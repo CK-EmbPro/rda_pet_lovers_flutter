@@ -1,0 +1,47 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/common_widgets.dart';
+import 'pages/home_page.dart';
+import 'pages/services_page.dart';
+import 'pages/pets_page.dart';
+import 'pages/profile_page.dart';
+
+class UserPortal extends StatefulWidget {
+  const UserPortal({super.key});
+
+  @override
+  State<UserPortal> createState() => _UserPortalState();
+}
+
+class _UserPortalState extends State<UserPortal> {
+  int _currentIndex = 0;
+
+  final List<Widget> _pages = [
+    const HomePage(),
+    const ServicesPage(),
+    const PetsPage(),
+    const ProfilePage(),
+  ];
+
+  final List<FloatingNavItem> _navItems = const [
+    FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
+    FloatingNavItem(icon: Icons.miscellaneous_services_outlined, label: 'Service'),
+    FloatingNavItem(icon: Icons.pets_outlined, label: 'Pets'),
+    FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _pages[_currentIndex],
+      ),
+      bottomNavigationBar: FloatingBottomNav(
+        currentIndex: _currentIndex,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: _navItems,
+      ),
+    );
+  }
+}
