@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/filter_sheet.dart';
+import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
 
@@ -15,18 +16,15 @@ class ServicesPage extends ConsumerStatefulWidget {
 
 class _ServicesPageState extends ConsumerState<ServicesPage> {
   String _selectedCategory = 'All';
+  final TextEditingController _searchController = TextEditingController();
 
-  final List<String> _categories = ['All', 'VETERINARY', 'GROOMING', 'TRAINING', 'WALKING'];
-
-  String _getCategoryLabel(String type) {
-    switch (type) {
-      case 'VETERINARY': return 'Veterinary';
-      case 'GROOMING': return 'Grooming';
-      case 'TRAINING': return 'Training';
-      case 'WALKING': return 'Walking';
-      default: return type;
-    }
-  }
+  final List<Map<String, dynamic>> _categories = [
+    {'key': 'All', 'label': 'All', 'icon': '🐾'},
+    {'key': 'VETERINARY', 'label': 'Veterinary', 'icon': '🩺'},
+    {'key': 'GROOMING', 'label': 'Groom', 'icon': '✂️'},
+    {'key': 'TRAINING', 'label': 'Training', 'icon': '🎓'},
+    {'key': 'WALKING', 'label': 'Walk', 'icon': '🚶'},
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -36,48 +34,111 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
       backgroundColor: AppColors.background,
       body: Column(
         children: [
-          // Header
-          GradientHeader(
-            title: 'Services',
-            subtitle: 'Find the best care for your pet',
-            trailing: IconButton(
-              icon: const Icon(Icons.filter_list, color: Colors.white),
-              onPressed: () {},
+          // Header matching design
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 24),
+            decoration: BoxDecoration(
+              gradient: AppTheme.primaryGradient,
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(30),
+                bottomRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Pet Health',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Lorem ipsum dolor sit amet',
+                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 20),
+                // Search Bar
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search, color: AppColors.textSecondary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search services...',
+                            border: InputBorder.none,
+                            filled: false,
+                            isDense: true,
+                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => FilterSheet.show(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.inputFill,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.tune, size: 20, color: Color(0xFF21314C)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
 
           // Category Filter Chips
           Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            height: 55,
+            padding: const EdgeInsets.only(top: 12),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 final cat = _categories[index];
-                final isSelected = _selectedCategory == cat;
+                final isSelected = _selectedCategory == cat['key'];
                 return Padding(
-                  padding: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.only(right: 10),
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = cat),
+                    onTap: () => setState(() => _selectedCategory = cat['key']),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primary : Colors.white,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: isSelected ? AppColors.primary : AppColors.inputFill,
-                        ),
+                        color: isSelected ? const Color(0xFF21314C) : Colors.white,
+                        borderRadius: BorderRadius.circular(25),
+                        boxShadow: isSelected ? [] : AppTheme.cardShadow,
                       ),
-                      child: Text(
-                        cat == 'All' ? 'All' : _getCategoryLabel(cat),
-                        style: TextStyle(
-                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 13,
-                        ),
+                      child: Row(
+                        children: [
+                          Text(cat['icon'], style: const TextStyle(fontSize: 16)),
+                          const SizedBox(width: 6),
+                          Text(
+                            cat['label'],
+                            style: TextStyle(
+                              color: isSelected ? Colors.white : AppColors.textPrimary,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -85,21 +146,29 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
               },
             ),
           ),
+          const SizedBox(height: 12),
 
           // Services List
           Expanded(
             child: services.isEmpty
-                ? const EmptyState(
-                    icon: Icons.miscellaneous_services,
-                    title: 'No Services Found',
-                    subtitle: 'No services available in this category',
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.miscellaneous_services, size: 60, color: AppColors.textMuted),
+                        const SizedBox(height: 16),
+                        const Text('No Services Found', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 4),
+                        const Text('No services available in this category', style: TextStyle(color: AppColors.textSecondary)),
+                      ],
+                    ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     itemCount: services.length,
                     itemBuilder: (context, index) {
                       final service = services[index];
-                      return _ServiceCard(service: service);
+                      return _ProviderCard(service: service);
                     },
                   ),
           ),
@@ -109,192 +178,130 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
   }
 }
 
-class _ServiceCard extends StatelessWidget {
+class _ProviderCard extends StatelessWidget {
   final ServiceModel service;
-  const _ServiceCard({required this.service});
+  const _ProviderCard({required this.service});
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
-        // Navigate to service details/booking
-        _showBookingSheet(context);
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        child: Row(
-          children: [
-            // Provider Avatar
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: AppColors.inputFill,
-              backgroundImage: service.provider?.avatarUrl != null
-                  ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
-                  : null,
-              child: service.provider?.avatarUrl == null
-                  ? const Icon(Icons.person, size: 28, color: AppColors.textSecondary)
-                  : null,
-            ),
-            const SizedBox(width: 16),
-            // Service Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    service.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    service.provider?.fullName ?? 'Provider',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      StatusBadge(
-                        label: service.displayServiceType,
-                        isPositive: true,
-                      ),
-                      const Spacer(),
-                      Text(
-                        'RWF ${service.fee.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.secondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: AppTheme.cardShadow,
       ),
-    );
-  }
-
-  void _showBookingSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(top: 12),
-              decoration: BoxDecoration(
-                color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(2),
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Availability Badge
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(20),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, size: 14, color: Color(0xFF22C55E)),
+                SizedBox(width: 4),
+                Text(
+                  'Available',
+                  style: TextStyle(color: Color(0xFF22C55E), fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          
+          // Provider Info Row
+          Row(
+            children: [
+              // Provider Avatar
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: AppColors.inputFill,
+                backgroundImage: service.provider?.avatarUrl != null
+                    ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
+                    : null,
+                child: service.provider?.avatarUrl == null
+                    ? const Icon(Icons.person, size: 28, color: AppColors.textSecondary)
+                    : null,
+              ),
+              const SizedBox(width: 12),
+              // Provider Details
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Provider Info
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 35,
-                          backgroundColor: AppColors.inputFill,
-                          backgroundImage: service.provider?.avatarUrl != null
-                              ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
-                              : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                service.provider?.fullName ?? 'Provider',
-                                style: AppTypography.h3,
-                              ),
-                              Text(
-                                service.provider?.specialty ?? service.displayServiceType,
-                                style: AppTypography.bodySmall,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    // Service Details
-                    Text('Service', style: AppTypography.caption),
-                    const SizedBox(height: 4),
-                    Text(service.name, style: AppTypography.h3),
-                    const SizedBox(height: 8),
                     Text(
-                      service.description ?? 'Professional pet care service.',
-                      style: AppTypography.bodySmall,
+                      service.provider?.fullName ?? 'Dr. Provider',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                     ),
-                    const SizedBox(height: 16),
-                    // Working Hours
+                    const SizedBox(height: 2),
+                    Text(
+                      service.provider?.specialty ?? service.displayServiceType,
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                    ),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        const Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
+                        const SizedBox(width: 4),
                         Text(
                           service.provider?.workingHours ?? '8:00 am - 6:00 pm',
-                          style: AppTypography.bodySmall,
-                        ),
-                      ],
-                    ),
-                    const Spacer(),
-                    // Fee & Book
-                    Row(
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Price', style: TextStyle(color: AppColors.textMuted)),
-                            Text(
-                              'RWF ${service.fee.toStringAsFixed(0)}',
-                              style: AppTypography.h2.copyWith(color: AppColors.secondary),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(width: 24),
-                        Expanded(
-                          child: PrimaryButton(
-                            label: 'Book Now',
-                            onPressed: () {
-                              Navigator.pop(context);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Booking feature coming soon!')),
-                              );
-                            },
-                          ),
+                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          
+          // Service Info and Price
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Service:', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  Text(
+                    service.name,
+                    style: const TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+              Text(
+                '${service.fee.toInt()} RWF',
+                style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Schedule Appointment Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => AppointmentFormSheet.show(context, serviceId: service.id, providerId: service.providerId),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF21314C),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text(
+                'Schedule Appointment',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

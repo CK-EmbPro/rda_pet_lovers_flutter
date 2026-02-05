@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
 import 'pages/shop_dashboard_page.dart';
 import 'pages/products_page.dart';
@@ -10,10 +9,10 @@ class ShopOwnerPortal extends StatefulWidget {
   const ShopOwnerPortal({super.key});
 
   @override
-  State<ShopOwnerPortal> createState() => _ShopOwnerPortalState();
+  State<ShopOwnerPortal> createState() => ShopOwnerPortalState();
 }
 
-class _ShopOwnerPortalState extends State<ShopOwnerPortal> {
+class ShopOwnerPortalState extends State<ShopOwnerPortal> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
@@ -23,12 +22,19 @@ class _ShopOwnerPortalState extends State<ShopOwnerPortal> {
     const ShopProfilePage(),
   ];
 
+  // Changed "Dashboard" to "Home" as requested
   final List<FloatingNavItem> _navItems = const [
-    FloatingNavItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
+    FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
     FloatingNavItem(icon: Icons.inventory_2_outlined, label: 'Products'),
     FloatingNavItem(icon: Icons.receipt_long_outlined, label: 'Orders'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];
+
+  void navigateToTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      setState(() => _currentIndex = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

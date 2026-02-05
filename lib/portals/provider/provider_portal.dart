@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
 import 'pages/provider_dashboard_page.dart';
 import 'pages/my_services_page.dart';
@@ -10,10 +9,10 @@ class ProviderPortal extends StatefulWidget {
   const ProviderPortal({super.key});
 
   @override
-  State<ProviderPortal> createState() => _ProviderPortalState();
+  State<ProviderPortal> createState() => ProviderPortalState();
 }
 
-class _ProviderPortalState extends State<ProviderPortal> {
+class ProviderPortalState extends State<ProviderPortal> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
@@ -23,12 +22,19 @@ class _ProviderPortalState extends State<ProviderPortal> {
     const ProviderProfilePage(),
   ];
 
+  // Changed "Dashboard" to "Home" as requested
   final List<FloatingNavItem> _navItems = const [
-    FloatingNavItem(icon: Icons.dashboard_outlined, label: 'Dashboard'),
+    FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
     FloatingNavItem(icon: Icons.design_services_outlined, label: 'Services'),
     FloatingNavItem(icon: Icons.calendar_today_outlined, label: 'Bookings'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];
+
+  void navigateToTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      setState(() => _currentIndex = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

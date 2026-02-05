@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// App Color Palette - Rwanda Pet Lovers
 class AppColors {
   // Primary Colors
-  static const Color primary = Color(0xFF1E293B); // Dark Slate
+  static const Color primary = Color(0xFF21314C); // Dark Slate #21314C
   static const Color secondary = Color(0xFF3B82F6); // Blue
   
   // Surface Colors
@@ -27,7 +27,7 @@ class AppColors {
   static const Color dangerButton = Color(0xFFF63B3B);
 
   // Tab/Navigation Colors
-  static const Color activeTabBg = Color(0xFF1E293B);
+  static const Color activeTabBg = Color(0xFF21314C);
   static const Color activeTabIcon = Color(0xFFFFFFFF);
   static const Color inactiveTabIcon = Color(0xFF475569);
 }
@@ -157,9 +157,9 @@ class AppTheme {
         ),
       );
 
-  // Gradient for headers
+  // Gradient for headers - Dark Slate theme
   static LinearGradient get primaryGradient => const LinearGradient(
-        colors: [AppColors.secondary, Color(0xFF60A5FA)],
+        colors: [Color(0xFF21314C), Color(0xFF21314C)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       );

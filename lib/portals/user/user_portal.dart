@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../core/widgets/common_widgets.dart';
 import 'pages/home_page.dart';
 import 'pages/services_page.dart';
+import '../pet_owner/pages/marketplace_page.dart';
 import 'pages/pets_page.dart';
 import 'pages/profile_page.dart';
 
@@ -10,15 +10,16 @@ class UserPortal extends StatefulWidget {
   const UserPortal({super.key});
 
   @override
-  State<UserPortal> createState() => _UserPortalState();
+  State<UserPortal> createState() => UserPortalState();
 }
 
-class _UserPortalState extends State<UserPortal> {
+class UserPortalState extends State<UserPortal> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
     const HomePage(),
     const ServicesPage(),
+    const MarketplacePage(),
     const PetsPage(),
     const ProfilePage(),
   ];
@@ -26,9 +27,16 @@ class _UserPortalState extends State<UserPortal> {
   final List<FloatingNavItem> _navItems = const [
     FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
     FloatingNavItem(icon: Icons.miscellaneous_services_outlined, label: 'Service'),
+    FloatingNavItem(icon: Icons.store_outlined, label: 'Market'),
     FloatingNavItem(icon: Icons.pets_outlined, label: 'Pets'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];
+
+  void navigateToTab(int index) {
+    if (index >= 0 && index < _pages.length) {
+      setState(() => _currentIndex = index);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

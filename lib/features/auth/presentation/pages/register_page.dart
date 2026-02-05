@@ -87,7 +87,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   ),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Container(
                       width: 50,
@@ -101,11 +101,13 @@ class _RegisterPageState extends State<RegisterPage> {
                     const SizedBox(height: 24),
                     const Text(
                       'Sign Up !',
+                      textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Provide required credentials below\nto create your account',
+                      textAlign: TextAlign.center,
                       style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
                     ),
                   ],
@@ -141,6 +143,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           ),
                           Expanded(
                             child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
                               onTap: () => context.go('/login'),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(vertical: 12),

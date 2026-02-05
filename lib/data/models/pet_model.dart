@@ -137,6 +137,16 @@ class PetModel {
   String get displayImage => images.isNotEmpty ? images.first : '';
   bool get isForSale => sellingStatus == 'SELLING_PENDING';
   bool get isForDonation => donationStatus == 'DONATION_PENDING';
+  
+  /// Computed listing type for UI display
+  String get listingType {
+    if (sellingStatus == 'SELLING_PENDING') return 'FOR_SALE';
+    if (donationStatus == 'DONATION_PENDING') return 'FOR_DONATION';
+    return 'NOT_LISTED';
+  }
+  
+  /// Computed price (mock for now, can be extended)
+  double? get price => isForSale ? 50000.0 : null;
 }
 
 /// Species Model

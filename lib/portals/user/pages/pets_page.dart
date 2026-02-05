@@ -68,40 +68,42 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                // Species Filter
-                SizedBox(
-                  height: 40,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: species.length + 1, // +1 for "All" option
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        final isSelected = _selectedSpecies == null;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: GestureDetector(
-                            onTap: () => setState(() => _selectedSpecies = null),
-                            child: _FilterChip(label: 'All', isSelected: isSelected),
-                          ),
-                        );
-                      }
-                      final sp = species[index - 1];
-                      final isSelected = _selectedSpecies == sp.id;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedSpecies = sp.id),
-                          child: _FilterChip(
-                            label: '${sp.icon ?? ''} ${sp.name}'.trim(),
-                            isSelected: isSelected,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
               ],
+            ),
+          ),
+
+          // Species Filter - Moved below header as per request
+          Container(
+            height: 60,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: species.length + 1, // +1 for "All" option
+              itemBuilder: (context, index) {
+                if (index == 0) {
+                  final isSelected = _selectedSpecies == null;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedSpecies = null),
+                      child: _FilterChip(label: 'All', isSelected: isSelected),
+                    ),
+                  );
+                }
+                final sp = species[index - 1];
+                final isSelected = _selectedSpecies == sp.id;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedSpecies = sp.id),
+                    child: _FilterChip(
+                      label: '${sp.icon ?? ''} ${sp.name}'.trim(),
+                      isSelected: isSelected,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -184,13 +186,20 @@ class _FilterChip extends StatelessWidget {
       duration: const Duration(milliseconds: 200),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
+        color: isSelected ? const Color(0xFF21314C) : AppColors.inputFill,
         borderRadius: BorderRadius.circular(20),
+        boxShadow: isSelected ? [] : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Text(
         label,
         style: TextStyle(
-          color: isSelected ? AppColors.secondary : Colors.white,
+          color: isSelected ? Colors.white : AppColors.textPrimary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),

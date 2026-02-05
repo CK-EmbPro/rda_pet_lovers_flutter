@@ -3,8 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/filter_sheet.dart';
+import '../../../core/widgets/notifications_sheet.dart';
+import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
+import '../pet_owner_portal.dart';
 
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
@@ -12,9 +16,14 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final myPets = ref.watch(myPetsProvider);
     final services = ref.watch(servicesProvider);
     final appointments = ref.watch(myAppointmentsProvider);
+    final shops = ref.watch(shopsProvider);
+    final browsablePets = ref.watch(browsablePetsProvider);
+
+    // Split browsable pets by listing type
+    final petsForSale = browsablePets.where((p) => p.listingType == 'FOR_SALE').toList();
+    final petsForDonation = browsablePets.where((p) => p.listingType == 'FOR_DONATION').toList();
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -23,7 +32,7 @@ class DashboardPage extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header
+              // Header with notification and profile
               Padding(
                 padding: const EdgeInsets.all(20),
                 child: Row(
@@ -39,42 +48,97 @@ class DashboardPage extends ConsumerWidget {
                     ),
                     Row(
                       children: [
-                        Stack(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined),
-                              onPressed: () {},
+                        // Notification Icon
+                        GestureDetector(
+                          onTap: () => NotificationsSheet.show(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.inputFill,
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            Positioned(
-                              right: 8,
-                              top: 8,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const BoxDecoration(
-                                  color: AppColors.error,
-                                  shape: BoxShape.circle,
+                            child: Stack(
+                              children: [
+                                const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: const BoxDecoration(
+                                      color: AppColors.error,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
                                 ),
-                              ),
+                              ],
                             ),
-                          ],
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        CircleAvatar(
-                          radius: 22,
-                          backgroundColor: AppColors.inputFill,
-                          backgroundImage: user?.avatarUrl != null
-                              ? CachedNetworkImageProvider(user!.avatarUrl!)
-                              : null,
-                          child: user?.avatarUrl == null
-                              ? const Icon(Icons.person, color: AppColors.textSecondary)
-                              : null,
+                        const SizedBox(width: 12),
+                        // Profile Icon - Links to Profile Page
+                        GestureDetector(
+                          onTap: () {
+                            final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                            portal?.navigateToTab(3);
+                          },
+                          child: CircleAvatar(
+                            radius: 22,
+                            backgroundColor: AppColors.inputFill,
+                            backgroundImage: user?.avatarUrl != null
+                                ? CachedNetworkImageProvider(user!.avatarUrl!)
+                                : null,
+                            child: user?.avatarUrl == null
+                                ? const Icon(Icons.person, color: AppColors.textSecondary)
+                                : null,
+                          ),
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
+
+              // Search Bar with Filter
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.inputFill,
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search, color: AppColors.textSecondary),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: 'Search pets, services, shops...',
+                            border: InputBorder.none,
+                            filled: false,
+                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => FilterSheet.show(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.tune, size: 20, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // Quick Actions
               const Padding(
@@ -88,74 +152,144 @@ class DashboardPage extends ConsumerWidget {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _QuickActionButton(icon: Icons.pets, label: 'Add Pet', color: AppColors.secondary, onTap: () {}),
+                    _QuickActionButton(
+                      icon: Icons.add_circle_outline,
+                      label: '', // Removed as per request
+                      color: AppColors.secondary,
+                      onTap: () {
+                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                        portal?.navigateToTab(1); // Go to My Pets page
+                      },
+                    ),
                     _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)),
-                    _QuickActionButton(icon: Icons.medical_services, label: 'Book Vet', color: Colors.orange, onTap: () {}),
-                    _QuickActionButton(icon: Icons.store, label: 'Shop', color: Colors.purple, onTap: () {}),
+                    _QuickActionButton(icon: Icons.calendar_today, label: 'Book Vet', color: Colors.orange, onTap: () => AppointmentFormSheet.show(context)),
+                    _QuickActionButton(
+                      icon: Icons.store,
+                      label: 'Shop',
+                      color: Colors.purple,
+                      onTap: () {
+                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                        portal?.navigateToTab(2);
+                      },
+                    ),
                   ],
                 ),
               ),
               const SizedBox(height: 24),
 
-              // My Pets Section
+              // Upcoming Appointments
+              if (appointments.isNotEmpty) ...[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Upcoming Appointments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                      TextButton(
+                        onPressed: () {},
+                        child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+                      ),
+                    ],
+                  ),
+                ),
+                ...appointments.take(2).map((apt) => _AppointmentCard(appointment: apt)),
+                const SizedBox(height: 24),
+              ],
+
+              // Shops Section
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Text('My Pets', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    const Text('Shops Near You', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                        portal?.navigateToTab(2);
+                      },
                       child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
                     ),
                   ],
                 ),
               ),
-              myPets.isEmpty
-                  ? Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Container(
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: AppColors.inputFill,
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: shops.length,
+                  itemBuilder: (context, index) {
+                    final shop = shops[index];
+                    return Container(
+                      width: 160,
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Icon(Icons.pets, size: 40, color: AppColors.textMuted),
-                              SizedBox(height: 8),
-                              Text('No pets registered yet', style: TextStyle(color: AppColors.textMuted)),
+                              CircleAvatar(
+                                radius: 20,
+                                backgroundColor: AppColors.inputFill,
+                                backgroundImage: shop.logoUrl != null
+                                    ? CachedNetworkImageProvider(shop.logoUrl!)
+                                    : null,
+                                child: shop.logoUrl == null
+                                    ? const Icon(Icons.store, color: AppColors.secondary)
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  shop.name,
+                                  style: const TextStyle(fontWeight: FontWeight.w600),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
                             ],
                           ),
-                        ),
+                          const Spacer(),
+                          Row(
+                            children: [
+                              const Icon(Icons.star, size: 14, color: Color(0xFFFBBF24)),
+                              const SizedBox(width: 4),
+                              Text('${shop.rating ?? 4.5}', style: const TextStyle(fontSize: 12)),
+                              const Spacer(),
+                              Text('${shop.productCount} items', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                            ],
+                          ),
+                        ],
                       ),
-                    )
-                  : SizedBox(
-                      height: 160,
-                      child: PageView.builder(
-                        controller: PageController(viewportFraction: 0.92),
-                        itemCount: myPets.length,
-                        itemBuilder: (context, index) {
-                          final pet = myPets[index];
-                          return _PetSlideCard(
-                            pet: pet,
-                            onMateCheck: () => _showMateCheckModalForPet(context, pet),
-                          );
-                        },
-                      ),
-                    ),
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 24),
 
-              // Upcoming Appointments
-              if (appointments.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20),
-                  child: Text('Upcoming Appointments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                ),
-                const SizedBox(height: 12),
-                ...appointments.take(2).map((apt) => _AppointmentCard(appointment: apt)),
+              // Being Sold Section
+              if (petsForSale.isNotEmpty) ...[
+                _buildPetsSectionHeader(context, 'Being Sold', () {
+                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                  portal?.navigateToTab(2);
+                }),
+                _buildPetsHorizontalList(petsForSale.take(5).toList()),
+                const SizedBox(height: 24),
+              ],
+
+              // Being Donated Section
+              if (petsForDonation.isNotEmpty) ...[
+                _buildPetsSectionHeader(context, 'Being Donated', () {
+                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                  portal?.navigateToTab(2);
+                }),
+                _buildPetsHorizontalList(petsForDonation.take(5).toList()),
                 const SizedBox(height: 24),
               ],
 
@@ -170,6 +304,106 @@ class DashboardPage extends ConsumerWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildPetsSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          TextButton(
+            onPressed: onSeeAll,
+            child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPetsHorizontalList(List<PetModel> pets) {
+    return SizedBox(
+      height: 180,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: pets.length,
+        itemBuilder: (context, index) {
+          final pet = pets[index];
+          return Container(
+            width: 140,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: AppTheme.cardShadow,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 3,
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                        child: pet.displayImage.isNotEmpty
+                            ? CachedNetworkImage(
+                                imageUrl: pet.displayImage,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                placeholder: (_, __) => Container(color: AppColors.inputFill),
+                                errorWidget: (_, __, ___) => Container(
+                                  color: AppColors.inputFill,
+                                  child: const Icon(Icons.pets, size: 30, color: AppColors.secondary),
+                                ),
+                              )
+                            : Container(
+                                color: AppColors.inputFill,
+                                child: const Center(child: Icon(Icons.pets, size: 30, color: AppColors.secondary)),
+                              ),
+                      ),
+                      Positioned(
+                        top: 6,
+                        left: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: pet.listingType == 'FOR_SALE' ? AppColors.secondary : Colors.pink,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            pet.listingType == 'FOR_SALE' ? 'Sale' : 'Free',
+                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis),
+                        Text(pet.breed?.name ?? '', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
+                        const Spacer(),
+                        if (pet.price != null && pet.price! > 0)
+                          Text('${pet.price!.toInt()} RWF', style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
@@ -203,50 +437,6 @@ class DashboardPage extends ConsumerWidget {
               hint: myPets.isNotEmpty ? myPets.first.petCode : 'PET-XXX-XXX',
               prefixIcon: Icons.pets,
             ),
-            const SizedBox(height: 16),
-            const AppTextField(label: 'Partner Pet Code', hint: 'Enter partner pet code', prefixIcon: Icons.pets),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: 'Check Compatibility',
-              onPressed: () {
-                Navigator.pop(context);
-                _showCompatibilityResult(context, true);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showMateCheckModalForPet(BuildContext context, PetModel pet) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 20),
-            const Text('Mate Compatibility Check', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.pets, size: 16, color: AppColors.secondary),
-                const SizedBox(width: 8),
-                Text('Checking for: ${pet.name}', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w500)),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text('Code: ${pet.petCode}', style: const TextStyle(color: AppColors.textMuted, fontSize: 12)),
             const SizedBox(height: 16),
             const AppTextField(label: 'Partner Pet Code', hint: 'Enter partner pet code', prefixIcon: Icons.pets),
             const SizedBox(height: 24),
@@ -333,83 +523,13 @@ class _QuickActionButton extends StatelessWidget {
               ),
               child: Icon(icon, color: color),
             ),
-            const SizedBox(height: 6),
-            Text(label, style: const TextStyle(fontSize: 11), textAlign: TextAlign.center),
+            if (label.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(label, style: const TextStyle(fontSize: 11), textAlign: TextAlign.center),
+            ],
           ],
         ),
       ),
-    );
-  }
-}
-
-class _PetSlideCard extends StatelessWidget {
-  final PetModel pet;
-  final VoidCallback onMateCheck;
-  const _PetSlideCard({required this.pet, required this.onMateCheck});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Row(
-        children: [
-          // Pet Image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: pet.displayImage.isNotEmpty
-                ? CachedNetworkImage(
-                    imageUrl: pet.displayImage,
-                    width: 90,
-                    height: 90,
-                    fit: BoxFit.cover,
-                    placeholder: (_, __) => Container(color: AppColors.inputFill),
-                    errorWidget: (_, __, ___) => _petPlaceholder(),
-                  )
-                : _petPlaceholder(),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(pet.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(pet.breed?.name ?? pet.species?.name ?? '', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.inputFill,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(pet.petCode, style: const TextStyle(fontSize: 10, color: AppColors.textSecondary)),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.compare_arrows, color: AppColors.success),
-            onPressed: onMateCheck,
-            tooltip: 'Mate Check',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _petPlaceholder() {
-    return Container(
-      width: 90,
-      height: 90,
-      color: AppColors.inputFill,
-      child: const Icon(Icons.pets, size: 40, color: AppColors.secondary),
     );
   }
 }
@@ -474,38 +594,41 @@ class _ServiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: AppColors.inputFill,
-            backgroundImage: service.provider?.avatarUrl != null
-                ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
-                : null,
-            child: service.provider?.avatarUrl == null
-                ? const Icon(Icons.person, color: AppColors.textSecondary)
-                : null,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(service.provider?.fullName ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(service.displayServiceType, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-              ],
+    return GestureDetector(
+      onTap: () => AppointmentFormSheet.show(context, serviceId: service.id),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: AppColors.inputFill,
+              backgroundImage: service.provider?.avatarUrl != null
+                  ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
+                  : null,
+              child: service.provider?.avatarUrl == null
+                  ? const Icon(Icons.person, color: AppColors.textSecondary)
+                  : null,
             ),
-          ),
-          StatusBadge(label: 'Available', isPositive: true),
-        ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(service.provider?.fullName ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(service.displayServiceType, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ],
+              ),
+            ),
+            const StatusBadge(label: 'Available', isPositive: true),
+          ],
+        ),
       ),
     );
   }
