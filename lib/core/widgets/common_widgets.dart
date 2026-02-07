@@ -16,9 +16,22 @@ class FloatingBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 380;
+    
+    // Dynamic values based on screen width
+    final outerMargin = isSmallScreen ? 12.0 : 20.0;
+    final horizontalPadding = isSmallScreen ? 8.0 : 12.0;
+    final verticalPadding = isSmallScreen ? 6.0 : 8.0;
+    final itemHorizontalPadding = isSmallScreen ? (isActive) => 10.0 : (isActive) => isActive ? 16.0 : 12.0;
+    final itemVerticalPadding = isSmallScreen ? 8.0 : 10.0;
+    final iconSize = isSmallScreen ? 20.0 : 22.0;
+    final fontSize = isSmallScreen ? 12.0 : 14.0;
+    final gapWidth = isSmallScreen ? 4.0 : 8.0;
+
     return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      margin: EdgeInsets.fromLTRB(outerMargin, outerMargin, outerMargin, isSmallScreen ? 10 : outerMargin),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: verticalPadding),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
@@ -44,8 +57,8 @@ class FloatingBottomNav extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               curve: Curves.easeInOut,
               padding: EdgeInsets.symmetric(
-                horizontal: isActive ? 16 : 12,
-                vertical: 10,
+                horizontal: isSmallScreen ? (isActive ? 10.0 : 6.0) : (isActive ? 16.0 : 12.0),
+                vertical: itemVerticalPadding,
               ),
               decoration: BoxDecoration(
                 color: isActive 
@@ -61,16 +74,20 @@ class FloatingBottomNav extends StatelessWidget {
                     color: isActive
                         ? (isCart ? Colors.white : AppColors.activeTabIcon)
                         : AppColors.inactiveTabIcon,
-                    size: 22,
+                    size: iconSize,
                   ),
                   if (isActive) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      item.label,
-                      style: TextStyle(
-                        color: isActive && isCart ? Colors.white : AppColors.activeTabIcon,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+                    SizedBox(width: gapWidth),
+                    Flexible(
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: isActive && isCart ? Colors.white : AppColors.activeTabIcon,
+                          fontWeight: FontWeight.w600,
+                          fontSize: fontSize,
+                        ),
                       ),
                     ),
                   ],

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../data/providers/cart_provider.dart';
@@ -132,7 +134,7 @@ class HomePage extends ConsumerWidget {
                           onTap: () {
                             // Navigate to profile tab
                             final portal = context.findAncestorStateOfType<UserPortalState>();
-                            portal?.navigateToTab(4);
+                            portal?.navigateToTab(5);
                           },
                           child: CircleAvatar(
                             radius: 22,
@@ -272,7 +274,10 @@ class HomePage extends ConsumerWidget {
                 icon: Icons.calendar_today,
                 label: 'Book Service',
                 color: Colors.orange,
-                onTap: () => AppointmentFormSheet.show(context),
+                onTap: () {
+                  final portal = context.findAncestorStateOfType<UserPortalState>();
+                  portal?.navigateToTab(1);
+                },
               ),
               const SizedBox(width: 12),
               _QuickActionButton(
@@ -313,7 +318,7 @@ class HomePage extends ConsumerWidget {
           ),
         ),
         SizedBox(
-          height: 160,
+          height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -322,8 +327,10 @@ class HomePage extends ConsumerWidget {
               final product = products[index];
               return GestureDetector(
                 onTap: () {
-                  final portal = context.findAncestorStateOfType<UserPortalState>();
-                  portal?.navigateToTab(2);
+                  ref.read(cartProvider.notifier).addProduct(product);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Added to cart!'), backgroundColor: AppColors.success),
+                  );
                 },
                 child: Container(
                   width: 130,
@@ -471,7 +478,7 @@ class HomePage extends ConsumerWidget {
           ),
         ),
         SizedBox(
-          height: 100,
+          height: 120,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -571,111 +578,201 @@ class HomePage extends ConsumerWidget {
   }
 
   void _showAddPetModal(BuildContext context) {
+    XFile? profileImage;
+    List<XFile> galleryImages = [];
+    DateTime? selectedBirthDate;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(2),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          height: MediaQuery.of(context).size.height * 0.9,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: GestureDetector(
-                        onTap: () => _showImagePickerOptions(context),
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.secondary, width: 2),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, size: 40, color: AppColors.secondary),
-                              const SizedBox(height: 4),
-                              Text('Add Photo', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
-                            ],
+              const SizedBox(height: 20),
+              const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 20),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Profile Photo Section
+                      const Text('Profile Photo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                      const SizedBox(height: 12),
+                      Center(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final image = await _pickImage(context, ImageSource.gallery);
+                            if (image != null) setModalState(() => profileImage = image);
+                          },
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: AppColors.inputFill,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.secondary, width: 2),
+                              image: profileImage != null
+                                  ? DecorationImage(image: FileImage(File(profileImage!.path)), fit: BoxFit.cover)
+                                  : null,
+                            ),
+                            child: profileImage == null
+                                ? const Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.add_a_photo, size: 30, color: AppColors.secondary),
+                                      Text('Add Profile', style: TextStyle(fontSize: 10, color: AppColors.secondary)),
+                                    ],
+                                  )
+                                : null,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    const AppTextField(label: 'Pet Name', hint: 'e.g. Buddy'),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildDropdownField('Species', 'Select species')),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildDropdownField('Breed', 'Select breed')),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildDropdownField('Gender', 'Select gender')),
-                        const SizedBox(width: 16),
-                        Expanded(child: const AppTextField(label: 'Age', hint: 'e.g. 2 years')),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const AppTextField(label: 'Weight (kg)', hint: 'e.g. 15'),
-                    const SizedBox(height: 16),
-                    const AppTextField(label: 'Location', hint: 'e.g. Kicukiro, Kigali'),
-                    const SizedBox(height: 16),
-                    const AppTextField(
-                      label: 'Health Summary',
-                      hint: 'e.g. Vaccinated, healthy...',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    const AppTextField(
-                      label: 'Description',
-                      hint: 'Tell us more about your pet...',
-                      maxLines: 4,
-                    ),
-                    const SizedBox(height: 24),
-                    PrimaryButton(
-                      label: 'Register Pet',
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Pet registered successfully!'), backgroundColor: AppColors.success),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                  ],
+                      const SizedBox(height: 24),
+
+                      // Gallery Photos Section
+                      const Text('Gallery Photos (Multiple)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 80,
+                        child: ListView(
+                          scrollDirection: Axis.horizontal,
+                          children: [
+                            GestureDetector(
+                              onTap: () async {
+                                final List<XFile> images = await ImagePicker().pickMultiImage();
+                                if (images.isNotEmpty) {
+                                  setModalState(() => galleryImages.addAll(images));
+                                }
+                              },
+                              child: Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: AppColors.inputFill,
+                                  borderRadius: BorderRadius.circular(15),
+                                  border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
+                                ),
+                                child: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.secondary),
+                              ),
+                            ),
+                            ...galleryImages.map((img) => Container(
+                                  width: 80,
+                                  height: 80,
+                                  margin: const EdgeInsets.only(left: 12),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(15),
+                                    image: DecorationImage(image: FileImage(File(img.path)), fit: BoxFit.cover),
+                                  ),
+                                )),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      const AppTextField(label: 'Pet Name', hint: 'e.g. Buddy'),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: _buildDropdownField('Species', 'Select species')),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildDropdownField('Breed', 'Select breed')),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: _buildDropdownField('Gender', 'MALE / FEMALE')),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () async {
+                                final date = await showDatePicker(
+                                  context: context,
+                                  initialDate: DateTime.now().subtract(const Duration(days: 365)),
+                                  firstDate: DateTime(2000),
+                                  lastDate: DateTime.now(),
+                                );
+                                if (date != null) setModalState(() => selectedBirthDate = date);
+                              },
+                              child: AbsorbPointer(
+                                child: AppTextField(
+                                  label: 'Birth Date',
+                                  hint: selectedBirthDate != null 
+                                      ? "${selectedBirthDate!.day}/${selectedBirthDate!.month}/${selectedBirthDate!.year}"
+                                      : 'Select date',
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(child: const AppTextField(label: 'Weight (kg)', hint: 'e.g. 15', keyboardType: TextInputType.number)),
+                          const SizedBox(width: 16),
+                          Expanded(child: _buildDropdownField('Nationality', 'Select nationality')),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      _buildDropdownField('Listing Type', 'Personal / Selling / Donation'),
+                      const SizedBox(height: 16),
+                      const AppTextField(label: 'Location', hint: 'e.g. Kicukiro, Kigali'),
+                      const SizedBox(height: 16),
+                      const AppTextField(
+                        label: 'Health Summary',
+                        hint: 'e.g. Vaccinated, healthy...',
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: 16),
+                      const AppTextField(
+                        label: 'Description',
+                        hint: 'Tell us more about your pet...',
+                        maxLines: 4,
+                      ),
+                      const SizedBox(height: 24),
+                      PrimaryButton(
+                        label: 'Register Pet',
+                        onPressed: () {
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Pet registered successfully!'), backgroundColor: AppColors.success),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Future<XFile?> _pickImage(BuildContext context, ImageSource source) async {
+    final ImagePicker picker = ImagePicker();
+    return await picker.pickImage(source: source);
   }
 
   Widget _buildDropdownField(String label, String hint) {
