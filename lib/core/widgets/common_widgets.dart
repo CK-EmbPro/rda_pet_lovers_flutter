@@ -36,6 +36,7 @@ class FloatingBottomNav extends StatelessWidget {
           final index = entry.key;
           final item = entry.value;
           final isActive = index == currentIndex;
+          final isCart = item.label.toLowerCase() == 'cart';
 
           return GestureDetector(
             onTap: () => onTap(index),
@@ -47,7 +48,9 @@ class FloatingBottomNav extends StatelessWidget {
                 vertical: 10,
               ),
               decoration: BoxDecoration(
-                color: isActive ? AppColors.activeTabBg : Colors.transparent,
+                color: isActive 
+                    ? (isCart ? const Color(0xFF21314C) : AppColors.activeTabBg)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(25),
               ),
               child: Row(
@@ -56,7 +59,7 @@ class FloatingBottomNav extends StatelessWidget {
                   Icon(
                     item.icon,
                     color: isActive
-                        ? AppColors.activeTabIcon
+                        ? (isCart ? Colors.white : AppColors.activeTabIcon)
                         : AppColors.inactiveTabIcon,
                     size: 22,
                   ),
@@ -64,8 +67,8 @@ class FloatingBottomNav extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       item.label,
-                      style: const TextStyle(
-                        color: AppColors.activeTabIcon,
+                      style: TextStyle(
+                        color: isActive && isCart ? Colors.white : AppColors.activeTabIcon,
                         fontWeight: FontWeight.w600,
                         fontSize: 14,
                       ),
@@ -292,6 +295,7 @@ class AppTextField extends StatelessWidget {
   final bool obscureText;
   final TextInputType? keyboardType;
   final String? Function(String?)? validator;
+  final int? maxLines;
 
   const AppTextField({
     super.key,
@@ -303,6 +307,7 @@ class AppTextField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType,
     this.validator,
+    this.maxLines = 1,
   });
 
   @override
@@ -326,6 +331,7 @@ class AppTextField extends StatelessWidget {
           obscureText: obscureText,
           keyboardType: keyboardType,
           validator: validator,
+          maxLines: maxLines,
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,

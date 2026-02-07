@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../data/providers/cart_provider.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
 
@@ -63,6 +65,47 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                           icon: Icons.view_carousel,
                           isActive: !_isGridView,
                           onTap: () => setState(() => _isGridView = false),
+                        ),
+                        const SizedBox(width: 8),
+                        _ViewToggle(
+                          icon: Icons.add,
+                          isActive: false,
+                          onTap: () => _showAddPetModal(context),
+                        ),
+                        const SizedBox(width: 8),
+                        // Cart Icon
+                        GestureDetector(
+                          onTap: () => context.push('/cart'),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Stack(
+                              children: [
+                                const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 20),
+                                if (ref.watch(cartProvider).isNotEmpty)
+                                  Positioned(
+                                    right: -2,
+                                    top: -2,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(2),
+                                      decoration: const BoxDecoration(
+                                        color: AppColors.secondary,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                                      child: Text(
+                                        '${ref.watch(cartProvider).length}',
+                                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -146,6 +189,139 @@ class _PetsPageState extends ConsumerState<PetsPage> {
       controller: PageController(viewportFraction: 0.85),
       itemCount: pets.length,
       itemBuilder: (context, index) => _PetCarouselCard(pet: pets[index]),
+    );
+  }
+
+  void _showAddPetModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: AppColors.inputFill,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.secondary, width: 2),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.add_a_photo, size: 40, color: AppColors.secondary),
+                              const SizedBox(height: 4),
+                              const Text('Add Photo', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const AppTextField(label: 'Pet Name', hint: 'e.g. Buddy'),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDropdownField('Species', 'Select species')),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildDropdownField('Breed', 'Select breed')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDropdownField('Gender', 'Select gender')),
+                        const SizedBox(width: 16),
+                        Expanded(child: const AppTextField(label: 'Age', hint: 'e.g. 2 years')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const AppTextField(label: 'Weight (kg)', hint: 'e.g. 15'),
+                    const SizedBox(height: 16),
+                    const AppTextField(label: 'Location', hint: 'e.g. Kicukiro, Kigali'),
+                    const SizedBox(height: 16),
+                    const AppTextField(
+                      label: 'Health Summary',
+                      hint: 'e.g. Vaccinated, healthy...',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    const AppTextField(
+                      label: 'Description',
+                      hint: 'Tell us more about your pet...',
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 24),
+                    PrimaryButton(
+                      label: 'Register Pet',
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Pet registered successfully!'), backgroundColor: AppColors.success),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDropdownField(String label, String hint) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.inputFill,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              hint: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+              items: const [],
+              onChanged: (val) {},
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -294,12 +470,7 @@ class _PetGridCard extends StatelessWidget {
   }
 
   void _showPetDetails(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _PetDetailsSheet(pet: pet),
-    );
+    context.push('/pet-details/${pet.id}');
   }
 }
 
@@ -396,14 +567,7 @@ class _PetCarouselCard extends StatelessWidget {
                   const SizedBox(height: 12),
                   PrimaryButton(
                     label: 'View Details',
-                    onPressed: () {
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (context) => _PetDetailsSheet(pet: pet),
-                      );
-                    },
+                    onPressed: () => context.push('/pet-details/${pet.id}'),
                   ),
                 ],
               ),
@@ -582,3 +746,4 @@ class _PetDetailsSheet extends StatelessWidget {
     );
   }
 }
+

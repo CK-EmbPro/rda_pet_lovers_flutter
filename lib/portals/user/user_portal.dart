@@ -5,6 +5,7 @@ import 'pages/services_page.dart';
 import '../pet_owner/pages/marketplace_page.dart';
 import 'pages/pets_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/cart_page.dart';
 
 class UserPortal extends StatefulWidget {
   const UserPortal({super.key});
@@ -21,14 +22,16 @@ class UserPortalState extends State<UserPortal> {
     const ServicesPage(),
     const MarketplacePage(),
     const PetsPage(),
+    const CartPage(),
     const ProfilePage(),
   ];
 
   final List<FloatingNavItem> _navItems = const [
     FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
-    FloatingNavItem(icon: Icons.miscellaneous_services_outlined, label: 'Service'),
+    FloatingNavItem(icon: Icons.miscellaneous_services_outlined, label: 'Services'),
     FloatingNavItem(icon: Icons.store_outlined, label: 'Market'),
     FloatingNavItem(icon: Icons.pets_outlined, label: 'Pets'),
+    FloatingNavItem(icon: Icons.shopping_cart_outlined, label: 'Cart'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];
 

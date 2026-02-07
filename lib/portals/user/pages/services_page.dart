@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
@@ -184,124 +185,127 @@ class _ProviderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Availability Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF0FDF4),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, size: 14, color: Color(0xFF22C55E)),
-                SizedBox(width: 4),
-                Text(
-                  'Available',
-                  style: TextStyle(color: Color(0xFF22C55E), fontSize: 12, fontWeight: FontWeight.w500),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          
-          // Provider Info Row
-          Row(
-            children: [
-              // Provider Avatar
-              CircleAvatar(
-                radius: 30,
-                backgroundColor: AppColors.inputFill,
-                backgroundImage: service.provider?.avatarUrl != null
-                    ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
-                    : null,
-                child: service.provider?.avatarUrl == null
-                    ? const Icon(Icons.person, size: 28, color: AppColors.textSecondary)
-                    : null,
+    return GestureDetector(
+      onTap: () => context.push('/service-details/${service.id}'),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Availability Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF0FDF4),
+                borderRadius: BorderRadius.circular(20),
               ),
-              const SizedBox(width: 12),
-              // Provider Details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      service.provider?.fullName ?? 'Dr. Provider',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      service.provider?.specialty ?? service.displayServiceType,
-                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
-                        const SizedBox(width: 4),
-                        Text(
-                          service.provider?.workingHours ?? '8:00 am - 6:00 pm',
-                          style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Service Info and Price
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Service:', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                  Icon(Icons.check_circle, size: 14, color: Color(0xFF22C55E)),
+                  SizedBox(width: 4),
                   Text(
-                    service.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
+                    'Available',
+                    style: TextStyle(color: Color(0xFF22C55E), fontSize: 12, fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
-              Text(
-                '${service.fee.toInt()} RWF',
-                style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // Schedule Appointment Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () => AppointmentFormSheet.show(context, serviceId: service.id, providerId: service.providerId),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF21314C),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text(
-                'Schedule Appointment',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            
+            // Provider Info Row
+            Row(
+              children: [
+                // Provider Avatar
+                CircleAvatar(
+                  radius: 30,
+                  backgroundColor: AppColors.inputFill,
+                  backgroundImage: service.provider?.avatarUrl != null
+                      ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
+                      : null,
+                  child: service.provider?.avatarUrl == null
+                      ? const Icon(Icons.person, size: 28, color: AppColors.textSecondary)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                // Provider Details
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        service.provider?.fullName ?? 'Dr. Provider',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        service.provider?.specialty ?? service.displayServiceType,
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
+                          const SizedBox(width: 4),
+                          Text(
+                            service.provider?.workingHours ?? '8:00 am - 6:00 pm',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Service Info and Price
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Service:', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                    Text(
+                      service.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${service.fee.toInt()} RWF',
+                  style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+  
+            // Schedule Appointment Button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => AppointmentFormSheet.show(context, serviceId: service.id, providerId: service.providerId),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF21314C),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Schedule Appointment',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -135,6 +135,27 @@ final mockPets = [
     species: mockSpecies[1],
     breed: mockBreeds[5],
   ),
+  PetModel(
+    id: 'pet-5',
+    petCode: 'PET-005',
+    ownerId: 'user-2',
+    name: 'Keza',
+    speciesId: 'species-1',
+    breedId: 'breed-2',
+    gender: 'FEMALE',
+    weightKg: 25.4,
+    ageYears: 1,
+    images: [
+      'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=400',
+    ],
+    description: 'Energetic and friendly.',
+    donationStatus: 'NOT_FOR_DONATION',
+    sellingStatus: 'FOR_SALE',
+    isActive: true,
+    createdAt: DateTime.now().subtract(const Duration(days: 10)),
+    species: mockSpecies[0],
+    breed: mockBreeds[1],
+  ),
 ];
 
 // ============== MOCK PROVIDERS ==============
@@ -317,6 +338,20 @@ final mockProducts = [
     shopName: 'Pet Paradise',
     categoryName: 'Toys',
   ),
+  ProductModel(
+    id: 'prod-4',
+    productCode: 'PROD-004',
+    name: 'Dog Leash',
+    description: 'Strong leather leash.',
+    price: 12000,
+    stockQuantity: 10,
+    mainImage: 'https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=400',
+    images: ['https://images.unsplash.com/photo-1601758124510-52d02ddb7cbd?w=400'],
+    shopId: 'shop-1',
+    createdAt: DateTime.now(),
+    shopName: 'Pawfect Bites',
+    categoryName: 'Accessories',
+  ),
 ];
 
 // ============== MOCK CATEGORIES ==============
@@ -416,6 +451,9 @@ final myPetsProvider = Provider<List<PetModel>>((ref) {
   return allPets.where((pet) => pet.ownerId == user.id).toList();
 });
 
+/// Alias for myPetsProvider to match UI naming
+final userPetsProvider = myPetsProvider;
+
 /// Pets for sale/browsing
 final browsablePetsProvider = Provider<List<PetModel>>((ref) {
   final allPets = ref.watch(allPetsProvider);
@@ -444,73 +482,8 @@ final productsProvider = StateProvider<List<ProductModel>>((ref) => mockProducts
 /// Categories list
 final categoriesProvider = Provider<List<CategoryModel>>((ref) => mockCategories);
 
-/// Shopping cart
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItemModel>>((ref) {
-  return CartNotifier();
-});
 
-class CartNotifier extends StateNotifier<List<CartItemModel>> {
-  CartNotifier() : super([]);
-
-  void addItem(ProductModel product, {int quantity = 1}) {
-    final existingIndex = state.indexWhere((item) => item.productId == product.id);
-    if (existingIndex >= 0) {
-      state = [
-        ...state.sublist(0, existingIndex),
-        state[existingIndex].copyWith(quantity: state[existingIndex].quantity + quantity),
-        ...state.sublist(existingIndex + 1),
-      ];
-    } else {
-      state = [
-        ...state,
-        CartItemModel(
-          productId: product.id,
-          productName: product.name,
-          imageUrl: product.mainImage,
-          price: product.effectivePrice,
-          quantity: quantity,
-          shopId: product.shopId,
-          shopName: product.shopName,
-        ),
-      ];
-    }
-  }
-
-  void removeItem(String productId) {
-    state = state.where((item) => item.productId != productId).toList();
-  }
-
-  void updateQuantity(String productId, int quantity) {
-    if (quantity <= 0) {
-      removeItem(productId);
-      return;
-    }
-    state = state.map((item) {
-      if (item.productId == productId) {
-        return item.copyWith(quantity: quantity);
-      }
-      return item;
-    }).toList();
-  }
-
-  void clearCart() {
-    state = [];
-  }
-
-  double get totalAmount => state.fold(0, (sum, item) => sum + item.totalPrice);
-}
-
-/// Cart total amount
-final cartTotalProvider = Provider<double>((ref) {
-  final cart = ref.watch(cartProvider);
-  return cart.fold(0, (sum, item) => sum + item.totalPrice);
-});
-
-/// Cart item count
-final cartItemCountProvider = Provider<int>((ref) {
-  final cart = ref.watch(cartProvider);
-  return cart.fold(0, (sum, item) => sum + item.quantity);
-});
+// ============== APPOINTMENTS PROVIDER ==============
 
 /// Appointments provider
 final appointmentsProvider = StateProvider<List<AppointmentModel>>((ref) => mockAppointments);

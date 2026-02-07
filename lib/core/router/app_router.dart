@@ -11,6 +11,12 @@ import '../../portals/provider/provider_portal.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
+import '../../portals/common/pages/shop_details_page.dart';
+import '../../portals/common/pages/service_details_page.dart';
+import '../../portals/common/pages/pet_details_page.dart';
+import '../../portals/user/pages/cart_page.dart';
+import '../../portals/user/pages/checkout_page.dart';
+import '../../portals/user/pages/payment_method_page.dart';
 
 /// App Router Configuration
 class AppRouter {
@@ -50,6 +56,39 @@ class AppRouter {
       GoRoute(
         path: '/provider',
         builder: (context, state) => const ProviderPortal(),
+      ),
+      GoRoute(
+        path: '/shop-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ShopDetailsPage(shopId: id);
+        },
+      ),
+      GoRoute(
+        path: '/service-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ServiceDetailsPage(serviceId: id);
+        },
+      ),
+      GoRoute(
+        path: '/pet-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return PetDetailsPage(petId: id);
+        },
+      ),
+      GoRoute(
+        path: '/cart',
+        builder: (context, state) => const CartPage(),
+      ),
+      GoRoute(
+        path: '/checkout',
+        builder: (context, state) => const CheckoutPage(),
+      ),
+      GoRoute(
+        path: '/payment-method',
+        builder: (context, state) => const PaymentMethodPage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

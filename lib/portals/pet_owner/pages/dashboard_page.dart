@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../data/providers/cart_provider.dart';
 import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
@@ -48,6 +50,46 @@ class DashboardPage extends ConsumerWidget {
                     ),
                     Row(
                       children: [
+                        // Cart Icon
+                        GestureDetector(
+                          onTap: () => context.push('/cart'),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.inputFill,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Consumer(
+                              builder: (context, ref, child) {
+                                final cartCount = ref.watch(cartProvider).length;
+                                return Stack(
+                                  children: [
+                                    const Icon(Icons.shopping_cart_outlined, color: AppColors.textSecondary),
+                                    if (cartCount > 0)
+                                      Positioned(
+                                        right: -2,
+                                        top: -2,
+                                        child: Container(
+                                          padding: const EdgeInsets.all(2),
+                                          decoration: const BoxDecoration(
+                                            color: AppColors.secondary,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                                          child: Text(
+                                            '$cartCount',
+                                            style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
                         // Notification Icon
                         GestureDetector(
                           onTap: () => NotificationsSheet.show(context),
@@ -101,176 +143,30 @@ class DashboardPage extends ConsumerWidget {
               ),
 
               // Search Bar with Filter
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.inputFill,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.search, color: AppColors.textSecondary),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: 'Search pets, services, shops...',
-                            border: InputBorder.none,
-                            filled: false,
-                            contentPadding: EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => FilterSheet.show(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.tune, size: 20, color: AppColors.textSecondary),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildSearchBar(context),
+              const SizedBox(height: 24),
+
+              // Categories Section
+              _buildCategoriesSection(ref),
               const SizedBox(height: 24),
 
               // Quick Actions
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                height: 90,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: [
-                    _QuickActionButton(
-                      icon: Icons.add_circle_outline,
-                      label: '', // Removed as per request
-                      color: AppColors.secondary,
-                      onTap: () {
-                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                        portal?.navigateToTab(1); // Go to My Pets page
-                      },
-                    ),
-                    _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)),
-                    _QuickActionButton(icon: Icons.calendar_today, label: 'Book Vet', color: Colors.orange, onTap: () => AppointmentFormSheet.show(context)),
-                    _QuickActionButton(
-                      icon: Icons.store,
-                      label: 'Shop',
-                      color: Colors.purple,
-                      onTap: () {
-                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                        portal?.navigateToTab(2);
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              _buildQuickActions(context, ref),
               const SizedBox(height: 24),
 
               // Upcoming Appointments
               if (appointments.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Upcoming Appointments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
-                      ),
-                    ],
-                  ),
-                ),
+                _buildUpcomingAppointmentsHeader(context),
                 ...appointments.take(2).map((apt) => _AppointmentCard(appointment: apt)),
                 const SizedBox(height: 24),
               ],
 
               // Shops Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Shops Near You', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    TextButton(
-                      onPressed: () {
-                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                        portal?.navigateToTab(2);
-                      },
-                      child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(
-                height: 100,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: shops.length,
-                  itemBuilder: (context, index) {
-                    final shop = shops[index];
-                    return Container(
-                      width: 160,
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: AppTheme.cardShadow,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 20,
-                                backgroundColor: AppColors.inputFill,
-                                backgroundImage: shop.logoUrl != null
-                                    ? CachedNetworkImageProvider(shop.logoUrl!)
-                                    : null,
-                                child: shop.logoUrl == null
-                                    ? const Icon(Icons.store, color: AppColors.secondary)
-                                    : null,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  shop.name,
-                                  style: const TextStyle(fontWeight: FontWeight.w600),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const Spacer(),
-                          Row(
-                            children: [
-                              const Icon(Icons.star, size: 14, color: Color(0xFFFBBF24)),
-                              const SizedBox(width: 4),
-                              Text('${shop.rating ?? 4.5}', style: const TextStyle(fontSize: 12)),
-                              const Spacer(),
-                              Text('${shop.productCount} items', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-              ),
+              _buildShopsSection(context, shops),
+              const SizedBox(height: 24),
+
+              // Products Section
+              _buildProductsSection(context, ref),
               const SizedBox(height: 24),
 
               // Being Sold Section
@@ -293,13 +189,8 @@ class DashboardPage extends ConsumerWidget {
                 const SizedBox(height: 24),
               ],
 
-              // Available Services
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20),
-                child: Text('Available Services', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              ),
-              const SizedBox(height: 12),
-              ...services.take(3).map((service) => _ServiceTile(service: service)),
+              // Available Services Section (Moved to bottom)
+              _buildServicesSection(context, services),
               const SizedBox(height: 100),
             ],
           ),
@@ -308,15 +199,102 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPetsSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+  Widget _buildSearchBar(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppColors.inputFill,
+          borderRadius: BorderRadius.circular(15),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.search, color: AppColors.textSecondary),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search pets, services, shops...',
+                  border: InputBorder.none,
+                  filled: false,
+                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+            GestureDetector(
+              onTap: () => FilterSheet.show(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.tune, size: 20, color: AppColors.textSecondary),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoriesSection(WidgetRef ref) {
+    final categories = ref.watch(speciesProvider);
+    return _CategoriesWidget(categories: categories);
+  }
+
+  Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 90,
+          child: ListView(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            children: [
+              _QuickActionButton(
+                icon: Icons.add_circle_outline,
+                label: 'Add pet',
+                color: AppColors.secondary,
+                onTap: () => _showAddPetModal(context),
+              ),
+              _QuickActionButton(
+                icon: Icons.favorite_outline,
+                label: 'Donate',
+                color: Colors.pink,
+                onTap: () {},
+              ),
+              _QuickActionButton(
+                icon: Icons.sell_outlined,
+                label: 'Sell',
+                color: Colors.green,
+                onTap: () {},
+              ),
+              _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)),
+              _QuickActionButton(icon: Icons.calendar_today, label: 'Book Vet', color: Colors.orange, onTap: () => AppointmentFormSheet.show(context)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUpcomingAppointmentsHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          const Text('Upcoming Appointments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           TextButton(
-            onPressed: onSeeAll,
+            onPressed: () {},
             child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
           ),
         ],
@@ -324,87 +302,334 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildPetsHorizontalList(List<PetModel> pets) {
-    return SizedBox(
-      height: 180,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: pets.length,
-        itemBuilder: (context, index) {
-          final pet = pets[index];
-          return Container(
-            width: 140,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: AppTheme.cardShadow,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Stack(
+  Widget _buildShopsSection(BuildContext context, List<ShopModel> shops) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Shops Near You', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              TextButton(
+                onPressed: () {
+                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                  portal?.navigateToTab(2);
+                },
+                child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: shops.length,
+            itemBuilder: (context, index) {
+              final shop = shops[index];
+              return GestureDetector(
+                onTap: () => context.push('/shop-details/${shop.id}'),
+                child: Container(
+                  width: 160,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                        child: pet.displayImage.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: pet.displayImage,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                                placeholder: (_, __) => Container(color: AppColors.inputFill),
-                                errorWidget: (_, __, ___) => Container(
-                                  color: AppColors.inputFill,
-                                  child: const Icon(Icons.pets, size: 30, color: AppColors.secondary),
-                                ),
-                              )
-                            : Container(
-                                color: AppColors.inputFill,
-                                child: const Center(child: Icon(Icons.pets, size: 30, color: AppColors.secondary)),
-                              ),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 20,
+                            backgroundColor: AppColors.inputFill,
+                            backgroundImage: shop.logoUrl != null
+                                ? CachedNetworkImageProvider(shop.logoUrl!)
+                                : null,
+                            child: shop.logoUrl == null
+                                ? const Icon(Icons.store, color: AppColors.secondary)
+                                : null,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              shop.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
-                      Positioned(
-                        top: 6,
-                        left: 6,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                          decoration: BoxDecoration(
-                            color: pet.listingType == 'FOR_SALE' ? AppColors.secondary : Colors.pink,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            pet.listingType == 'FOR_SALE' ? 'Sale' : 'Free',
-                            style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
-                          ),
+                      const Spacer(),
+                      Row(
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Color(0xFFFBBF24)),
+                          const SizedBox(width: 4),
+                          Text('${shop.rating ?? 4.5}', style: const TextStyle(fontSize: 12)),
+                          const Spacer(),
+                          Text('${shop.productCount} items', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProductsSection(BuildContext context, WidgetRef ref) {
+    final products = ref.watch(productsProvider);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Trending Products', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              TextButton(
+                onPressed: () {
+                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                  portal?.navigateToTab(2);
+                },
+                child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              final product = products[index];
+              return GestureDetector(
+                onTap: () {
+                  ref.read(cartProvider.notifier).addProduct(product);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Added to cart!'), backgroundColor: AppColors.success),
+                  );
+                },
+                child: Container(
+                  width: 130,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: AppTheme.cardShadow,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          child: product.mainImage != null
+                              ? CachedNetworkImage(
+                                  imageUrl: product.mainImage!,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                )
+                              : Container(color: AppColors.inputFill),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              product.name,
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              '${product.effectivePrice.toInt()} RWF',
+                              style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.bold),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServicesSection(BuildContext context, List<ServiceModel> services) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Available Services', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              TextButton(
+                onPressed: () {
+                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                  portal?.navigateToTab(2);
+                },
+                child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+              ),
+            ],
+          ),
+        ),
+        ...services.take(3).map((service) => _ServiceTile(service: service)),
+      ],
+    );
+  }
+
+  void _showAddPetModal(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.85,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: Container(
+                          width: 120,
+                          height: 120,
+                          decoration: BoxDecoration(
+                            color: AppColors.inputFill,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: AppColors.secondary, width: 2),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_a_photo, size: 40, color: AppColors.secondary),
+                              const SizedBox(height: 4),
+                              Text('Add Photo', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    const AppTextField(label: 'Pet Name', hint: 'e.g. Buddy'),
+                    const SizedBox(height: 16),
+                    Row(
                       children: [
-                        Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13), overflow: TextOverflow.ellipsis),
-                        Text(pet.breed?.name ?? '', style: const TextStyle(fontSize: 10, color: AppColors.textSecondary), overflow: TextOverflow.ellipsis),
-                        const Spacer(),
-                        if (pet.price != null && pet.price! > 0)
-                          Text('${pet.price!.toInt()} RWF', style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.bold)),
+                        Expanded(child: _buildDropdownField('Species', 'Select species')),
+                        const SizedBox(width: 16),
+                        Expanded(child: _buildDropdownField('Breed', 'Select breed')),
                       ],
                     ),
-                  ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(child: _buildDropdownField('Gender', 'Select gender')),
+                        const SizedBox(width: 16),
+                        Expanded(child: const AppTextField(label: 'Age', hint: 'e.g. 2 years')),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const AppTextField(label: 'Weight (kg)', hint: 'e.g. 15'),
+                    const SizedBox(height: 16),
+                    const AppTextField(label: 'Location', hint: 'e.g. Kicukiro, Kigali'),
+                    const SizedBox(height: 16),
+                    const AppTextField(
+                      label: 'Health Summary',
+                      hint: 'e.g. Vaccinated, healthy...',
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 16),
+                    const AppTextField(
+                      label: 'Description',
+                      hint: 'Tell us more about your pet...',
+                      maxLines: 4,
+                    ),
+                    const SizedBox(height: 24),
+                    PrimaryButton(
+                      label: 'Register Pet',
+                      onPressed: () {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Pet registered successfully!'), backgroundColor: AppColors.success),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                 ),
-              ],
+              ),
             ),
-          );
-        },
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildDropdownField(String label, String hint) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          decoration: BoxDecoration(
+            color: AppColors.inputFill,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              isExpanded: true,
+              hint: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
+              items: [],
+              onChanged: (val) {},
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -488,6 +713,170 @@ class DashboardPage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildPetsSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          TextButton(
+            onPressed: onSeeAll,
+            child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPetsHorizontalList(List<PetModel> pets) {
+    return SizedBox(
+      height: 220,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: pets.length,
+        itemBuilder: (context, index) {
+          final pet = pets[index];
+          return Container(
+            width: 160,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
+            child: _PetDashboardCard(pet: pet),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PetDashboardCard extends StatelessWidget {
+  final PetModel pet;
+  const _PetDashboardCard({required this.pet});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push('/pet-details/${pet.id}'),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 3,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                child: pet.displayImage.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: pet.displayImage,
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                      )
+                    : Container(color: AppColors.inputFill),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  Text(pet.breed?.name ?? pet.species?.name ?? '', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                  const SizedBox(height: 4),
+                  if (pet.price != null && pet.price! > 0)
+                    Text('${pet.price!.toInt()} RWF', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 11)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoriesWidget extends StatefulWidget {
+  final List<dynamic> categories;
+  const _CategoriesWidget({required this.categories});
+
+  @override
+  State<_CategoriesWidget> createState() => _CategoriesWidgetState();
+}
+
+class _CategoriesWidgetState extends State<_CategoriesWidget> {
+  int activeIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 20),
+          child: Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 90,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: widget.categories.length,
+            itemBuilder: (context, index) {
+              final cat = widget.categories[index];
+              final isActive = index == activeIndex;
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    activeIndex = index;
+                  });
+                },
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: isActive ? const Color(0xFF21314C) : Colors.white,
+                          border: Border.all(
+                            color: isActive ? const Color(0xFF21314C) : AppColors.inputFill,
+                            width: 2,
+                          ),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Center(
+                          child: Text(
+                            cat.icon ?? '🐾',
+                            style: const TextStyle(fontSize: 24),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        cat.name,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                          color: isActive ? const Color(0xFF21314C) : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
@@ -595,7 +984,7 @@ class _ServiceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => AppointmentFormSheet.show(context, serviceId: service.id),
+      onTap: () => context.push('/service-details/${service.id}'),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
         padding: const EdgeInsets.all(16),
