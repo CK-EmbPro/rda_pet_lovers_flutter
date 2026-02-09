@@ -427,12 +427,7 @@ class DashboardPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final product = products[index];
               return GestureDetector(
-                onTap: () {
-                  ref.read(cartProvider.notifier).addProduct(product);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Added to cart!'), backgroundColor: AppColors.success),
-                  );
-                },
+                onTap: () => context.push('/product-details/${product.id}'),
                 child: Container(
                   width: 130,
                   margin: const EdgeInsets.symmetric(horizontal: 4),

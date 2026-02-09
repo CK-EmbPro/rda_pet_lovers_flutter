@@ -227,7 +227,10 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final product = filteredProducts[index];
-                    return _ProductCard(product: product);
+                    return GestureDetector(
+                      onTap: () => context.push('/product-details/${product.id}'),
+                      child: _ProductCard(product: product),
+                    );
                   },
                   childCount: filteredProducts.length,
                 ),
@@ -238,7 +241,10 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final product = filteredProducts[index];
-                  return _ProductListItem(product: product);
+                  return GestureDetector(
+                    onTap: () => context.push('/product-details/${product.id}'),
+                    child: _ProductListItem(product: product),
+                  );
                 },
                 childCount: filteredProducts.length,
               ),

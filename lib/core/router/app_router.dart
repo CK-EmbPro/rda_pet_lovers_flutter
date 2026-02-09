@@ -14,6 +14,7 @@ import '../../features/auth/presentation/pages/splash_page.dart';
 import '../../portals/common/pages/shop_details_page.dart';
 import '../../portals/common/pages/service_details_page.dart';
 import '../../portals/common/pages/pet_details_page.dart';
+import '../../portals/common/pages/product_details_page.dart';
 import '../../portals/user/pages/cart_page.dart';
 import '../../portals/user/pages/checkout_page.dart';
 import '../../portals/user/pages/payment_method_page.dart';
@@ -76,6 +77,13 @@ class AppRouter {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return PetDetailsPage(petId: id);
+        },
+      ),
+      GoRoute(
+        path: '/product-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ProductDetailsPage(productId: id);
         },
       ),
       GoRoute(

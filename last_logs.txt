@@ -1,0 +1,200 @@
+﻿[        ] Skipping task ':app:mergeDebugShaders' as it is up-to-date.
+[   +3 ms] Resolve mutations for :app:compileDebugShaders (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] :app:compileDebugShaders (Thread[#321,Execution worker Thread 5,5,main]) started.
+[   +2 ms] > Task :app:compileDebugShaders NO-SOURCE
+[   +1 ms] Skipping task ':app:compileDebugShaders' as it has no source files and no previous output files.
+[        ] Resolve mutations for :app:generateDebugAssets (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] :app:generateDebugAssets (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] > Task :app:generateDebugAssets UP-TO-DATE
+[        ] Skipping task ':app:generateDebugAssets' as it has no actions.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:mergeDebugShaders (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:mergeDebugShaders (Thread[#321,Execution worker Thread 5,5,main]) started.
+[   +2 ms] > Task :flutter_plugin_android_lifecycle:mergeDebugShaders UP-TO-DATE
+[   +1 ms] Caching disabled for task ':flutter_plugin_android_lifecycle:mergeDebugShaders' because:
+[   +1 ms]   Build cache is disabled
+[        ]   Simple merging task
+[        ] Skipping task ':flutter_plugin_android_lifecycle:mergeDebugShaders' as it is up-to-date.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:compileDebugShaders (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:compileDebugShaders (Thread[#321,Execution worker Thread 5,5,main]) started.
+[   +1 ms] > Task :flutter_plugin_android_lifecycle:compileDebugShaders NO-SOURCE
+[        ] Skipping task ':flutter_plugin_android_lifecycle:compileDebugShaders' as it has no source files and no previous output files.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:generateDebugAssets (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:generateDebugAssets (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] > Task :flutter_plugin_android_lifecycle:generateDebugAssets UP-TO-DATE
+[        ] Skipping task ':flutter_plugin_android_lifecycle:generateDebugAssets' as it has no actions.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:packageDebugAssets (Thread[#321,Execution worker Thread 5,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:packageDebugAssets (Thread[#321,Execution worker Thread 5,5,main]) started.
+[  +60 ms] > Task :app:checkDebugAarMetadata FAILED
+[   +1 ms] Transforming recyclerview-1.0.0.aar (androidx.recyclerview:recyclerview:1.0.0) with ExtractAarTransform
+[   +1 ms] Transforming recyclerview-1.0.0.aar (androidx.recyclerview:recyclerview:1.0.0) with AarTransform
+[        ] Transforming preference-1.2.1.aar (androidx.preference:preference:1.2.1) with ExtractAarTransform
+[   +1 ms] Transforming preference-1.2.1.aar (androidx.preference:preference:1.2.1) with AarTransform
+[        ] Transforming legacy-support-core-ui-1.0.0.aar (androidx.legacy:legacy-support-core-ui:1.0.0) with ExtractAarTransform
+[        ] Transforming legacy-support-core-ui-1.0.0.aar (androidx.legacy:legacy-support-core-ui:1.0.0) with AarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with ExtractAarTransform
+[        ] Transforming appcompat-1.1.0.aar (androidx.appcompat:appcompat:1.1.0) with ExtractAarTransform
+[        ] Transforming appcompat-1.1.0.aar (androidx.appcompat:appcompat:1.1.0) with AarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with AarTransform
+[        ] Transforming window-1.2.0.aar (androidx.window:window:1.2.0) with ExtractAarTransform
+[        ] Transforming window-1.2.0.aar (androidx.window:window:1.2.0) with AarTransform
+[        ] Transforming activity-ktx-1.12.2.aar (androidx.activity:activity-ktx:1.12.2) with ExtractAarTransform
+[        ] Transforming activity-ktx-1.12.2.aar (androidx.activity:activity-ktx:1.12.2) with AarTransform
+[        ] Transforming legacy-support-core-utils-1.0.0.aar (androidx.legacy:legacy-support-core-utils:1.0.0) with ExtractAarTransform
+[        ] Transforming legacy-support-core-utils-1.0.0.aar (androidx.legacy:legacy-support-core-utils:1.0.0) with AarTransform
+[        ] Transforming fragment-ktx-1.7.1.aar (androidx.fragment:fragment-ktx:1.7.1) with ExtractAarTransform
+[        ] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with ExtractAarTransform
+[        ] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with AarTransform
+[        ] Transforming fragment-ktx-1.7.1.aar (androidx.fragment:fragment-ktx:1.7.1) with AarTransform
+[   +3 ms] Transforming lifecycle-livedata-2.7.0.aar (androidx.lifecycle:lifecycle-livedata:2.7.0) with ExtractAarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with ExtractAarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with AarTransform
+[   +1 ms] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with ExtractAarTransform
+[   +3 ms] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with AarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with ExtractAarTransform
+[   +7 ms] Transforming lifecycle-livedata-core-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-livedata-core-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0) with AarTransform
+[        ] Transforming lifecycle-livedata-2.7.0.aar (androidx.lifecycle:lifecycle-livedata:2.7.0) with AarTransform
+[   +1 ms] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with AarTransform
+[   +1 ms] Transforming window-java-1.2.0.aar (androidx.window:window-java:1.2.0) with ExtractAarTransform
+[        ] Transforming window-java-1.2.0.aar (androidx.window:window-java:1.2.0) with AarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-runtime-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-runtime-ktx:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with AarTransform
+[        ] Transforming lifecycle-runtime-2.7.0.aar (androidx.lifecycle:lifecycle-runtime:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with ExtractAarTransform
+[   +2 ms] Transforming lifecycle-runtime-2.7.0.aar (androidx.lifecycle:lifecycle-runtime:2.7.0) with AarTransform
+[   +3 ms] Transforming lifecycle-runtime-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-runtime-ktx:2.7.0) with AarTransform
+[   +1 ms] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with AarTransform
+[        ] Transforming activity-1.12.2.aar (androidx.activity:activity:1.12.2) with ExtractAarTransform
+[        ] Transforming activity-1.12.2.aar (androidx.activity:activity:1.12.2) with AarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with ExtractAarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with AarTransform
+[        ] Transforming lifecycle-viewmodel-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0) with AarTransform
+[        ] Transforming lifecycle-livedata-core-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-livedata-core-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core:2.7.0) with AarTransform
+[        ] Transforming savedstate-ktx-1.2.1.aar (androidx.savedstate:savedstate-ktx:1.2.1) with ExtractAarTransform
+[        ] Transforming savedstate-ktx-1.2.1.aar (androidx.savedstate:savedstate-ktx:1.2.1) with AarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with ExtractAarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with AarTransform
+[        ] Transforming savedstate-1.2.1.aar (androidx.savedstate:savedstate:1.2.1) with ExtractAarTransform
+[        ] Transforming savedstate-1.2.1.aar (androidx.savedstate:savedstate:1.2.1) with AarTransform
+[        ] Transforming core-ktx-1.17.0.aar (androidx.core:core-ktx:1.17.0) with ExtractAarTransform
+[        ] Transforming core-ktx-1.17.0.aar (androidx.core:core-ktx:1.17.0) with AarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with ExtractAarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with AarTransform
+[        ] Transforming lifecycle-process-2.7.0.aar (androidx.lifecycle:lifecycle-process:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-process-2.7.0.aar (androidx.lifecycle:lifecycle-process:2.7.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[   +2 ms] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[   +2 ms] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with AarTransform
+[        ] Transforming lifecycle-viewmodel-savedstate-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-savedstate-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0) with AarTransform
+[        ] Transforming coordinatorlayout-1.0.0.aar (androidx.coordinatorlayout:coordinatorlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming coordinatorlayout-1.0.0.aar (androidx.coordinatorlayout:coordinatorlayout:1.0.0) with AarTransform
+[        ] Transforming transition-1.4.1.aar (androidx.transition:transition:1.4.1) with ExtractAarTransform
+[        ] Transforming transition-1.4.1.aar (androidx.transition:transition:1.4.1) with AarTransform
+[        ] Transforming appcompat-resources-1.1.0.aar (androidx.appcompat:appcompat-resources:1.1.0) with ExtractAarTransform
+[        ] Transforming appcompat-resources-1.1.0.aar (androidx.appcompat:appcompat-resources:1.1.0) with AarTransform
+[        ] Transforming swiperefreshlayout-1.0.0.aar (androidx.swiperefreshlayout:swiperefreshlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming asynclayoutinflater-1.0.0.aar (androidx.asynclayoutinflater:asynclayoutinflater:1.0.0) with ExtractAarTransform
+[        ] Transforming asynclayoutinflater-1.0.0.aar (androidx.asynclayoutinflater:asynclayoutinflater:1.0.0) with AarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with ExtractAarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with AarTransform
+[        ] Transforming swiperefreshlayout-1.0.0.aar (androidx.swiperefreshlayout:swiperefreshlayout:1.0.0) with AarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with ExtractAarTransform
+[   +1 ms] Transforming vectordrawable-animated-1.1.0.aar (androidx.vectordrawable:vectordrawable-animated:1.1.0) with ExtractAarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with AarTransform
+[   +1 ms] Transforming vectordrawable-animated-1.1.0.aar (androidx.vectordrawable:vectordrawable-animated:1.1.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming exifinterface-1.4.2.aar (androidx.exifinterface:exifinterface:1.4.2) with ExtractAarTransform
+[        ] Transforming exifinterface-1.4.2.aar (androidx.exifinterface:exifinterface:1.4.2) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming security-crypto-1.1.0-alpha06.aar (androidx.security:security-crypto:1.1.0-alpha06) with ExtractAarTransform
+[        ] Transforming security-crypto-1.1.0-alpha06.aar (androidx.security:security-crypto:1.1.0-alpha06) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[   +1 ms] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming startup-runtime-1.1.1.aar (androidx.startup:startup-runtime:1.1.1) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[   +1 ms] Transforming tracing-1.2.0.aar (androidx.tracing:tracing:1.2.0) with ExtractAarTransform
+[        ] Transforming tracing-1.2.0.aar (androidx.tracing:tracing:1.2.0) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming datastore-core.aar (androidx.datastore:datastore-core-android:1.2.0) with ExtractAarTransform
+[   +1 ms] Transforming datastore-core.aar (androidx.datastore:datastore-core-android:1.2.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming datastore.aar (androidx.datastore:datastore-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore.aar (androidx.datastore:datastore-android:1.2.0) with AarTransform
+[        ] Transforming startup-runtime-1.1.1.aar (androidx.startup:startup-runtime:1.1.1) with AarTransform
+[        ] Transforming cursoradapter-1.0.0.aar (androidx.cursoradapter:cursoradapter:1.0.0) with ExtractAarTransform
+[        ] Transforming cursoradapter-1.0.0.aar (androidx.cursoradapter:cursoradapter:1.0.0) with AarTransform
+[        ] Transforming core-1.0.0.aar (androidx.window.extensions.core:core:1.0.0) with ExtractAarTransform
+[        ] Transforming core-1.0.0.aar (androidx.window.extensions.core:core:1.0.0) with AarTransform
+[        ] Transforming documentfile-1.0.0.aar (androidx.documentfile:documentfile:1.0.0) with ExtractAarTransform
+[   +1 ms] Transforming documentfile-1.0.0.aar (androidx.documentfile:documentfile:1.0.0) with AarTransform
+[        ] Transforming print-1.0.0.aar (androidx.print:print:1.0.0) with ExtractAarTransform
+[        ] Transforming print-1.0.0.aar (androidx.print:print:1.0.0) with AarTransform
+[        ] Transforming versionedparcelable-1.1.1.aar (androidx.versionedparcelable:versionedparcelable:1.1.1) with ExtractAarTransform
+[        ] Transforming profileinstaller-1.4.0.aar (androidx.profileinstaller:profileinstaller:1.4.0) with ExtractAarTransform
+[        ] Transforming versionedparcelable-1.1.1.aar (androidx.versionedparcelable:versionedparcelable:1.1.1) with AarTransform
+[        ] Transforming localbroadcastmanager-1.0.0.aar (androidx.localbroadcastmanager:localbroadcastmanager:1.0.0) with ExtractAarTransform
+[        ] Transforming localbroadcastmanager-1.0.0.aar (androidx.localbroadcastmanager:localbroadcastmanager:1.0.0) with AarTransform
+[        ] Transforming datastore-preferences-core.aar (androidx.datastore:datastore-preferences-core-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore-preferences-core.aar (androidx.datastore:datastore-preferences-core-android:1.2.0) with AarTransform
+[        ] Transforming runtime-annotation.aar (androidx.compose.runtime:runtime-annotation-android:1.9.0) with ExtractAarTransform
+[        ] Transforming profileinstaller-1.4.0.aar (androidx.profileinstaller:profileinstaller:1.4.0) with AarTransform
+[        ] Transforming datastore-preferences.aar (androidx.datastore:datastore-preferences-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore-preferences.aar (androidx.datastore:datastore-preferences-android:1.2.0) with AarTransform
+[        ] Transforming runtime-annotation.aar (androidx.compose.runtime:runtime-annotation-android:1.9.0) with AarTransform
+[        ] Transforming annotation-experimental-1.4.1.aar (androidx.annotation:annotation-experimental:1.4.1) with ExtractAarTransform
+[        ] Transforming core-runtime-2.2.0.aar (androidx.arch.core:core-runtime:2.2.0) with ExtractAarTransform
+[        ] Transforming core-runtime-2.2.0.aar (androidx.arch.core:core-runtime:2.2.0) with AarTransform
+[        ] Transforming annotation-experimental-1.4.1.aar (androidx.annotation:annotation-experimental:1.4.1) with AarTransform
+[        ] Transforming core-viewtree-1.0.0.aar (androidx.core:core-viewtree:1.0.0) with ExtractAarTransform
+[        ] Transforming core-viewtree-1.0.0.aar (androidx.core:core-viewtree:1.0.0) with AarTransform
+[        ] Transforming relinker-1.4.5.aar (com.getkeepsafe.relinker:relinker:1.4.5) with ExtractAarTransform
+[        ] Transforming relinker-1.4.5.aar (com.getkeepsafe.relinker:relinker:1.4.5) with AarTransform
+[        ] Transforming navigationevent.aar (androidx.navigationevent:navigationevent-android:1.0.1) with ExtractAarTransform
+[        ] Transforming navigationevent.aar (androidx.navigationevent:navigationevent-android:1.0.1) with AarTransform
+[        ] Caching disabled for task ':app:checkDebugAarMetadata' because:
+[        ]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Task ':app:checkDebugAarMetadata' is not up-to-date because:
+[        ]   Task has failed previously.
+[        ] > Task :flutter_plugin_android_lifecycle:packageDebugAssets
+[        ] Caching disabled for task ':flutter_plugin_android_lifecycle:packageDebugAssets' because:
+[        ]   Build cache is disabled
+[        ]   Simple merging task
+[        ] Task ':flutter_plugin_android_lifecycle:packageDebugAssets' is not up-to-date because:
+[        ]   No history is available.
+[        ] The input changes require a full rebuild for incremental task ':flutter_plugin_android_lifecycle:packageDebugAssets'.
+[        ] 19 actionable tasks: 5 executed, 14 up-to-date
+[        ] Watched directory hierarchies: [C:\Users\kenny\develop\flutter\packages\flutter_tools\gradle]
+[ +481 ms] Running Gradle task 'assembleDebug'... (completed in 25.4s)
+[ +350 ms] "flutter apk" took 32,927ms.
+[        ] Running 1 shutdown hook
+[   +1 ms] Shutdown hooks complete
+[ +272 ms] exiting with code 1

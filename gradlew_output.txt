@@ -1,0 +1,8 @@
+\romain-gigs\Rwanda pet lovers\mobile_app\android/build.gradle) by the ext.kotlin_version property. >    
+                                                                                                                             
+<===----------> 25% C> :flutter_plugin_an
+> IDLE
+
+
+           minSdk (which determines which devices the app can be installedk = 36
+Exit code: 1

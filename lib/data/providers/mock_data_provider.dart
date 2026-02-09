@@ -155,6 +155,11 @@ final mockPets = [
     createdAt: DateTime.now().subtract(const Duration(days: 10)),
     species: mockSpecies[0],
     breed: mockBreeds[1],
+    owner: UserBasicModel(
+      id: 'user-2',
+      fullName: 'Keza Stessie',
+      avatarUrl: 'https://ui-avatars.com/api/?name=Keza+Stessie&background=F59E0B&color=fff',
+    ),
   ),
 ];
 
@@ -454,10 +459,11 @@ final myPetsProvider = Provider<List<PetModel>>((ref) {
 /// Alias for myPetsProvider to match UI naming
 final userPetsProvider = myPetsProvider;
 
-/// Pets for sale/browsing
+/// Pets for sale/browsing (Excluding current user's pets)
 final browsablePetsProvider = Provider<List<PetModel>>((ref) {
+  final user = ref.watch(currentUserProvider);
   final allPets = ref.watch(allPetsProvider);
-  return allPets.where((pet) => pet.isActive).toList();
+  return allPets.where((pet) => pet.isActive && pet.ownerId != user?.id).toList();
 });
 
 /// Providers list

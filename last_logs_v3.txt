@@ -1,0 +1,500 @@
+﻿[        ] Transforming apksig-8.11.1.jar (com.android.tools.build:apksig:8.11.1) with InstrumentationAnalysisTransform
+[        ] Transforming apksig-8.11.1.jar (com.android.tools.build:apksig:8.11.1) with MergeInstrumentationAnalysisTransform
+[        ] Transforming checker-qual-3.43.0.jar (org.checkerframework:checker-qual:3.43.0) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming javawriter-2.5.0.jar (com.squareup:javawriter:2.5.0) with InstrumentationAnalysisTransform
+[        ] Transforming apksig-8.11.1.jar (com.android.tools.build:apksig:8.11.1) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming javawriter-2.5.0.jar (com.squareup:javawriter:2.5.0) with MergeInstrumentationAnalysisTransform
+[        ] Transforming failureaccess-1.0.2.jar (com.google.guava:failureaccess:1.0.2) with InstrumentationAnalysisTransform
+[        ] Transforming failureaccess-1.0.2.jar (com.google.guava:failureaccess:1.0.2) with MergeInstrumentationAnalysisTransform
+[        ] Transforming javawriter-2.5.0.jar (com.squareup:javawriter:2.5.0) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava) with InstrumentationAnalysisTransform
+[        ] Transforming listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava) with MergeInstrumentationAnalysisTransform
+[        ] Transforming commons-logging-1.2.jar (commons-logging:commons-logging:1.2) with InstrumentationAnalysisTransform
+[        ] Transforming commons-logging-1.2.jar (commons-logging:commons-logging:1.2) with MergeInstrumentationAnalysisTransform
+[        ] Transforming commons-codec-1.11.jar (commons-codec:commons-codec:1.11) with InstrumentationAnalysisTransform
+[        ] Transforming commons-codec-1.11.jar (commons-codec:commons-codec:1.11) with MergeInstrumentationAnalysisTransform
+[        ] Transforming commons-logging-1.2.jar (commons-logging:commons-logging:1.2) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming commons-codec-1.11.jar (commons-codec:commons-codec:1.11) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming failureaccess-1.0.2.jar (com.google.guava:failureaccess:1.0.2) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming jna-5.6.0.jar (net.java.dev.jna:jna:5.6.0) with InstrumentationAnalysisTransform
+[        ] Transforming listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar (com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming jna-5.6.0.jar (net.java.dev.jna:jna:5.6.0) with MergeInstrumentationAnalysisTransform
+[        ] Transforming netty-codec-socks-4.1.110.Final.jar (io.netty:netty-codec-socks:4.1.110.Final) with InstrumentationAnalysisTransform
+[        ] Transforming netty-codec-socks-4.1.110.Final.jar (io.netty:netty-codec-socks:4.1.110.Final) with MergeInstrumentationAnalysisTransform
+[        ] Transforming netty-codec-4.1.110.Final.jar (io.netty:netty-codec:4.1.110.Final) with InstrumentationAnalysisTransform
+[        ] Transforming netty-codec-4.1.110.Final.jar (io.netty:netty-codec:4.1.110.Final) with MergeInstrumentationAnalysisTransform
+[        ] Transforming jna-5.6.0.jar (net.java.dev.jna:jna:5.6.0) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming netty-transport-4.1.110.Final.jar (io.netty:netty-transport:4.1.110.Final) with InstrumentationAnalysisTransform
+[        ] Transforming netty-transport-4.1.110.Final.jar (io.netty:netty-transport:4.1.110.Final) with MergeInstrumentationAnalysisTransform
+[        ] Transforming netty-buffer-4.1.110.Final.jar (io.netty:netty-buffer:4.1.110.Final) with InstrumentationAnalysisTransform
+[        ] Transforming netty-buffer-4.1.110.Final.jar (io.netty:netty-buffer:4.1.110.Final) with MergeInstrumentationAnalysisTransform
+[        ] Transforming netty-resolver-4.1.110.Final.jar (io.netty:netty-resolver:4.1.110.Final) with InstrumentationAnalysisTransform
+[        ] Transforming netty-resolver-4.1.110.Final.jar (io.netty:netty-resolver:4.1.110.Final) with MergeInstrumentationAnalysisTransform
+[        ] Transforming netty-common-4.1.110.Final.jar (io.netty:netty-common:4.1.110.Final) with InstrumentationAnalysisTransform
+[   +2 ms] Transforming netty-common-4.1.110.Final.jar (io.netty:netty-common:4.1.110.Final) with MergeInstrumentationAnalysisTransform
+[        ] Transforming netty-codec-4.1.110.Final.jar (io.netty:netty-codec:4.1.110.Final) with ExternalDependencyInstrumentingArtifactTransform
+[   +1 ms] Transforming netty-transport-4.1.110.Final.jar (io.netty:netty-transport:4.1.110.Final) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming netty-resolver-4.1.110.Final.jar (io.netty:netty-resolver:4.1.110.Final) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming netty-common-4.1.110.Final.jar (io.netty:netty-common:4.1.110.Final) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming netty-codec-socks-4.1.110.Final.jar (io.netty:netty-codec-socks:4.1.110.Final) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Transforming netty-buffer-4.1.110.Final.jar (io.netty:netty-buffer:4.1.110.Final) with ExternalDependencyInstrumentingArtifactTransform
+[        ] Using default execution profile
+[        ] Warning: The plugin sqflite_android requires Android SDK version 36 or higher.
+[        ] For more information about build configuration, see https://flutter.dev/to/review-gradle-config.
+[        ] All projects evaluated.
+[ +576 ms] Task name matched 'assembleDebug'
+[   +1 ms] Selected primary task 'assembleDebug' from project :
+[ +104 ms] WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 35
+[  +35 ms] This Android Gradle plugin (8.5.1) was tested up to compileSdk = 34.
+[   +6 ms] You are strongly encouraged to update your project to use a newer
+[        ] Android Gradle plugin that has been tested with compileSdk = 35.
+[  +29 ms] If you are already using the latest version of the Android Gradle plugin,
+[   +1 ms] you may need to wait until a newer version with support for compileSdk = 35 is available.
+[        ] For more information refer to the compatibility table:
+[  +20 ms] https://d.android.com/r/tools/api-level-support
+[   +1 ms] To suppress this warning, add/update
+[   +2 ms]     android.suppressUnsupportedCompileSdk=35
+[   +8 ms] to this project's gradle.properties.
+[ +957 ms] WARNING: We recommend using a newer Android Gradle plugin to use compileSdk = 36
+[        ] This Android Gradle plugin (8.5.1) was tested up to compileSdk = 34.
+[        ] You are strongly encouraged to update your project to use a newer
+[   +1 ms] Android Gradle plugin that has been tested with compileSdk = 36.
+[        ] If you are already using the latest version of the Android Gradle plugin,
+[        ] you may need to wait until a newer version with support for compileSdk = 36 is available.
+[   +7 ms] For more information refer to the compatibility table:
+[   +4 ms] https://d.android.com/r/tools/api-level-support
+[  +16 ms] To suppress this warning, add/update
+[        ]     android.suppressUnsupportedCompileSdk=36
+[        ] to this project's gradle.properties.
+[ +654 ms] Tasks to be executed: [task ':app:DebugMinSdkCheck', task ':app:preBuild', task ':app:preDebugBuild', task ':app:mergeDebugNativeDebugMetadata', task ':app:checkKotlinGradlePluginConfigurationErrors', task ':app:compileFlutterBuildDebug', task ':app:packJniLibsflutterBuildDebug', task ':flutter_plugin_android_lifecycle:preBuild', task ':flutter_plugin_android_lifecycle:preDebugBuild', task ':flutter_plugin_android_lifecycle:writeDebugAarMetadata', task ':flutter_secure_storage:preBuild', task ':flutter_secure_storage:preDebugBuild', task ':flutter_secure_storage:writeDebugAarMetadata', task ':image_picker_android:preBuild', task ':image_picker_android:preDebugBuild', task ':image_picker_android:writeDebugAarMetadata', task ':path_provider_android:preBuild', task ':path_provider_android:preDebugBuild', task ':path_provider_android:writeDebugAarMetadata', task ':shared_preferences_android:preBuild', task ':shared_preferences_android:preDebugBuild', task ':shared_preferences_android:writeDebugAarMetadata', task ':sqflite_android:preBuild', task ':sqflite_android:preDebugBuild', task ':sqflite_android:writeDebugAarMetadata', task ':app:checkDebugAarMetadata', task ':app:cleanMergeDebugAssets', task ':app:mergeDebugShaders', task ':app:compileDebugShaders', task ':app:generateDebugAssets', task ':flutter_plugin_android_lifecycle:mergeDebugShaders', task ':flutter_plugin_android_lifecycle:compileDebugShaders', task ':flutter_plugin_android_lifecycle:generateDebugAssets', task ':flutter_plugin_android_lifecycle:packageDebugAssets', task ':flutter_secure_storage:mergeDebugShaders', task ':flutter_secure_storage:compileDebugShaders', task ':flutter_secure_storage:generateDebugAssets', task ':flutter_secure_storage:packageDebugAssets', task ':image_picker_android:mergeDebugShaders', task ':image_picker_android:compileDebugShaders', task ':image_picker_android:generateDebugAssets', task ':image_picker_android:packageDebugAssets', task ':path_provider_android:mergeDebugShaders', task ':path_provider_android:compileDebugShaders', task ':path_provider_android:generateDebugAssets', task ':path_provider_android:packageDebugAssets', task ':shared_preferences_android:mergeDebugShaders', task ':shared_preferences_android:compileDebugShaders', task ':shared_preferences_android:generateDebugAssets', task ':shared_preferences_android:packageDebugAssets', task ':sqflite_android:mergeDebugShaders', task ':sqflite_android:compileDebugShaders', task ':sqflite_android:generateDebugAssets', task ':sqflite_android:packageDebugAssets', task ':app:mergeDebugAssets', task ':app:copyFlutterAssetsDebug', task ':app:generateDebugResValues', task ':flutter_plugin_android_lifecycle:generateDebugResValues', task ':flutter_plugin_android_lifecycle:generateDebugResources', task ':flutter_plugin_android_lifecycle:packageDebugResources', task ':flutter_secure_storage:generateDebugResValues', task ':flutter_secure_storage:generateDebugResources', task ':flutter_secure_storage:packageDebugResources', task ':image_picker_android:generateDebugResValues', task ':image_picker_android:generateDebugResources', task ':image_picker_android:packageDebugResources', task ':path_provider_android:generateDebugResValues', task ':path_provider_android:generateDebugResources', task ':path_provider_android:packageDebugResources', task ':shared_preferences_android:generateDebugResValues', task ':shared_preferences_android:generateDebugResources', task ':shared_preferences_android:packageDebugResources', task ':sqflite_android:generateDebugResValues', task ':sqflite_android:generateDebugResources', task ':sqflite_android:packageDebugResources', task ':app:mapDebugSourceSetPaths', task ':app:generateDebugResources', task ':app:mergeDebugResources', task ':app:packageDebugResources', task ':app:parseDebugLocalResources', task ':app:createDebugCompatibleScreenManifests', task ':app:extractDeepLinksDebug', task ':flutter_plugin_android_lifecycle:extractDeepLinksDebug', task ':flutter_plugin_android_lifecycle:processDebugManifest', task ':flutter_secure_storage:extractDeepLinksDebug', task ':flutter_secure_storage:processDebugManifest', task ':image_picker_android:extractDeepLinksDebug', task ':image_picker_android:processDebugManifest', task ':path_provider_android:extractDeepLinksDebug', task ':path_provider_android:processDebugManifest', task ':shared_preferences_android:extractDeepLinksDebug', task ':shared_preferences_android:processDebugManifest', task ':sqflite_android:extractDeepLinksDebug', task ':sqflite_android:processDebugManifest', task ':app:processDebugMainManifest', task ':app:outputDebugAppLinkSettings', task ':app:processDebugManifest', task ':app:processDebugManifestForPackage', task ':flutter_plugin_android_lifecycle:compileDebugLibraryResources', task ':flutter_plugin_android_lifecycle:parseDebugLocalResources', task ':flutter_plugin_android_lifecycle:generateDebugRFile', task ':flutter_secure_storage:compileDebugLibraryResources', task ':flutter_secure_storage:parseDebugLocalResources', task ':flutter_secure_storage:generateDebugRFile', task ':image_picker_android:compileDebugLibraryResources', task ':image_picker_android:parseDebugLocalResources', task ':image_picker_android:generateDebugRFile', task ':path_provider_android:compileDebugLibraryResources', task ':path_provider_android:parseDebugLocalResources', task ':path_provider_android:generateDebugRFile', task ':shared_preferences_android:compileDebugLibraryResources', task ':shared_preferences_android:parseDebugLocalResources', task ':shared_preferences_android:generateDebugRFile', task ':sqflite_android:compileDebugLibraryResources', task ':sqflite_android:parseDebugLocalResources', task ':sqflite_android:generateDebugRFile', task ':app:processDebugResources', task ':flutter_plugin_android_lifecycle:javaPreCompileDebug', task ':flutter_plugin_android_lifecycle:compileDebugJavaWithJavac', task ':flutter_plugin_android_lifecycle:bundleLibCompileToJarDebug', task ':flutter_secure_storage:generateDebugBuildConfig', task ':flutter_secure_storage:javaPreCompileDebug', task ':flutter_secure_storage:compileDebugJavaWithJavac', task ':flutter_secure_storage:bundleLibCompileToJarDebug', task ':image_picker_android:javaPreCompileDebug', task ':image_picker_android:compileDebugJavaWithJavac', task ':image_picker_android:bundleLibCompileToJarDebug', task ':path_provider_android:javaPreCompileDebug', task ':path_provider_android:compileDebugJavaWithJavac', task ':path_provider_android:bundleLibCompileToJarDebug', task ':shared_preferences_android:checkKotlinGradlePluginConfigurationErrors', task ':shared_preferences_android:compileDebugKotlin', task ':shared_preferences_android:javaPreCompileDebug', task ':shared_preferences_android:compileDebugJavaWithJavac', task ':shared_preferences_android:bundleLibCompileToJarDebug', task ':sqflite_android:javaPreCompileDebug', task ':sqflite_android:compileDebugJavaWithJavac', task ':sqflite_android:bundleLibCompileToJarDebug', task ':app:compileDebugKotlin', task ':app:javaPreCompileDebug', task ':app:compileDebugJavaWithJavac', task ':app:compressDebugAssets', task ':image_picker_android:bundleLibRuntimeToJarDebug', task ':flutter_plugin_android_lifecycle:bundleLibRuntimeToJarDebug', task ':flutter_secure_storage:bundleLibRuntimeToJarDebug', task ':path_provider_android:bundleLibRuntimeToJarDebug', task ':shared_preferences_android:bundleLibRuntimeToJarDebug', task ':sqflite_android:bundleLibRuntimeToJarDebug', task ':app:desugarDebugFileDependencies', task ':app:dexBuilderDebug', task ':app:mergeDebugGlobalSynthetics', task ':app:processDebugJavaRes', task ':flutter_plugin_android_lifecycle:processDebugJavaRes', task ':flutter_secure_storage:processDebugJavaRes', task ':image_picker_android:processDebugJavaRes', task ':path_provider_android:processDebugJavaRes', task ':shared_preferences_android:processDebugJavaRes', task ':sqflite_android:processDebugJavaRes', task ':app:mergeDebugJavaResource', task ':app:checkDebugDuplicateClasses', task ':app:mergeDebugStartupProfile', task ':app:mergeExtDexDebug', task ':image_picker_android:bundleLibRuntimeToDirDebug', task ':flutter_plugin_android_lifecycle:bundleLibRuntimeToDirDebug', task ':flutter_secure_storage:bundleLibRuntimeToDirDebug', task ':path_provider_android:bundleLibRuntimeToDirDebug', task ':shared_preferences_android:bundleLibRuntimeToDirDebug', task ':sqflite_android:bundleLibRuntimeToDirDebug', task ':app:mergeLibDexDebug', task ':app:mergeProjectDexDebug', task ':app:configureCMakeDebug[arm64-v8a]', task ':app:buildCMakeDebug[arm64-v8a]', task ':app:configureCMakeDebug[armeabi-v7a]', task ':app:buildCMakeDebug[armeabi-v7a]', task ':app:configureCMakeDebug[x86_64]', task ':app:buildCMakeDebug[x86_64]', task ':app:mergeDebugJniLibFolders', task ':flutter_plugin_android_lifecycle:mergeDebugJniLibFolders', task ':flutter_plugin_android_lifecycle:mergeDebugNativeLibs', task ':flutter_plugin_android_lifecycle:copyDebugJniLibsProjectOnly', task ':flutter_secure_storage:mergeDebugJniLibFolders', task ':flutter_secure_storage:mergeDebugNativeLibs', task ':flutter_secure_storage:copyDebugJniLibsProjectOnly', task ':image_picker_android:mergeDebugJniLibFolders', task ':image_picker_android:mergeDebugNativeLibs', task ':image_picker_android:copyDebugJniLibsProjectOnly', task ':path_provider_android:mergeDebugJniLibFolders', task ':path_provider_android:mergeDebugNativeLibs', task ':path_provider_android:copyDebugJniLibsProjectOnly', task ':shared_preferences_android:mergeDebugJniLibFolders', task ':shared_preferences_android:mergeDebugNativeLibs', task ':shared_preferences_android:copyDebugJniLibsProjectOnly', task ':sqflite_android:mergeDebugJniLibFolders', task ':sqflite_android:mergeDebugNativeLibs', task ':sqflite_android:copyDebugJniLibsProjectOnly', task ':app:mergeDebugNativeLibs', task ':app:stripDebugDebugSymbols', task ':app:validateSigningDebug', task ':app:writeDebugAppMetadata', task ':app:writeDebugSigningConfigVersions', task ':app:packageDebug', task ':app:createDebugApkListingFileRedirect', task ':app:assembleDebug', task ':flutter_plugin_android_lifecycle:stripDebugDebugSymbols', task ':flutter_plugin_android_lifecycle:copyDebugJniLibsProjectAndLocalJars', task ':flutter_plugin_android_lifecycle:extractDebugAnnotations', task ':flutter_plugin_android_lifecycle:extractDeepLinksForAarDebug', task ':flutter_plugin_android_lifecycle:mergeDebugGeneratedProguardFiles', task ':flutter_plugin_android_lifecycle:mergeDebugConsumerProguardFiles', task ':flutter_plugin_android_lifecycle:prepareDebugArtProfile', task ':flutter_plugin_android_lifecycle:prepareLintJarForPublish', task ':flutter_plugin_android_lifecycle:mergeDebugJavaResource', task ':flutter_plugin_android_lifecycle:syncDebugLibJars', task ':flutter_plugin_android_lifecycle:bundleDebugAar', task ':flutter_plugin_android_lifecycle:assembleDebug', task ':flutter_secure_storage:stripDebugDebugSymbols', task ':flutter_secure_storage:copyDebugJniLibsProjectAndLocalJars', task ':flutter_secure_storage:extractDebugAnnotations', task ':flutter_secure_storage:extractDeepLinksForAarDebug', task ':flutter_secure_storage:mergeDebugGeneratedProguardFiles', task ':flutter_secure_storage:mergeDebugConsumerProguardFiles', task ':flutter_secure_storage:prepareDebugArtProfile', task ':flutter_secure_storage:prepareLintJarForPublish', task ':flutter_secure_storage:mergeDebugJavaResource', task ':flutter_secure_storage:syncDebugLibJars', task ':flutter_secure_storage:bundleDebugAar', task ':flutter_secure_storage:assembleDebug', task ':image_picker_android:stripDebugDebugSymbols', task ':image_picker_android:copyDebugJniLibsProjectAndLocalJars', task ':image_picker_android:extractDebugAnnotations', task ':image_picker_android:extractDeepLinksForAarDebug', task ':image_picker_android:mergeDebugGeneratedProguardFiles', task ':image_picker_android:mergeDebugConsumerProguardFiles', task ':image_picker_android:prepareDebugArtProfile', task ':image_picker_android:prepareLintJarForPublish', task ':image_picker_android:mergeDebugJavaResource', task ':image_picker_android:syncDebugLibJars', task ':image_picker_android:bundleDebugAar', task ':image_picker_android:assembleDebug', task ':path_provider_android:stripDebugDebugSymbols', task ':path_provider_android:copyDebugJniLibsProjectAndLocalJars', task ':path_provider_android:extractDebugAnnotations', task ':path_provider_android:extractDeepLinksForAarDebug', task ':path_provider_android:mergeDebugGeneratedProguardFiles', task ':path_provider_android:mergeDebugConsumerProguardFiles', task ':path_provider_android:prepareDebugArtProfile', task ':path_provider_android:prepareLintJarForPublish', task ':path_provider_android:mergeDebugJavaResource', task ':path_provider_android:syncDebugLibJars', task ':path_provider_android:bundleDebugAar', task ':path_provider_android:assembleDebug', task ':shared_preferences_android:stripDebugDebugSymbols', task ':shared_preferences_android:copyDebugJniLibsProjectAndLocalJars', task ':shared_preferences_android:extractDebugAnnotations', task ':shared_preferences_android:extractDeepLinksForAarDebug', task ':shared_preferences_android:mergeDebugGeneratedProguardFiles', task ':shared_preferences_android:mergeDebugConsumerProguardFiles', task ':shared_preferences_android:prepareDebugArtProfile', task ':shared_preferences_android:prepareLintJarForPublish', task ':shared_preferences_android:mergeDebugJavaResource', task ':shared_preferences_android:syncDebugLibJars', task ':shared_preferences_android:bundleDebugAar', task ':shared_preferences_android:assembleDebug', task ':sqflite_android:stripDebugDebugSymbols', task ':sqflite_android:copyDebugJniLibsProjectAndLocalJars', task ':sqflite_android:extractDebugAnnotations', task ':sqflite_android:extractDeepLinksForAarDebug', task ':sqflite_android:mergeDebugGeneratedProguardFiles', task ':sqflite_android:mergeDebugConsumerProguardFiles', task ':sqflite_android:prepareDebugArtProfile', task ':sqflite_android:prepareLintJarForPublish', task ':sqflite_android:mergeDebugJavaResource', task ':sqflite_android:syncDebugLibJars', task ':sqflite_android:bundleDebugAar', task ':sqflite_android:assembleDebug']
+[   +3 ms] Tasks that were excluded: []
+[ +204 ms] work action Parameters of IdentityTransform (Thread[#223,Execution worker Thread 2,5,main]) started.
+[   +5 ms] work action Parameters of DexingNoClasspathTransform (Thread[#221,included builds,5,main]) started.
+[  +96 ms] work action Parameters of DexingOutputSplitTransform (Thread[#221,included builds,5,main]) started.
+[        ] work action Parameters of ClassesDirToClassesTransform (Thread[#221,included builds,5,main]) started.
+[        ] work action Parameters of DexingOutputSplitTransform (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] Resolve mutations for :app:DebugMinSdkCheck (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] :app:DebugMinSdkCheck (Thread[#223,Execution worker Thread 2,5,main]) started.
+[   +1 ms] > Task :app:DebugMinSdkCheck
+[        ] Caching disabled for task ':app:DebugMinSdkCheck' because:
+[        ]   Build cache is disabled
+[        ] Task ':app:DebugMinSdkCheck' is not up-to-date because:
+[        ]   Task has not declared any outputs despite executing actions.
+[        ] Resolve mutations for :app:preBuild (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] :app:preBuild (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] > Task :app:preBuild UP-TO-DATE
+[        ] Skipping task ':app:preBuild' as it has no actions.
+[        ] Resolve mutations for :app:preDebugBuild (Thread[#226,Execution worker Thread 4,5,main]) started.
+[   +4 ms] :app:preDebugBuild (Thread[#226,Execution worker Thread 4,5,main]) started.
+[   +2 ms] > Task :app:preDebugBuild UP-TO-DATE
+[   +3 ms] Skipping task ':app:preDebugBuild' as it has no actions.
+[        ] Resolve mutations for :app:mergeDebugNativeDebugMetadata (Thread[#226,Execution worker Thread 4,5,main]) started.
+[        ] :app:mergeDebugNativeDebugMetadata (Thread[#226,Execution worker Thread 4,5,main]) started.
+[        ] > Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+[        ] Skipping task ':app:mergeDebugNativeDebugMetadata' as it has no source files and no previous output files.
+[        ] Resolve mutations for :app:checkKotlinGradlePluginConfigurationErrors (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] :app:checkKotlinGradlePluginConfigurationErrors (Thread[#226,Execution worker Thread 4,5,main]) started.
+[        ] > Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+[        ] Skipping task ':app:checkKotlinGradlePluginConfigurationErrors' as task onlyIf 'errorDiagnostics are present' is false.
+[        ] Resolve mutations for :app:compileFlutterBuildDebug (Thread[#226,Execution worker Thread 4,5,main]) started.
+[  +81 ms] :app:compileFlutterBuildDebug (Thread[#226,Execution worker Thread 4,5,main]) started.
+[+2493 ms] > Task :app:compileFlutterBuildDebug
+[        ] Caching disabled for task ':app:compileFlutterBuildDebug' because:
+[        ]   Build cache is disabled
+[        ]   Caching has not been enabled for the task
+[        ] Task ':app:compileFlutterBuildDebug' is not up-to-date because:
+[        ]   Value of input property 'verbose' has changed for task ':app:compileFlutterBuildDebug'
+[        ] Starting process 'command 'C:\Users\kenny\develop\flutter\bin\flutter.bat''. Working directory: C:\Users\kenny\Documents\programming\romain-gigs\Rwanda pet lovers\mobile_app Command: C:\Users\kenny\develop\flutter\bin\flutter.bat --verbose assemble --no-version-check --depfile C:\Users\kenny\Documents\programming\romain-gigs\Rwanda pet lovers\mobile_app\build\app\intermediates\flutter\debug/flutter_build.d --output C:\Users\kenny\Documents\programming\romain-gigs\Rwanda pet lovers\mobile_app\build\app\intermediates\flutter\debug -dTargetFile=lib\main.dart -dTargetPlatform=android -dBuildMode=debug -dTrackWidgetCreation=true --DartDefines=RkxVVFRFUl9WRVJTSU9OPTMuMzguMw==,RkxVVFRFUl9DSEFOTkVMPXN0YWJsZQ==,RkxVVFRFUl9HSVRfVVJMPWh0dHBzOi8vZ2l0aHViLmNvbS9mbHV0dGVyL2ZsdXR0ZXIuZ2l0,RkxVVFRFUl9GUkFNRVdPUktfUkVWSVNJT049MTkwNzRkMTJmNw==,RkxVVFRFUl9FTkdJTkVfUkVWSVNJT049MTNlNjU4NzI1ZA==,RkxVVFRFUl9EQVJUX1ZFUlNJT049My4xMC4x -dFlavor= -dAndroidArchs=android-arm android-arm64 android-x64 -dMinSdkVersion=24 debug_android_application
+[  +89 ms] Successfully started process 'command 'C:\Users\kenny\develop\flutter\bin\flutter.bat''
+[+4313 ms] [ +529 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[  +93 ms] [   +2 ms] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[   +1 ms] [   +2 ms] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] [   +1 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[   +4 ms] [   +3 ms] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[   +5 ms] [        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[        ] [  +56 ms] Artifact Instance of 'AndroidGenSnapshotArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterEngineStamp' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] [  +22 ms] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[ +281 ms] [ +329 ms] Artifact Instance of 'MaterialFonts' is not required, skipping update.
+[  +90 ms] [        ] Artifact Instance of 'GradleWrapper' is not required, skipping update.
+[        ] [   +9 ms] Artifact Instance of 'AndroidInternalBuildArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IOSEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterWebSdk' is not required, skipping update.
+[   +3 ms] [   +1 ms] Artifact Instance of 'FlutterEngineStamp' is not required, skipping update.
+[        ] [   +2 ms] Artifact Instance of 'LegacyCanvasKitRemover' is not required, skipping update.
+[        ] [   +1 ms] Artifact Instance of 'FlutterSdk' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'WindowsEngineArtifacts' is not required, skipping update.
+[   +1 ms] [   +2 ms] Artifact Instance of 'MacOSEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'LinuxEngineArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'LinuxFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'MacOSFuchsiaSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterRunnerSDKArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FlutterRunnerDebugSymbols' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'IosUsbArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'FontSubsetArtifacts' is not required, skipping update.
+[        ] [        ] Artifact Instance of 'PubDependencies' is not required, skipping update.
+[ +293 ms] [ +261 ms] Initializing file store
+[        ] [  +72 ms] Done initializing file store
+[ +293 ms] [ +251 ms] Skipping target: dart_build
+[        ] [   +9 ms] Skipping target: gen_dart_plugin_registrant
+[        ] [   +2 ms] Skipping target: install_code_assets
+[        ] [        ] Skipping target: gen_localizations
+[+5212 ms] [+5187 ms] Skipping target: kernel_snapshot_program
+[+2792 ms] [+2821 ms] Skipping target: debug_android_application
+[        ] [   +4 ms] Persisting file store
+[  +90 ms] [  +65 ms] Done persisting file store
+[ +117 ms] [ +137 ms] build succeeded.
+[  +85 ms] [ +120 ms] "flutter assemble" took 9,315ms.
+[ +610 ms] [ +578 ms] Running 1 shutdown hook
+[        ] [  +11 ms] Shutdown hooks complete
+[ +294 ms] [ +265 ms] exiting with code 0
+[ +201 ms] Resolve mutations for :app:packJniLibsflutterBuildDebug (Thread[#226,Execution worker Thread 4,5,main]) started.
+[        ] :app:packJniLibsflutterBuildDebug (Thread[#226,Execution worker Thread 4,5,main]) started.
+[  +92 ms] > Task :app:packJniLibsflutterBuildDebug UP-TO-DATE
+[        ] Caching disabled for task ':app:packJniLibsflutterBuildDebug' because:
+[   +1 ms]   Build cache is disabled
+[        ]   Not worth caching
+[        ] Skipping task ':app:packJniLibsflutterBuildDebug' as it is up-to-date.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:preBuild (Thread[#226,Execution worker Thread 4,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:preBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] > Task :flutter_plugin_android_lifecycle:preBuild UP-TO-DATE
+[        ] Skipping task ':flutter_plugin_android_lifecycle:preBuild' as it has no actions.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:preDebugBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:preDebugBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] > Task :flutter_plugin_android_lifecycle:preDebugBuild UP-TO-DATE
+[        ] Skipping task ':flutter_plugin_android_lifecycle:preDebugBuild' as it has no actions.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:writeDebugAarMetadata (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:writeDebugAarMetadata (Thread[#229,Execution worker Thread 7,5,main]) started.
+[ +105 ms] > Task :flutter_plugin_android_lifecycle:writeDebugAarMetadata UP-TO-DATE
+[        ] Caching disabled for task ':flutter_plugin_android_lifecycle:writeDebugAarMetadata' because:
+[   +2 ms]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Skipping task ':flutter_plugin_android_lifecycle:writeDebugAarMetadata' as it is up-to-date.
+[  +14 ms] work action resolve aar-metadata.properties (project :flutter_plugin_android_lifecycle) (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] Resolve mutations for :flutter_secure_storage:preBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[   +5 ms] :flutter_secure_storage:preBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] > Task :flutter_secure_storage:preBuild UP-TO-DATE
+[        ] Skipping task ':flutter_secure_storage:preBuild' as it has no actions.
+[        ] Resolve mutations for :flutter_secure_storage:preDebugBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] :flutter_secure_storage:preDebugBuild (Thread[#229,Execution worker Thread 7,5,main]) started.
+[        ] > Task :flutter_secure_storage:preDebugBuild UP-TO-DATE
+[        ] Skipping task ':flutter_secure_storage:preDebugBuild' as it has no actions.
+[        ] Resolve mutations for :flutter_secure_storage:writeDebugAarMetadata (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] :flutter_secure_storage:writeDebugAarMetadata (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] > Task :flutter_secure_storage:writeDebugAarMetadata UP-TO-DATE
+[        ] Caching disabled for task ':flutter_secure_storage:writeDebugAarMetadata' because:
+[        ]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Skipping task ':flutter_secure_storage:writeDebugAarMetadata' as it is up-to-date.
+[        ] work action resolve aar-metadata.properties (project :flutter_secure_storage) (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] Resolve mutations for :image_picker_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :image_picker_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :image_picker_android:preBuild UP-TO-DATE
+[   +1 ms] Skipping task ':image_picker_android:preBuild' as it has no actions.
+[        ] Resolve mutations for :image_picker_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :image_picker_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :image_picker_android:preDebugBuild UP-TO-DATE
+[   +5 ms] Skipping task ':image_picker_android:preDebugBuild' as it has no actions.
+[   +1 ms] Resolve mutations for :image_picker_android:writeDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :image_picker_android:writeDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :image_picker_android:writeDebugAarMetadata UP-TO-DATE
+[        ] Caching disabled for task ':image_picker_android:writeDebugAarMetadata' because:
+[   +1 ms]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Skipping task ':image_picker_android:writeDebugAarMetadata' as it is up-to-date.
+[        ] work action resolve aar-metadata.properties (project :image_picker_android) (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] Resolve mutations for :path_provider_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :path_provider_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[   +1 ms] > Task :path_provider_android:preBuild UP-TO-DATE
+[        ] Skipping task ':path_provider_android:preBuild' as it has no actions.
+[   +3 ms] Resolve mutations for :path_provider_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :path_provider_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[  +14 ms] > Task :path_provider_android:preDebugBuild UP-TO-DATE
+[        ] Skipping task ':path_provider_android:preDebugBuild' as it has no actions.
+[        ] Resolve mutations for :path_provider_android:writeDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :path_provider_android:writeDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :path_provider_android:writeDebugAarMetadata UP-TO-DATE
+[        ] Caching disabled for task ':path_provider_android:writeDebugAarMetadata' because:
+[        ]   Build cache is disabled
+[   +2 ms]   Caching has been disabled for the task
+[        ] Skipping task ':path_provider_android:writeDebugAarMetadata' as it is up-to-date.
+[        ] work action resolve aar-metadata.properties (project :path_provider_android) (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] Resolve mutations for :shared_preferences_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :shared_preferences_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :shared_preferences_android:preBuild UP-TO-DATE
+[        ] Skipping task ':shared_preferences_android:preBuild' as it has no actions.
+[        ] Resolve mutations for :shared_preferences_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :shared_preferences_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :shared_preferences_android:preDebugBuild UP-TO-DATE
+[        ] Skipping task ':shared_preferences_android:preDebugBuild' as it has no actions.
+[        ] Resolve mutations for :shared_preferences_android:writeDebugAarMetadata (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] :shared_preferences_android:writeDebugAarMetadata (Thread[#223,Execution worker Thread 2,5,main]) started.
+[        ] > Task :shared_preferences_android:writeDebugAarMetadata UP-TO-DATE
+[   +7 ms] Caching disabled for task ':shared_preferences_android:writeDebugAarMetadata' because:
+[        ]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Skipping task ':shared_preferences_android:writeDebugAarMetadata' as it is up-to-date.
+[        ] work action resolve aar-metadata.properties (project :shared_preferences_android) (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] Resolve mutations for :sqflite_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :sqflite_android:preBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :sqflite_android:preBuild UP-TO-DATE
+[        ] Skipping task ':sqflite_android:preBuild' as it has no actions.
+[        ] Resolve mutations for :sqflite_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :sqflite_android:preDebugBuild (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :sqflite_android:preDebugBuild UP-TO-DATE
+[        ] Skipping task ':sqflite_android:preDebugBuild' as it has no actions.
+[        ] Resolve mutations for :sqflite_android:writeDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] :sqflite_android:writeDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] > Task :sqflite_android:writeDebugAarMetadata UP-TO-DATE
+[        ] Caching disabled for task ':sqflite_android:writeDebugAarMetadata' because:
+[        ]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Skipping task ':sqflite_android:writeDebugAarMetadata' as it is up-to-date.
+[        ] work action resolve aar-metadata.properties (project :sqflite_android) (Thread[#227,Execution worker Thread 5,5,main]) started.
+[        ] Resolve mutations for :app:checkDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[   +1 ms] :app:checkDebugAarMetadata (Thread[#227,Execution worker Thread 5,5,main]) started.
+[+1007 ms] Resolve mutations for :app:cleanMergeDebugAssets (Thread[#228,Execution worker Thread 6,5,main]) started.
+[        ] :app:cleanMergeDebugAssets (Thread[#228,Execution worker Thread 6,5,main]) started.
+[   +1 ms] > Task :app:cleanMergeDebugAssets UP-TO-DATE
+[        ] Caching disabled for task ':app:cleanMergeDebugAssets' because:
+[        ]   Build cache is disabled
+[        ] Task ':app:cleanMergeDebugAssets' is not up-to-date because:
+[        ]   Task has not declared any outputs despite executing actions.
+[        ] Resolve mutations for :app:mergeDebugShaders (Thread[#228,Execution worker Thread 6,5,main]) started.
+[  +13 ms] :app:mergeDebugShaders (Thread[#228,Execution worker Thread 6,5,main]) started.
+[        ] > Task :app:mergeDebugShaders UP-TO-DATE
+[        ] Caching disabled for task ':app:mergeDebugShaders' because:
+[        ]   Build cache is disabled
+[        ]   Simple merging task
+[        ] Skipping task ':app:mergeDebugShaders' as it is up-to-date.
+[        ] Resolve mutations for :app:compileDebugShaders (Thread[#228,Execution worker Thread 6,5,main]) started.
+[        ] :app:compileDebugShaders (Thread[#228,Execution worker Thread 6,5,main]) started.
+[        ] > Task :app:compileDebugShaders NO-SOURCE
+[        ] Skipping task ':app:compileDebugShaders' as it has no source files and no previous output files.
+[        ] Resolve mutations for :app:generateDebugAssets (Thread[#224,Execution worker Thread 3,5,main]) started.
+[   +1 ms] :app:generateDebugAssets (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] > Task :app:generateDebugAssets UP-TO-DATE
+[        ] Skipping task ':app:generateDebugAssets' as it has no actions.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:mergeDebugShaders (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:mergeDebugShaders (Thread[#224,Execution worker Thread 3,5,main]) started.
+[  +72 ms] > Task :flutter_plugin_android_lifecycle:mergeDebugShaders
+[        ] Caching disabled for task ':flutter_plugin_android_lifecycle:mergeDebugShaders' because:
+[        ]   Build cache is disabled
+[        ]   Simple merging task
+[        ] Task ':flutter_plugin_android_lifecycle:mergeDebugShaders' is not up-to-date because:
+[        ]   Output property 'outputDir' file C:\Users\kenny\Documents\programming\romain-gigs\Rwanda pet lovers\mobile_app\build\flutter_plugin_android_lifecycle\intermediates\merged_shaders\debug\mergeDebugShaders\out has been removed.
+[        ] The input changes require a full rebuild for incremental task ':flutter_plugin_android_lifecycle:mergeDebugShaders'.
+[   +3 ms] Resolve mutations for :flutter_plugin_android_lifecycle:compileDebugShaders (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:compileDebugShaders (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] > Task :flutter_plugin_android_lifecycle:compileDebugShaders NO-SOURCE
+[        ] Skipping task ':flutter_plugin_android_lifecycle:compileDebugShaders' as it has no source files and no previous output files.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:generateDebugAssets (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:generateDebugAssets (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] > Task :flutter_plugin_android_lifecycle:generateDebugAssets UP-TO-DATE
+[        ] Skipping task ':flutter_plugin_android_lifecycle:generateDebugAssets' as it has no actions.
+[        ] Resolve mutations for :flutter_plugin_android_lifecycle:packageDebugAssets (Thread[#224,Execution worker Thread 3,5,main]) started.
+[        ] :flutter_plugin_android_lifecycle:packageDebugAssets (Thread[#224,Execution worker Thread 3,5,main]) started.
+[  +95 ms] > Task :app:checkDebugAarMetadata FAILED
+[        ] Transforming preference-1.2.1.aar (androidx.preference:preference:1.2.1) with ExtractAarTransform
+[        ] Transforming preference-1.2.1.aar (androidx.preference:preference:1.2.1) with AarTransform
+[        ] Transforming legacy-support-core-ui-1.0.0.aar (androidx.legacy:legacy-support-core-ui:1.0.0) with ExtractAarTransform
+[        ] Transforming legacy-support-core-ui-1.0.0.aar (androidx.legacy:legacy-support-core-ui:1.0.0) with AarTransform
+[        ] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with ExtractAarTransform
+[        ] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with AarTransform
+[        ] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with ExtractAarTransform
+[        ] Transforming slidingpanelayout-1.2.0.aar (androidx.slidingpanelayout:slidingpanelayout:1.2.0) with AarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with ExtractAarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with AarTransform
+[        ] Transforming activity-1.12.2.aar (androidx.activity:activity:1.12.2) with ExtractAarTransform
+[        ] Transforming activity-1.12.2.aar (androidx.activity:activity:1.12.2) with AarTransform
+[   +2 ms] Transforming legacy-support-core-utils-1.0.0.aar (androidx.legacy:legacy-support-core-utils:1.0.0) with ExtractAarTransform
+[        ] Transforming legacy-support-core-utils-1.0.0.aar (androidx.legacy:legacy-support-core-utils:1.0.0) with AarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with ExtractAarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with AarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with ExtractAarTransform
+[        ] Transforming loader-1.0.0.aar (androidx.loader:loader:1.0.0) with AarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with ExtractAarTransform
+[        ] Transforming fragment-1.7.1.aar (androidx.fragment:fragment:1.7.1) with AarTransform
+[        ] Transforming lifecycle-livedata-2.7.0.aar (androidx.lifecycle:lifecycle-livedata:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-livedata-2.7.0.aar (androidx.lifecycle:lifecycle-livedata:2.7.0) with AarTransform
+[        ] Transforming lifecycle-viewmodel-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0) with AarTransform
+[        ] Transforming fragment-ktx-1.7.1.aar (androidx.fragment:fragment-ktx:1.7.1) with ExtractAarTransform
+[        ] Transforming fragment-ktx-1.7.1.aar (androidx.fragment:fragment-ktx:1.7.1) with AarTransform
+[        ] Transforming lifecycle-runtime-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-runtime-ktx:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-runtime-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-runtime-ktx:2.7.0) with AarTransform
+[        ] Transforming appcompat-1.1.0.aar (androidx.appcompat:appcompat:1.1.0) with ExtractAarTransform
+[        ] Transforming appcompat-1.1.0.aar (androidx.appcompat:appcompat:1.1.0) with AarTransform
+[        ] Transforming activity-ktx-1.12.2.aar (androidx.activity:activity-ktx:1.12.2) with ExtractAarTransform
+[        ] Transforming activity-ktx-1.12.2.aar (androidx.activity:activity-ktx:1.12.2) with AarTransform
+[        ] Transforming lifecycle-livedata-core-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-livedata-core-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core:2.7.0) with AarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with AarTransform
+[        ] Transforming window-java-1.2.0.aar (androidx.window:window-java:1.2.0) with ExtractAarTransform
+[        ] Transforming window-java-1.2.0.aar (androidx.window:window-java:1.2.0) with AarTransform
+[        ] Transforming savedstate-1.2.1.aar (androidx.savedstate:savedstate:1.2.1) with ExtractAarTransform
+[        ] Transforming savedstate-1.2.1.aar (androidx.savedstate:savedstate:1.2.1) with AarTransform
+[        ] Transforming recyclerview-1.0.0.aar (androidx.recyclerview:recyclerview:1.0.0) with ExtractAarTransform
+[        ] Transforming recyclerview-1.0.0.aar (androidx.recyclerview:recyclerview:1.0.0) with AarTransform
+[        ] Transforming core-ktx-1.17.0.aar (androidx.core:core-ktx:1.17.0) with ExtractAarTransform
+[        ] Transforming core-ktx-1.17.0.aar (androidx.core:core-ktx:1.17.0) with AarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with ExtractAarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with AarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with ExtractAarTransform
+[        ] Transforming viewpager-1.0.0.aar (androidx.viewpager:viewpager:1.0.0) with AarTransform
+[        ] Transforming appcompat-resources-1.1.0.aar (androidx.appcompat:appcompat-resources:1.1.0) with ExtractAarTransform
+[        ] Transforming appcompat-resources-1.1.0.aar (androidx.appcompat:appcompat-resources:1.1.0) with AarTransform
+[        ] Transforming window-1.2.0.aar (androidx.window:window:1.2.0) with ExtractAarTransform
+[        ] Transforming window-1.2.0.aar (androidx.window:window:1.2.0) with AarTransform
+[        ] Transforming savedstate-ktx-1.2.1.aar (androidx.savedstate:savedstate-ktx:1.2.1) with ExtractAarTransform
+[        ] Transforming savedstate-ktx-1.2.1.aar (androidx.savedstate:savedstate-ktx:1.2.1) with AarTransform
+[        ] Transforming lifecycle-process-2.7.0.aar (androidx.lifecycle:lifecycle-process:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-process-2.7.0.aar (androidx.lifecycle:lifecycle-process:2.7.0) with AarTransform
+[   +2 ms] Transforming lifecycle-livedata-core-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-livedata-core-ktx-2.7.0.aar (androidx.lifecycle:lifecycle-livedata-core-ktx:2.7.0) with AarTransform
+[        ] Transforming lifecycle-viewmodel-savedstate-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-savedstate-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel-savedstate:2.7.0) with AarTransform
+[        ] Transforming coordinatorlayout-1.0.0.aar (androidx.coordinatorlayout:coordinatorlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming coordinatorlayout-1.0.0.aar (androidx.coordinatorlayout:coordinatorlayout:1.0.0) with AarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-viewmodel-2.7.0.aar (androidx.lifecycle:lifecycle-viewmodel:2.7.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming lifecycle-runtime-2.7.0.aar (androidx.lifecycle:lifecycle-runtime:2.7.0) with ExtractAarTransform
+[        ] Transforming lifecycle-runtime-2.7.0.aar (androidx.lifecycle:lifecycle-runtime:2.7.0) with AarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with AarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming drawerlayout-1.0.0.aar (androidx.drawerlayout:drawerlayout:1.0.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with ExtractAarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming transition-1.4.1.aar (androidx.transition:transition:1.4.1) with ExtractAarTransform
+[        ] Transforming transition-1.4.1.aar (androidx.transition:transition:1.4.1) with AarTransform
+[        ] Transforming customview-1.1.0.aar (androidx.customview:customview:1.1.0) with AarTransform
+[        ] Transforming vectordrawable-animated-1.1.0.aar (androidx.vectordrawable:vectordrawable-animated:1.1.0) with ExtractAarTransform
+[        ] Transforming vectordrawable-animated-1.1.0.aar (androidx.vectordrawable:vectordrawable-animated:1.1.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[   +4 ms] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[   +2 ms] Transforming swiperefreshlayout-1.0.0.aar (androidx.swiperefreshlayout:swiperefreshlayout:1.0.0) with ExtractAarTransform
+[        ] Transforming swiperefreshlayout-1.0.0.aar (androidx.swiperefreshlayout:swiperefreshlayout:1.0.0) with AarTransform
+[        ] Transforming security-crypto-1.1.0-alpha06.aar (androidx.security:security-crypto:1.1.0-alpha06) with ExtractAarTransform
+[        ] Transforming security-crypto-1.1.0-alpha06.aar (androidx.security:security-crypto:1.1.0-alpha06) with AarTransform
+[        ] Transforming profileinstaller-1.4.0.aar (androidx.profileinstaller:profileinstaller:1.4.0) with ExtractAarTransform
+[        ] Transforming profileinstaller-1.4.0.aar (androidx.profileinstaller:profileinstaller:1.4.0) with AarTransform
+[        ] Transforming tracing-1.2.0.aar (androidx.tracing:tracing:1.2.0) with ExtractAarTransform
+[        ] Transforming tracing-1.2.0.aar (androidx.tracing:tracing:1.2.0) with AarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with ExtractAarTransform
+[        ] Transforming core-1.17.0.aar (androidx.core:core:1.17.0) with AarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with ExtractAarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with AarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with ExtractAarTransform
+[        ] Transforming vectordrawable-1.1.0.aar (androidx.vectordrawable:vectordrawable:1.1.0) with AarTransform
+[        ] Transforming asynclayoutinflater-1.0.0.aar (androidx.asynclayoutinflater:asynclayoutinflater:1.0.0) with ExtractAarTransform
+[        ] Transforming asynclayoutinflater-1.0.0.aar (androidx.asynclayoutinflater:asynclayoutinflater:1.0.0) with AarTransform
+[   +3 ms] Transforming versionedparcelable-1.1.1.aar (androidx.versionedparcelable:versionedparcelable:1.1.1) with ExtractAarTransform
+[   +1 ms] Transforming versionedparcelable-1.1.1.aar (androidx.versionedparcelable:versionedparcelable:1.1.1) with AarTransform
+[        ] Transforming datastore-preferences-core.aar (androidx.datastore:datastore-preferences-core-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore-preferences-core.aar (androidx.datastore:datastore-preferences-core-android:1.2.0) with AarTransform
+[        ] Transforming datastore-core.aar (androidx.datastore:datastore-core-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore-core.aar (androidx.datastore:datastore-core-android:1.2.0) with AarTransform
+[        ] Transforming datastore-preferences.aar (androidx.datastore:datastore-preferences-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore-preferences.aar (androidx.datastore:datastore-preferences-android:1.2.0) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with ExtractAarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming interpolator-1.0.0.aar (androidx.interpolator:interpolator:1.0.0) with AarTransform
+[        ] Transforming datastore.aar (androidx.datastore:datastore-android:1.2.0) with ExtractAarTransform
+[        ] Transforming datastore.aar (androidx.datastore:datastore-android:1.2.0) with AarTransform
+[        ] Transforming core-runtime-2.2.0.aar (androidx.arch.core:core-runtime:2.2.0) with ExtractAarTransform
+[        ] Transforming core-runtime-2.2.0.aar (androidx.arch.core:core-runtime:2.2.0) with AarTransform
+[        ] Transforming navigationevent.aar (androidx.navigationevent:navigationevent-android:1.0.1) with ExtractAarTransform
+[        ] Transforming navigationevent.aar (androidx.navigationevent:navigationevent-android:1.0.1) with AarTransform
+[        ] Transforming print-1.0.0.aar (androidx.print:print:1.0.0) with ExtractAarTransform
+[        ] Transforming print-1.0.0.aar (androidx.print:print:1.0.0) with AarTransform
+[        ] Transforming exifinterface-1.4.2.aar (androidx.exifinterface:exifinterface:1.4.2) with ExtractAarTransform
+[        ] Transforming exifinterface-1.4.2.aar (androidx.exifinterface:exifinterface:1.4.2) with AarTransform
+[        ] Transforming localbroadcastmanager-1.0.0.aar (androidx.localbroadcastmanager:localbroadcastmanager:1.0.0) with ExtractAarTransform
+[   +3 ms] Transforming localbroadcastmanager-1.0.0.aar (androidx.localbroadcastmanager:localbroadcastmanager:1.0.0) with AarTransform
+[        ] Transforming startup-runtime-1.1.1.aar (androidx.startup:startup-runtime:1.1.1) with ExtractAarTransform
+[        ] Transforming startup-runtime-1.1.1.aar (androidx.startup:startup-runtime:1.1.1) with AarTransform
+[        ] Transforming core-viewtree-1.0.0.aar (androidx.core:core-viewtree:1.0.0) with ExtractAarTransform
+[        ] Transforming core-viewtree-1.0.0.aar (androidx.core:core-viewtree:1.0.0) with AarTransform
+[        ] Transforming cursoradapter-1.0.0.aar (androidx.cursoradapter:cursoradapter:1.0.0) with ExtractAarTransform
+[        ] Transforming cursoradapter-1.0.0.aar (androidx.cursoradapter:cursoradapter:1.0.0) with AarTransform
+[        ] Transforming cursoradapter-1.0.0.aar (androidx.cursoradapter:cursoradapter:1.0.0) with ExtractAarTransform
+[        ] Transforming cursoradapter-1.0.0.aar (androidx.cursoradapter:cursoradapter:1.0.0) with AarTransform
+[        ] Transforming relinker-1.4.5.aar (com.getkeepsafe.relinker:relinker:1.4.5) with ExtractAarTransform
+[        ] Transforming relinker-1.4.5.aar (com.getkeepsafe.relinker:relinker:1.4.5) with AarTransform
+[        ] Transforming core-1.0.0.aar (androidx.window.extensions.core:core:1.0.0) with ExtractAarTransform
+[        ] Transforming core-1.0.0.aar (androidx.window.extensions.core:core:1.0.0) with AarTransform
+[        ] Transforming runtime-annotation.aar (androidx.compose.runtime:runtime-annotation-android:1.9.0) with ExtractAarTransform
+[        ] Transforming runtime-annotation.aar (androidx.compose.runtime:runtime-annotation-android:1.9.0) with AarTransform
+[        ] Transforming documentfile-1.0.0.aar (androidx.documentfile:documentfile:1.0.0) with ExtractAarTransform
+[        ] Transforming documentfile-1.0.0.aar (androidx.documentfile:documentfile:1.0.0) with AarTransform
+[        ] Transforming annotation-experimental-1.4.1.aar (androidx.annotation:annotation-experimental:1.4.1) with ExtractAarTransform
+[        ] Transforming annotation-experimental-1.4.1.aar (androidx.annotation:annotation-experimental:1.4.1) with AarTransform
+[        ] Caching disabled for task ':app:checkDebugAarMetadata' because:
+[        ]   Build cache is disabled
+[        ]   Caching has been disabled for the task
+[        ] Task ':app:checkDebugAarMetadata' is not up-to-date because:
+[        ]   Task has failed previously.
+[        ] > Task :flutter_plugin_android_lifecycle:packageDebugAssets
+[        ] Caching disabled for task ':flutter_plugin_android_lifecycle:packageDebugAssets' because:
+[        ]   Build cache is disabled
+[        ]   Simple merging task
+[        ] Task ':flutter_plugin_android_lifecycle:packageDebugAssets' is not up-to-date because:
+[        ]   Output property 'outputDir' file C:\Users\kenny\Documents\programming\romain-gigs\Rwanda pet lovers\mobile_app\build\flutter_plugin_android_lifecycle\intermediates\library_assets\debug\packageDebugAssets\out has been removed.
+[        ] The input changes require a full rebuild for incremental task ':flutter_plugin_android_lifecycle:packageDebugAssets'.
+[   +1 ms] 19 actionable tasks: 6 executed, 13 up-to-date
+[        ] Watched directory hierarchies: [C:\Users\kenny\develop\flutter\packages\flutter_tools\gradle]
+[  +49 ms] Running Gradle task 'assembleDebug'... (completed in 60.7s)
+[ +161 ms] "flutter apk" took 71,935ms.
+[   +5 ms] Running 1 shutdown hook
+[   +7 ms] Shutdown hooks complete
+[ +473 ms] exiting with code 1

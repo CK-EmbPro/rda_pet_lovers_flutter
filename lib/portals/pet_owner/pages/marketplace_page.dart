@@ -108,14 +108,26 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                         childAspectRatio: 0.75,
                       ),
                       itemCount: products.length,
-                      itemBuilder: (context, index) => _ProductCard(product: products[index]),
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        return GestureDetector(
+                          onTap: () => context.push('/product-details/${product.id}'),
+                          child: _ProductCard(product: product),
+                        );
+                      },
                     )
                   else
                     ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemCount: products.length,
-                      itemBuilder: (context, index) => _ProductListItem(product: products[index]),
+                      itemBuilder: (context, index) {
+                        final product = products[index];
+                        return GestureDetector(
+                          onTap: () => context.push('/product-details/${product.id}'),
+                          child: _ProductListItem(product: product),
+                        );
+                      },
                     ),
                 ],
               ),

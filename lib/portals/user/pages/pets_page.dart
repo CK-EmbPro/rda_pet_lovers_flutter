@@ -22,7 +22,7 @@ class _PetsPageState extends ConsumerState<PetsPage> {
   @override
   Widget build(BuildContext context) {
     final species = ref.watch(speciesProvider);
-    final allPets = ref.watch(browsablePetsProvider);
+    final allPets = ref.watch(myPetsProvider);
     
     // Filter pets by species if selected
     final pets = _selectedSpecies == null
@@ -50,7 +50,7 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     const Text(
-                      'Browse Pets',
+                      'My Pets',
                       style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
                     ),
                     Row(
