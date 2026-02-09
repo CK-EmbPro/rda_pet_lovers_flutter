@@ -163,6 +163,10 @@ class DashboardPage extends ConsumerWidget {
                 const SizedBox(height: 24),
               ],
 
+              // Recent Orders
+              _buildRecentOrdersSection(context),
+              const SizedBox(height: 24),
+
               // Shops Section
               _buildShopsSection(context, shops),
               const SizedBox(height: 24),
@@ -309,6 +313,99 @@ class DashboardPage extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecentOrdersSection(BuildContext context) {
+    // Mock recent orders for the pet owner
+    final mockRecentOrders = [
+      {'product': 'Premium Dog Food', 'shop': 'Pet Paradise', 'total': 45000, 'status': 'delivered', 'date': '2 days ago'},
+      {'product': 'Cat Treats Pack', 'shop': 'Happy Paws', 'total': 12000, 'status': 'shipped', 'date': '5 days ago'},
+      {'product': 'Pet Shampoo', 'shop': 'Pet Care Plus', 'total': 8500, 'status': 'pending', 'date': '1 week ago'},
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Recent Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              TextButton(
+                onPressed: () {},
+                child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+              ),
+            ],
+          ),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          itemCount: mockRecentOrders.length,
+          itemBuilder: (context, index) {
+            final order = mockRecentOrders[index];
+            return Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: AppTheme.cardShadow,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: AppColors.inputFill,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.shopping_bag, color: AppColors.secondary),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(order['product'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('${order['shop']} • ${order['total']} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(order['date'] as String, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                      ],
+                    ),
+                  ),
+                  _buildOrderStatusBadge(order['status'] as String),
+                ],
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildOrderStatusBadge(String status) {
+    Color color;
+    switch (status) {
+      case 'delivered':
+        color = AppColors.success;
+        break;
+      case 'shipped':
+        color = AppColors.secondary;
+        break;
+      default:
+        color = Colors.orange;
+    }
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
     );
   }
 
