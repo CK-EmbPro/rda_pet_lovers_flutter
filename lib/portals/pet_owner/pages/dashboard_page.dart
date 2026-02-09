@@ -10,6 +10,8 @@ import '../../../data/providers/cart_provider.dart';
 import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
+import '../../../core/widgets/all_appointments_sheet.dart';
+import '../../../core/widgets/all_orders_sheet.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
 import '../pet_owner_portal.dart';
@@ -54,7 +56,10 @@ class DashboardPage extends ConsumerWidget {
                       children: [
                         // Cart Icon
                         GestureDetector(
-                          onTap: () => context.push('/cart'),
+                          onTap: () {
+                            final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                            portal?.navigateToTab(4);
+                          },
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
@@ -308,7 +313,7 @@ class DashboardPage extends ConsumerWidget {
         children: [
           const Text('Upcoming Appointments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           TextButton(
-            onPressed: () {},
+            onPressed: () => AllAppointmentsSheet.show(context),
             child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
           ),
         ],
@@ -334,7 +339,7 @@ class DashboardPage extends ConsumerWidget {
             children: [
               const Text('Recent Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               TextButton(
-                onPressed: () {},
+                onPressed: () => AllOrdersSheet.show(context),
                 child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
               ),
             ],
@@ -598,7 +603,7 @@ class DashboardPage extends ConsumerWidget {
           ),
         ),
         SizedBox(
-          height: 120,
+          height: 110,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
