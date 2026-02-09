@@ -4,6 +4,7 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/notifications_sheet.dart';
+import '../../../core/widgets/appointment_detail_sheet.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
 import '../provider_portal.dart';
@@ -521,7 +522,13 @@ class _ScheduleCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final timeString = '${appointment.scheduledAt.hour}:${appointment.scheduledAt.minute.toString().padLeft(2, '0')} ${appointment.scheduledAt.hour >= 12 ? 'PM' : 'AM'}';
     
-    return Container(
+    return GestureDetector(
+      onTap: () => AppointmentDetailSheet.show(
+        context,
+        appointment,
+        userType: AppointmentUserType.provider,
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -571,6 +578,7 @@ class _ScheduleCard extends StatelessWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -583,7 +591,13 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => AppointmentDetailSheet.show(
+        context,
+        appointment,
+        userType: AppointmentUserType.provider,
+      ),
+      child: Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -628,6 +642,7 @@ class _RequestCard extends StatelessWidget {
             child: Icon(Icons.arrow_forward, color: Colors.orange, size: 20),
           ),
         ],
+      ),
       ),
     );
   }

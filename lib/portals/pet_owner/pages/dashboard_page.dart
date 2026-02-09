@@ -12,6 +12,7 @@ import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../core/widgets/all_appointments_sheet.dart';
 import '../../../core/widgets/all_orders_sheet.dart';
+import '../../../core/widgets/appointment_detail_sheet.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
 import '../pet_owner_portal.dart';
@@ -1174,7 +1175,13 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => AppointmentDetailSheet.show(
+        context,
+        appointment,
+        userType: AppointmentUserType.petOwner,
+      ),
+      child: Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -1217,6 +1224,7 @@ class _AppointmentCard extends StatelessWidget {
           ),
           StatusBadge(label: appointment.displayStatus, isPositive: appointment.isConfirmed),
         ],
+      ),
       ),
     );
   }
