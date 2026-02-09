@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/order_detail_sheet.dart';
 
 final List<Map<String, dynamic>> _mockOrders = [
   {'id': 'ORD-001', 'customer': 'John Doe', 'items': 3, 'total': 45000, 'date': 'Today', 'status': 'pending'},
@@ -119,66 +120,69 @@ class _OrderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final status = order['status'] as String;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.shopping_bag, color: AppColors.textSecondary),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(order['id'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(order['customer'] as String, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  ],
-                ),
-              ),
-              Text('${order['total']} RWF', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(10)),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return GestureDetector(
+      onTap: () => OrderDetailSheet.show(context, order),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          children: [
+            Row(
               children: [
-                Text('${order['items']} items', style: const TextStyle(color: AppColors.textSecondary)),
-                Text(order['date'] as String, style: const TextStyle(color: AppColors.textSecondary)),
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(12)),
+                  child: const Icon(Icons.shopping_bag, color: AppColors.textSecondary),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(order['id'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(order['customer'] as String, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                    ],
+                  ),
+                ),
+                Text('${order['total']} RWF', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
               ],
             ),
-          ),
-          if (status == 'pending') ...[
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44), backgroundColor: AppColors.success),
-              child: const Text('Process Order'),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(10)),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('${order['items']} items', style: const TextStyle(color: AppColors.textSecondary)),
+                  Text(order['date'] as String, style: const TextStyle(color: AppColors.textSecondary)),
+                ],
+              ),
             ),
+            if (status == 'pending') ...[
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44), backgroundColor: AppColors.success),
+                child: const Text('Process Order'),
+              ),
+            ],
+            if (status == 'processing') ...[
+              const SizedBox(height: 12),
+              ElevatedButton(
+                onPressed: () {},
+                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44), backgroundColor: AppColors.secondary),
+                child: const Text('Mark as Shipped'),
+              ),
+            ],
           ],
-          if (status == 'processing') ...[
-            const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44), backgroundColor: AppColors.secondary),
-              child: const Text('Mark as Shipped'),
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

@@ -3,6 +3,7 @@ import '../../core/widgets/common_widgets.dart';
 import 'pages/shop_dashboard_page.dart';
 import 'pages/products_page.dart';
 import 'pages/orders_page.dart';
+import 'pages/shop_reports_page.dart';
 import 'pages/shop_profile_page.dart';
 
 class ShopOwnerPortal extends StatefulWidget {
@@ -19,14 +20,16 @@ class ShopOwnerPortalState extends State<ShopOwnerPortal> {
     const ShopDashboardPage(),
     const ProductsPage(),
     const OrdersPage(),
+    const ShopReportsPage(),
     const ShopProfilePage(),
   ];
 
-  // Changed "Dashboard" to "Home" as requested
+  // Updated nav items with Reports tab
   final List<FloatingNavItem> _navItems = const [
     FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
     FloatingNavItem(icon: Icons.inventory_2_outlined, label: 'Products'),
     FloatingNavItem(icon: Icons.receipt_long_outlined, label: 'Orders'),
+    FloatingNavItem(icon: Icons.bar_chart_outlined, label: 'Reports'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];
 
