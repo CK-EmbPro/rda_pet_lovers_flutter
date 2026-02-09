@@ -8,7 +8,7 @@ import '../../../core/widgets/order_detail_sheet.dart';
 import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
 import '../shop_owner_portal.dart';
-import 'products_page.dart';
+import '../widgets/product_form_sheet.dart';
 
 // Mock orders for dashboard
 final List<Map<String, dynamic>> _mockRecentOrders = [
@@ -134,7 +134,7 @@ class ShopDashboardPage extends ConsumerWidget {
                             icon: Icons.add,
                             label: 'Add Product',
                             color: AppColors.secondary,
-                            onTap: () => _showAddProductSheet(context),
+                            onTap: () => ProductFormSheet.show(context),
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -314,39 +314,7 @@ class ShopDashboardPage extends ConsumerWidget {
     );
   }
 
-  void _showAddProductSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(2)))),
-            const SizedBox(height: 20),
-            const Text('Add New Product', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            const AppTextField(label: 'Product Name', hint: 'e.g: Premium Dog Food', prefixIcon: Icons.inventory_2),
-            const SizedBox(height: 16),
-            Row(
-              children: const [
-                Expanded(child: AppTextField(label: 'Price (RWF)', hint: '25000', prefixIcon: Icons.monetization_on)),
-                SizedBox(width: 12),
-                Expanded(child: AppTextField(label: 'Stock', hint: '50', prefixIcon: Icons.inventory)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const AppTextField(label: 'Description', hint: 'Describe your product...', prefixIcon: Icons.description),
-            const SizedBox(height: 24),
-            PrimaryButton(label: 'Add Product', onPressed: () => Navigator.pop(context)),
-          ],
-        ),
-      ),
-    );
-  }
+
 }
 
 // Stat Card Widget
