@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../data/providers/mock_data_provider.dart';
+import '../../../data/models/models.dart';
 
-final List<Map<String, dynamic>> _mockServices = [
-  {'name': 'Pet Grooming', 'price': 25000, 'duration': '1 hour', 'active': true},
-  {'name': 'Full Checkup', 'price': 35000, 'duration': '45 min', 'active': true},
-  {'name': 'Vaccination', 'price': 15000, 'duration': '30 min', 'active': true},
-  {'name': 'Pet Training', 'price': 50000, 'duration': '2 hours', 'active': false},
-];
+// Provider for services listing mode
+final servicesViewModeProvider = StateProvider<bool>((ref) => true); // true = card, false = list
 
-class MyServicesPage extends StatelessWidget {
+class MyServicesPage extends ConsumerWidget {
   const MyServicesPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final services = ref.watch(servicesProvider);
+    final isCardView = ref.watch(servicesViewModeProvider);
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Header
@@ -22,15 +25,49 @@ class MyServicesPage extends StatelessWidget {
             title: 'My Services',
             subtitle: 'Manage your service offerings',
           ),
-          // Content
+          // View toggle and content
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.all(20),
-              itemCount: _mockServices.length,
-              itemBuilder: (context, index) {
-                final service = _mockServices[index];
-                return _ServiceCard(service: service);
-              },
+            child: Column(
+              children: [
+                // View Toggle Header
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${services.length} Services',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          _ViewToggleButton(
+                            icon: Icons.grid_view_rounded,
+                            isSelected: isCardView,
+                            onTap: () => ref.read(servicesViewModeProvider.notifier).state = true,
+                          ),
+                          const SizedBox(width: 8),
+                          _ViewToggleButton(
+                            icon: Icons.view_list_rounded,
+                            isSelected: !isCardView,
+                            onTap: () => ref.read(servicesViewModeProvider.notifier).state = false,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Services List
+                Expanded(
+                  child: isCardView
+                      ? _buildCardView(context, services)
+                      : _buildListView(context, services),
+                ),
+              ],
             ),
           ),
         ],
@@ -44,18 +81,55 @@ class MyServicesPage extends StatelessWidget {
     );
   }
 
+  Widget _buildCardView(BuildContext context, List<ServiceModel> services) {
+    return GridView.builder(
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.85,
+      ),
+      itemCount: services.length,
+      itemBuilder: (context, index) {
+        return _ServiceCardView(service: services[index]);
+      },
+    );
+  }
+
+  Widget _buildListView(BuildContext context, List<ServiceModel> services) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: services.length,
+      itemBuilder: (context, index) {
+        return _ServiceListView(service: services[index]);
+      },
+    );
+  }
+
   void _showAddServiceSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
       builder: (context) => Padding(
         padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(2)))),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
             const SizedBox(height: 20),
             const Text('Create New Service', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
@@ -77,55 +151,217 @@ class MyServicesPage extends StatelessWidget {
       ),
     );
   }
+
+  static void showEditServiceSheet(BuildContext context, ServiceModel service) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (context) => Padding(
+        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text('Edit Service', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            AppTextField(label: 'Service Name', hint: service.name, prefixIcon: Icons.design_services),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(child: AppTextField(label: 'Price (RWF)', hint: '${service.fee.toInt()}', prefixIcon: Icons.monetization_on)),
+                const SizedBox(width: 12),
+                const Expanded(child: AppTextField(label: 'Duration', hint: '1 hour', prefixIcon: Icons.timer)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            AppTextField(label: 'Description', hint: service.description ?? 'Describe your service...', prefixIcon: Icons.description),
+            const SizedBox(height: 24),
+            PrimaryButton(label: 'Save Changes', onPressed: () => Navigator.pop(context)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _ServiceCard extends StatelessWidget {
-  final Map<String, dynamic> service;
-  const _ServiceCard({required this.service});
+// View Toggle Button
+class _ViewToggleButton extends StatelessWidget {
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ViewToggleButton({
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final isActive = service['active'] == true;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.secondary : AppColors.inputFill,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(
+          icon,
+          size: 20,
+          color: isSelected ? Colors.white : AppColors.textSecondary,
+        ),
+      ),
+    );
+  }
+}
+
+// Service Card View (Grid)
+class _ServiceCardView extends StatelessWidget {
+  final ServiceModel service;
+
+  const _ServiceCardView({required this.service});
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppTheme.cardShadow,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: isActive ? AppColors.secondary.withOpacity(0.15) : AppColors.inputFill,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(Icons.design_services, size: 28, color: isActive ? AppColors.secondary : AppColors.textMuted),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(service['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
-                Row(
+          // Header with status and options
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: service.isActive ? AppColors.success.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text('${service['price']} RWF', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w500)),
-                    const SizedBox(width: 8),
-                    Text('• ${service['duration']}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    Icon(
+                      service.isActive ? Icons.check_circle : Icons.cancel,
+                      size: 12,
+                      color: service.isActive ? AppColors.success : AppColors.error,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      service.isActive ? 'Active' : 'Inactive',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: service.isActive ? AppColors.success : AppColors.error,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
+              PopupMenuButton<String>(
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.delete_outline, size: 16, color: AppColors.error),
+                ),
+                onSelected: (value) {
+                  if (value == 'delete') {
+                    _showDeleteConfirmation(context);
+                  }
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'delete', child: Text('Delete Service')),
+                ],
+              ),
+            ],
+          ),
+          const Spacer(),
+          // Service Name
+          Text(
+            service.name,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 8),
+          // Payment method
+          Row(
+            children: [
+              const Text('method: ', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+              Text(
+                service.paymentMethod == 'PAY_BEFORE' ? 'Pay Before' : 'Pay After',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          // Fee
+          Row(
+            children: [
+              const Text('Service Fee: ', style: TextStyle(fontSize: 10, color: AppColors.textSecondary)),
+              Text(
+                '${service.fee.toInt()} frw',
+                style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Edit Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => MyServicesPage.showEditServiceSheet(context, service),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.secondary,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: const Text('edit', style: TextStyle(color: Colors.white, fontSize: 12)),
             ),
           ),
-          Switch(
-            value: isActive,
-            onChanged: (val) {},
-            activeColor: AppColors.secondary,
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Service'),
+        content: Text('Are you sure you want to delete "${service.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -133,3 +369,103 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
+// Service List View
+class _ServiceListView extends StatelessWidget {
+  final ServiceModel service;
+
+  const _ServiceListView({required this.service});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Row(
+        children: [
+          // Icon
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: service.isActive ? AppColors.secondary.withOpacity(0.15) : AppColors.inputFill,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.design_services,
+              color: service.isActive ? AppColors.secondary : AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  service.name,
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Text(
+                      '${service.fee.toInt()} RWF',
+                      style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w500, fontSize: 13),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      '• ${service.paymentMethod == 'PAY_BEFORE' ? 'Pay Before' : 'Pay After'}',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // Actions
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                onPressed: () => MyServicesPage.showEditServiceSheet(context, service),
+                icon: const Icon(Icons.edit_outlined, color: AppColors.secondary),
+                iconSize: 20,
+              ),
+              IconButton(
+                onPressed: () => _showDeleteConfirmation(context),
+                icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                iconSize: 20,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showDeleteConfirmation(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Service'),
+        content: Text('Are you sure you want to delete "${service.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+  }
+}
