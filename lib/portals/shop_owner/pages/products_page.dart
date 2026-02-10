@@ -83,7 +83,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   @override
   Widget build(BuildContext context) {
     // Calculate approximate heights for fixed elements
-    const double headerHeight = 200; 
+    const double headerHeight = 230; 
     const double statsHeight = 80; // Compact stats height
     const double totalTopHeight = headerHeight + statsHeight;
 
@@ -330,7 +330,7 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.5),
           borderRadius: BorderRadius.circular(12),
@@ -338,13 +338,14 @@ class _StatCard extends StatelessWidget {
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Text(
               value,
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: color),
             ),
-            const SizedBox(height: 2),
-            Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+            const SizedBox(height: 1),
+            Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 10)),
           ],
         ),
       ),
