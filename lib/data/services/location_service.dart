@@ -16,9 +16,13 @@ class LocationService extends BaseApiService {
       final List<dynamic> data = response.data is List
           ? response.data
           : (response.data['data'] ?? []);
-      return data
-          .map((json) => LocationModel.fromJson(json as Map<String, dynamic>))
-          .toList();
+      return data.map((item) {
+        if (item is String) {
+          // Backend returns plain district name strings
+          return LocationModel(id: item, name: item, district: item);
+        }
+        return LocationModel.fromJson(item as Map<String, dynamic>);
+      }).toList();
     });
   }
 
