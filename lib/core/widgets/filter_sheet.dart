@@ -4,7 +4,7 @@ import '../theme/app_theme.dart';
 import '../../data/providers/species_provider.dart';
 import '../../data/providers/location_providers.dart';
 
-/// Filter Sheet for pets and services
+/// Filter Sheet for pets and services — supports multi-select filters
 class FilterSheet extends ConsumerStatefulWidget {
   final Function(Map<String, dynamic>)? onApply;
   
@@ -24,9 +24,9 @@ class FilterSheet extends ConsumerStatefulWidget {
 }
 
 class _FilterSheetState extends ConsumerState<FilterSheet> {
-  String? selectedBreed;
-  String? selectedAge;
-  String? selectedLocation;
+  Set<String> selectedBreeds = {};
+  Set<String> selectedAges = {};
+  Set<String> selectedLocations = {};
   double priceMax = 100000;
 
   final List<String> ageRanges = ['1-2 yr', '1-3 month', '3-9 month', '1-5 yr'];
@@ -74,6 +74,28 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
+                const Spacer(),
+                // Clear All button
+                if (selectedBreeds.isNotEmpty || selectedAges.isNotEmpty || selectedLocations.isNotEmpty)
+                  GestureDetector(
+                    onTap: () => setState(() {
+                      selectedBreeds.clear();
+                      selectedAges.clear();
+                      selectedLocations.clear();
+                      priceMax = 100000;
+                    }),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Text(
+                        'Clear All',
+                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -85,17 +107,30 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Breed
-                  _buildSectionHeader('Breed', onReset: () => setState(() => selectedBreed = null)),
+                  // Breed (multi-select)
+                  _buildSectionHeader(
+                    'Breed',
+                    count: selectedBreeds.length,
+                    onReset: () => setState(() => selectedBreeds.clear()),
+                  ),
                   const SizedBox(height: 12),
                   breedsAsync.when(
                     data: (breeds) => Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: breeds.map((breed) => _FilterChip(
+                        key: ValueKey('breed_${breed.id}'),
                         label: breed.name,
-                        isSelected: selectedBreed == breed.id,
-                        onTap: () => setState(() => selectedBreed = breed.id),
+                        isSelected: selectedBreeds.contains(breed.id),
+                        onTap: () => setState(() {
+                          final newSet = Set<String>.from(selectedBreeds);
+                          if (newSet.contains(breed.id)) {
+                            newSet.remove(breed.id);
+                          } else {
+                            newSet.add(breed.id);
+                          }
+                          selectedBreeds = newSet;
+                        }),
                       )).toList(),
                     ),
                     loading: () => const Center(child: CircularProgressIndicator()),
@@ -103,31 +138,57 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Age
-                  _buildSectionHeader('Age'),
+                  // Age (multi-select)
+                  _buildSectionHeader(
+                    'Age',
+                    count: selectedAges.length,
+                    onReset: () => setState(() => selectedAges.clear()),
+                  ),
                   const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: ageRanges.map((age) => _FilterChip(
+                      key: ValueKey('age_$age'),
                       label: age,
-                      isSelected: selectedAge == age,
-                      onTap: () => setState(() => selectedAge = age),
+                      isSelected: selectedAges.contains(age),
+                      onTap: () => setState(() {
+                        final newSet = Set<String>.from(selectedAges);
+                        if (newSet.contains(age)) {
+                          newSet.remove(age);
+                        } else {
+                          newSet.add(age);
+                        }
+                        selectedAges = newSet;
+                      }),
                     )).toList(),
                   ),
                   const SizedBox(height: 24),
 
-                  // Location
-                  _buildSectionHeader('Location'),
+                  // Location (multi-select)
+                  _buildSectionHeader(
+                    'Location',
+                    count: selectedLocations.length,
+                    onReset: () => setState(() => selectedLocations.clear()),
+                  ),
                   const SizedBox(height: 12),
                   locationsAsync.when(
                     data: (locations) => Wrap(
                       spacing: 8,
                       runSpacing: 8,
                       children: locations.map((loc) => _FilterChip(
+                        key: ValueKey('loc_${loc.id}'),
                         label: loc.name,
-                        isSelected: selectedLocation == loc.id,
-                        onTap: () => setState(() => selectedLocation = loc.id),
+                        isSelected: selectedLocations.contains(loc.id),
+                        onTap: () => setState(() {
+                          final newSet = Set<String>.from(selectedLocations);
+                          if (newSet.contains(loc.id)) {
+                            newSet.remove(loc.id);
+                          } else {
+                            newSet.add(loc.id);
+                          }
+                          selectedLocations = newSet;
+                        }),
                       )).toList(),
                     ),
                     loading: () => const Center(child: CircularProgressIndicator()),
@@ -155,28 +216,55 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
             ),
           ),
 
-          // Apply Button
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  widget.onApply?.call({
-                    'breed': selectedBreed,
-                    'age': selectedAge,
-                    'location': selectedLocation,
-                    'maxPrice': priceMax,
-                  });
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF21314C),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+          // Active Filters Summary + Apply Button
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -4),
                 ),
-                child: const Text('Apply Filter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ),
+              ],
+            ),
+            child: Column(
+              children: [
+                // Active filter count
+                if (_totalFilters > 0)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Text(
+                      '$_totalFilters filter${_totalFilters > 1 ? 's' : ''} active',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.secondary,
+                      ),
+                    ),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      widget.onApply?.call({
+                        'breeds': selectedBreeds.toList(),
+                        'ages': selectedAges.toList(),
+                        'locations': selectedLocations.toList(),
+                        'maxPrice': priceMax,
+                      });
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF21314C),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: const Text('Apply Filter', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -184,12 +272,36 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
     );
   }
 
-  Widget _buildSectionHeader(String title, {VoidCallback? onReset}) {
+  int get _totalFilters => selectedBreeds.length + selectedAges.length + selectedLocations.length;
+
+  Widget _buildSectionHeader(String title, {int count = 0, VoidCallback? onReset}) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        if (onReset != null)
+        Row(
+          children: [
+            Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            if (count > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: AppColors.secondary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$count',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (onReset != null && count > 0)
           GestureDetector(
             onTap: onReset,
             child: Container(
@@ -211,24 +323,35 @@ class _FilterChip extends StatelessWidget {
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+  const _FilterChip({super.key, required this.label, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF21314C) : AppColors.inputFill,
           borderRadius: BorderRadius.circular(20),
+          border: isSelected ? Border.all(color: const Color(0xFF21314C), width: 1.5) : null,
         ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
-            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (isSelected) ...[
+              const Icon(Icons.check, size: 14, color: Colors.white),
+              const SizedBox(width: 4),
+            ],
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textPrimary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
         ),
       ),
     );

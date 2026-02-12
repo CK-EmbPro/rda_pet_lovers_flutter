@@ -845,9 +845,17 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _CategoriesWidget extends StatelessWidget {
+class _CategoriesWidget extends StatefulWidget {
   final List<SpeciesModel> categories;
   const _CategoriesWidget({required this.categories});
+
+  @override
+  State<_CategoriesWidget> createState() => _CategoriesWidgetState();
+}
+
+class _CategoriesWidgetState extends State<_CategoriesWidget> {
+  Set<String> _selected = {};
+  static const Color _catColor = Color(0xFF475569);
 
   @override
   Widget build(BuildContext context) {
@@ -856,79 +864,68 @@ class _CategoriesWidget extends StatelessWidget {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: categories.length,
+        itemCount: widget.categories.length,
         itemBuilder: (context, index) {
-          final category = categories[index];
-          final gradient = _getGradient(category.name);
-          
+          final category = widget.categories[index];
+          final isActive = _selected.contains(category.id);
+          final letter = category.name.isNotEmpty
+              ? category.name.substring(0, 1).toUpperCase()
+              : '?';
+
           return Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Column(
-              children: [
-                Container(
-                  width: 65,
-                  height: 65,
-                  decoration: BoxDecoration(
-                    gradient: gradient,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: gradient.colors.first.withValues(alpha: 0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Text(
-                      (category.icon != null && category.icon!.isNotEmpty)
-                          ? category.icon!
-                          : category.name.substring(0, 1).toUpperCase(),
-                      style: TextStyle(
-                        fontSize: (category.icon != null && category.icon!.isNotEmpty) ? 28 : 24,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+            child: GestureDetector(
+              key: ValueKey('cat_${category.id}'),
+              onTap: () => setState(() {
+                final newSet = Set<String>.from(_selected);
+                if (newSet.contains(category.id)) {
+                  newSet.remove(category.id);
+                } else {
+                  newSet.add(category.id);
+                }
+                _selected = newSet;
+              }),
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    width: 65,
+                    height: 65,
+                    decoration: BoxDecoration(
+                      color: isActive ? _catColor : Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _catColor, width: 1.5),
+                    ),
+                    child: Center(
+                      child: Text(
+                        letter,
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: isActive ? Colors.white : _catColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  category.name,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.textPrimary,
+                  const SizedBox(height: 10),
+                  Text(
+                    category.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: _catColor,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           );
         },
       ),
     );
   }
-
-  LinearGradient _getGradient(String name) {
-    final int hash = name.hashCode;
-    final List<List<Color>> palettes = [
-      [const Color(0xFF6366F1), const Color(0xFF818CF8)], // Indigo
-      [const Color(0xFFF59E0B), const Color(0xFFFBBF24)], // Amber
-      [const Color(0xFF10B981), const Color(0xFF34D399)], // Emerald
-      [const Color(0xFFEF4444), const Color(0xFFF87171)], // Red
-      [const Color(0xFF8B5CF6), const Color(0xFFA78BFA)], // Violet
-      [const Color(0xFFEC4899), const Color(0xFFFB7185)], // Pink/Rose
-      [const Color(0xFF06B6D4), const Color(0xFF22D3EE)], // Cyan
-    ];
-    
-    final palette = palettes[hash.abs() % palettes.length];
-    return LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: palette,
-    );
-  }
 }
+
 
 class _AppointmentCard extends StatelessWidget {
   final AppointmentModel appointment;
