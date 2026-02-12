@@ -4,7 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/models.dart';
-import '../../../data/providers/mock_data_provider.dart';
+// import '../../../data/providers/mock_data_provider.dart'; // No longer needed
+import '../../../data/providers/shop_providers.dart';
+import '../../../data/providers/product_providers.dart';
 
 class ShopDetailsPage extends ConsumerStatefulWidget {
   final String shopId;
@@ -27,231 +29,255 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final shops = ref.watch(shopsProvider);
-    final shop = shops.firstWhere((s) => s.id == widget.shopId, orElse: () => shops.first);
-    final allProducts = ref.watch(productsProvider);
-    final shopProducts = allProducts.where((p) => p.shopId == shop.id).toList();
+    final shopAsync = ref.watch(shopDetailProvider(widget.shopId));
+    final productsAsync = ref.watch(allProductsProvider(ProductQueryParams(shopId: widget.shopId)));
     
-    final filteredProducts = shopProducts.where((p) {
-      if (_searchQuery.isEmpty) return true;
-      return p.name.toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: CustomScrollView(
-        slivers: [
-          // Custom App Bar with Shop Logo/Banner
-          SliverAppBar(
-            expandedHeight: 200,
-            pinned: true,
-            backgroundColor: const Color(0xFF21314C),
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: () => context.pop(),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.share, color: Colors.white),
-                onPressed: () {},
+    return shopAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(backgroundColor: Colors.transparent, elevation: 0, iconTheme: const IconThemeData(color: Colors.black)),
+        body: Center(child: Text('Failed to load shop details: $error')),
+      ),
+      data: (shop) => Scaffold(
+        backgroundColor: AppColors.background,
+        body: CustomScrollView(
+          slivers: [
+            // Custom App Bar with Shop Logo/Banner
+            SliverAppBar(
+              expandedHeight: 200,
+              pinned: true,
+              backgroundColor: const Color(0xFF21314C),
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
+                onPressed: () => context.pop(),
               ),
-              IconButton(
-                icon: const Icon(Icons.more_vert, color: Colors.white),
-                onPressed: () {},
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (shop.bannerUrl != null)
-                    CachedNetworkImage(
-                      imageUrl: shop.bannerUrl!,
-                      fit: BoxFit.cover,
-                    )
-                  else
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.share, color: Colors.white),
+                  onPressed: () {},
+                ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert, color: Colors.white),
+                  onPressed: () {},
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (shop.bannerUrl != null)
+                      CachedNetworkImage(
+                        imageUrl: shop.bannerUrl!,
+                        fit: BoxFit.cover,
+                      )
+                    else
+                      Container(
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFF21314C), Color(0xFF334155)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ),
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Color(0xFF21314C), Color(0xFF334155)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                          colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
                         ),
                       ),
                     ),
-                  Container(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Colors.black.withOpacity(0.4), Colors.transparent],
-                        begin: Alignment.bottomCenter,
-                        end: Alignment.topCenter,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 20,
-                    left: 20,
-                    right: 20,
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 35,
-                          backgroundColor: Colors.white,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4),
-                            child: shop.logoUrl != null
-                                ? ClipRRect(
-                                    borderRadius: BorderRadius.circular(30),
-                                    child: CachedNetworkImage(imageUrl: shop.logoUrl!),
-                                  )
-                                : const Icon(Icons.store, size: 40, color: Color(0xFF21314C)),
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                shop.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              Row(
-                                children: [
-                                  const Icon(Icons.star, size: 16, color: Colors.amber),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${shop.rating ?? 4.5} (200+ ratings)',
-                                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Shop Info & Search
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    shop.description ?? 'Quality pet products for your furry friends.',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-                  ),
-                  const SizedBox(height: 20),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(15),
-                      boxShadow: AppTheme.cardShadow,
-                    ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search products in this shop...',
-                        border: InputBorder.none,
-                        icon: Icon(Icons.search, color: AppColors.textSecondary),
-                      ),
-                      onChanged: (val) {
-                        setState(() {
-                          _searchQuery = val;
-                        });
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Products (${filteredProducts.length})',
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      Row(
+                    Positioned(
+                      bottom: 20,
+                      left: 20,
+                      right: 20,
+                      child: Row(
                         children: [
-                          IconButton(
-                            icon: Icon(
-                              Icons.grid_view,
-                              color: _isGridView ? const Color(0xFF21314C) : AppColors.textMuted,
+                          CircleAvatar(
+                            radius: 35,
+                            backgroundColor: Colors.white,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: shop.logoUrl != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(30),
+                                      child: CachedNetworkImage(imageUrl: shop.logoUrl!),
+                                    )
+                                  : const Icon(Icons.store, size: 40, color: Color(0xFF21314C)),
                             ),
-                            onPressed: () => setState(() => _isGridView = true),
                           ),
-                          IconButton(
-                            icon: Icon(
-                              Icons.list,
-                              color: !_isGridView ? const Color(0xFF21314C) : AppColors.textMuted,
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  shop.name,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.star, size: 16, color: Colors.amber),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${shop.rating ?? 4.5} (200+ ratings)',
+                                      style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                            onPressed: () => setState(() => _isGridView = false),
                           ),
                         ],
                       ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
 
-          // Products List/Grid
-          if (filteredProducts.isEmpty)
-            const SliverFillRemaining(
-              child: Center(
-                child: Text('No products found matching your search.'),
-              ),
-            )
-          else if (_isGridView)
-            SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  mainAxisSpacing: 16,
-                  crossAxisSpacing: 16,
-                  childAspectRatio: 0.75,
+            // Shop Info & Search
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      shop.description ?? 'Quality pet products for your furry friends.',
+                      style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(15),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        decoration: const InputDecoration(
+                          hintText: 'Search products in this shop...',
+                          border: InputBorder.none,
+                          icon: Icon(Icons.search, color: AppColors.textSecondary),
+                        ),
+                        onChanged: (val) {
+                          setState(() {
+                            _searchQuery = val;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    productsAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (_,__) => const Text('Failed to load products'),
+                      data: (paginated) => Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Products (${paginated.data.length})',
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: Icon(
+                                  Icons.grid_view,
+                                  color: _isGridView ? const Color(0xFF21314C) : AppColors.textMuted,
+                                ),
+                                onPressed: () => setState(() => _isGridView = true),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  Icons.list,
+                                  color: !_isGridView ? const Color(0xFF21314C) : AppColors.textMuted,
+                                ),
+                                onPressed: () => setState(() => _isGridView = false),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final product = filteredProducts[index];
-                    return GestureDetector(
-                      onTap: () => context.push('/product-details/${product.id}'),
-                      child: _ProductCard(product: product),
-                    );
-                  },
-                  childCount: filteredProducts.length,
-                ),
-              ),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final product = filteredProducts[index];
-                  return GestureDetector(
-                    onTap: () => context.push('/product-details/${product.id}'),
-                    child: _ProductListItem(product: product),
-                  );
-                },
-                childCount: filteredProducts.length,
               ),
             ),
-          
-          const SliverToBoxAdapter(child: SizedBox(height: 100)),
-        ],
+
+            // Products List/Grid
+            productsAsync.when(
+              loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
+              error: (e, _) => SliverFillRemaining(child: Center(child: Text('Error loading products: $e'))),
+              data: (paginated) {
+                final allProducts = paginated.data;
+                // Filter locally for search query as an optimization, or could refetch
+                final filteredProducts = _searchQuery.isEmpty 
+                    ? allProducts 
+                    : allProducts.where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+
+                if (filteredProducts.isEmpty) {
+                  return const SliverFillRemaining(
+                    child: Center(
+                      child: Text('No products found matching your search.'),
+                    ),
+                  );
+                }
+
+                if (_isGridView) {
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    sliver: SliverGrid(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 16,
+                        crossAxisSpacing: 16,
+                        childAspectRatio: 0.75,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final product = filteredProducts[index];
+                          return GestureDetector(
+                            onTap: () => context.push('/product-details/${product.id}'),
+                            child: _ProductCard(product: product),
+                          );
+                        },
+                        childCount: filteredProducts.length,
+                      ),
+                    ),
+                  );
+                } else {
+                  return SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (context, index) {
+                        final product = filteredProducts[index];
+                        return GestureDetector(
+                          onTap: () => context.push('/product-details/${product.id}'),
+                          child: _ProductListItem(product: product),
+                        );
+                      },
+                      childCount: filteredProducts.length,
+                    ),
+                  );
+                }
+              },
+            ),
+            
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
+          ],
+        ),
       ),
     );
   }

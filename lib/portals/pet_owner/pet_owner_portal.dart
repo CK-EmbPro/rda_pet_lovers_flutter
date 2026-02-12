@@ -8,14 +8,29 @@ import 'pages/profile_page.dart';
 import '../user/pages/cart_page.dart';
 
 class PetOwnerPortal extends StatefulWidget {
-  const PetOwnerPortal({super.key});
+  final int initialIndex;
+  const PetOwnerPortal({super.key, this.initialIndex = 0});
 
   @override
   State<PetOwnerPortal> createState() => PetOwnerPortalState();
 }
 
 class PetOwnerPortalState extends State<PetOwnerPortal> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
+
+  @override
+  void didUpdateWidget(PetOwnerPortal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      setState(() => _currentIndex = widget.initialIndex);
+    }
+  }
 
   final List<Widget> _pages = [
     const DashboardPage(),

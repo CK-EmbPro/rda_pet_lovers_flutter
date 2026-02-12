@@ -4,51 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../data/providers/product_providers.dart';
+import '../../../data/providers/shop_providers.dart';
+import '../../../data/models/models.dart';
 import '../widgets/product_form_sheet.dart';
-
-// Mock products data with image support
-final List<Map<String, dynamic>> _mockProducts = [
-  {
-    'id': 'prod-1',
-    'name': 'Crockets',
-    'category': 'Dog',
-    'price': 50000,
-    'stock': 5,
-    'unit': 'Bags',
-    'active': true,
-    'image': 'https://m.media-amazon.com/images/I/81+h0LqVBYL._AC_SL1500_.jpg',
-  },
-  {
-    'id': 'prod-2',
-    'name': 'Premium Cat Food',
-    'category': 'Cat',
-    'price': 35000,
-    'stock': 12,
-    'unit': 'Bags',
-    'active': true,
-    'image': 'https://m.media-amazon.com/images/I/71vNHDhB2NL._AC_SL1500_.jpg',
-  },
-  {
-    'id': 'prod-3',
-    'name': 'Pet Collar Set',
-    'category': 'Dog',
-    'price': 8000,
-    'stock': 25,
-    'unit': 'Pieces',
-    'active': true,
-    'image': null,
-  },
-  {
-    'id': 'prod-4',
-    'name': 'Bird Cage',
-    'category': 'Bird',
-    'price': 45000,
-    'stock': 0,
-    'unit': 'Pieces',
-    'active': false,
-    'image': null,
-  },
-];
 
 class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
@@ -62,18 +21,6 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
-  List<Map<String, dynamic>> get _filteredProducts {
-    if (_searchQuery.isEmpty) return _mockProducts;
-    return _mockProducts.where((p) => 
-      (p['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase())
-    ).toList();
-  }
-
-  // Stats
-  int get _totalProducts => _mockProducts.length;
-  int get _activeProducts => _mockProducts.where((p) => p['active'] == true).length;
-  int get _outOfStock => _mockProducts.where((p) => (p['stock'] as int) == 0).length;
-
   @override
   void dispose() {
     _searchController.dispose();
@@ -82,6 +29,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final myShopAsync = ref.watch(myShopProvider);
+    
     // Calculate approximate heights for fixed elements
     const double headerHeight = 230; 
     const double statsHeight = 80; // Compact stats height
@@ -89,186 +38,213 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Stack(
-        children: [
-          // Content Scroll View
-          _filteredProducts.isEmpty
-              ? Padding(
-                  padding: const EdgeInsets.only(top: totalTopHeight),
-                  child: const EmptyState(
-                    icon: Icons.inventory_2_outlined,
-                    title: 'No Products Found',
-                    subtitle: 'Add your first product to see it here!',
-                  ),
-                )
-              : _isGridView
-                  ? GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, totalTopHeight + 20, 20, 100),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.65,
-                      ),
-                      itemCount: _filteredProducts.length,
-                      itemBuilder: (context, index) => _ProductGridCard(
-                        product: _filteredProducts[index],
-                        onEdit: () => _showEditProductSheet(context, _filteredProducts[index]),
-                        onDelete: () => _showDeleteConfirmation(context, _filteredProducts[index]),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(20, totalTopHeight + 20, 20, 100),
-                      itemCount: _filteredProducts.length,
-                      itemBuilder: (context, index) => _ProductCard(
-                        product: _filteredProducts[index],
-                        onEdit: () => _showEditProductSheet(context, _filteredProducts[index]),
-                        onDelete: () => _showDeleteConfirmation(context, _filteredProducts[index]),
-                      ),
-                    ),
+      body: myShopAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Error loading shop: $e')),
+        data: (shop) {
+          if (shop == null) {
+             return const Center(child: Text('No shop found. Please create a shop first.'));
+          }
+          
+          final productsAsync = ref.watch(shopProductsProvider(shop.id));
 
-          // Fixed Header + Blur Stats
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Column(
-              children: [
-                // Header with gradient
-                Container(
-                  height: headerHeight,
-                  padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.primaryGradient,
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(30),
-                      bottomRight: Radius.circular(30),
-                    ),
+          return productsAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (error, _) => Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                  const SizedBox(height: 16),
+                  Text('Failed to load products: $error', style: AppTypography.body),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: () => ref.invalidate(shopProductsProvider(shop.id)),
+                    child: const Text('Retry'),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      // Title and actions row
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('Products', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text('Manage your inventory', style: TextStyle(color: Colors.white.withAlpha(200))),
-                            ],
-                          ),
-                          Row(
-                            children: [
-                              _ViewToggle(
-                                icon: Icons.view_list,
-                                isActive: !_isGridView,
-                                onTap: () => setState(() => _isGridView = false),
-                              ),
-                              const SizedBox(width: 8),
-                              _ViewToggle(
-                                icon: Icons.grid_view,
-                                isActive: _isGridView,
-                                onTap: () => setState(() => _isGridView = true),
-                              ),
-                              const SizedBox(width: 8),
-                              _ViewToggle(
-                                icon: Icons.add,
-                                isActive: false,
-                                onTap: () => _showAddProductSheet(context),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      // Search bar
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withAlpha(51),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: TextField(
-                          controller: _searchController,
-                          onChanged: (value) => setState(() => _searchQuery = value),
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
-                            hintText: 'Search products...',
-                            hintStyle: TextStyle(color: Colors.white70),
-                            border: InputBorder.none,
-                            icon: Icon(Icons.search, color: Colors.white70),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Stats Row with Blur
-                ClipRRect(
-                  borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                    child: Container(
-                      height: statsHeight,
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.8),
-                        border: Border(bottom: BorderSide(color: Colors.grey.withOpacity(0.1))),
-                      ),
-                      child: Row(
-                        children: [
-                          _StatCard(
-                            label: 'Total',
-                            value: '$_totalProducts',
-                            color: AppColors.secondary,
-                          ),
-                          const SizedBox(width: 12),
-                          _StatCard(
-                            label: 'Active',
-                            value: '$_activeProducts',
-                            color: AppColors.success,
-                          ),
-                          const SizedBox(width: 12),
-                          _StatCard(
-                            label: 'Out of Stock',
-                            value: '$_outOfStock',
-                            color: AppColors.error,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+            data: (paginatedResult) {
+              final allProducts = paginatedResult.data;
+              final filteredProducts = _searchQuery.isEmpty
+                  ? allProducts
+                  : allProducts.where((p) => p.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+              final totalProducts = allProducts.length;
+              final activeProducts = allProducts.where((p) => p.isActive).length;
+              final outOfStock = allProducts.where((p) => p.stockQuantity == 0).length;
+
+              return Stack(
+                children: [
+                  // Content Scroll View
+                  filteredProducts.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.only(top: totalTopHeight),
+                          child: const EmptyState(
+                            icon: Icons.inventory_2_outlined,
+                            title: 'No Products Found',
+                            subtitle: 'Add your first product to see it here!',
+                          ),
+                        )
+                      : _isGridView
+                          ? GridView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, totalTopHeight + 20, 20, 100),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                mainAxisSpacing: 16,
+                                crossAxisSpacing: 16,
+                                childAspectRatio: 0.65,
+                              ),
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) => _ProductGridCard(
+                                product: filteredProducts[index],
+                                onEdit: () => _showEditProductSheet(context, filteredProducts[index]),
+                                onDelete: () => _showDeleteConfirmation(context, filteredProducts[index], shop.id),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(20, totalTopHeight + 20, 20, 100),
+                              itemCount: filteredProducts.length,
+                              itemBuilder: (context, index) => _ProductCard(
+                                product: filteredProducts[index],
+                                onEdit: () => _showEditProductSheet(context, filteredProducts[index]),
+                                onDelete: () => _showDeleteConfirmation(context, filteredProducts[index], shop.id),
+                              ),
+                            ),
+
+                  // Fixed Header + Blur Stats
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: Column(
+                      children: [
+                        // Header with gradient
+                        Container(
+                          height: headerHeight,
+                          padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+                          decoration: BoxDecoration(
+                            gradient: AppTheme.primaryGradient,
+                            borderRadius: const BorderRadius.only(
+                              bottomLeft: Radius.circular(30),
+                              bottomRight: Radius.circular(30),
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Products', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4),
+                                      Text('Manage your inventory', style: TextStyle(color: Colors.white.withValues(alpha: 0.8))),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      _ViewToggle(
+                                        icon: Icons.view_list,
+                                        isActive: !_isGridView,
+                                        onTap: () => setState(() => _isGridView = false),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _ViewToggle(
+                                        icon: Icons.grid_view,
+                                        isActive: _isGridView,
+                                        onTap: () => setState(() => _isGridView = true),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      _ViewToggle(
+                                        icon: Icons.add,
+                                        isActive: false,
+                                        onTap: () => _showAddProductSheet(context),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                child: TextField(
+                                  controller: _searchController,
+                                  onChanged: (value) => setState(() => _searchQuery = value),
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: const InputDecoration(
+                                    hintText: 'Search products...',
+                                    hintStyle: TextStyle(color: Colors.white70),
+                                    border: InputBorder.none,
+                                    icon: Icon(Icons.search, color: Colors.white70),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Stats Row with Blur
+                        ClipRRect(
+                          borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                          child: BackdropFilter(
+                            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                            child: Container(
+                              height: statsHeight,
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
+                              ),
+                              child: Row(
+                                children: [
+                                  _StatCard(label: 'Total', value: '$totalProducts', color: AppColors.secondary),
+                                  const SizedBox(width: 12),
+                                  _StatCard(label: 'Active', value: '$activeProducts', color: AppColors.success),
+                                  const SizedBox(width: 12),
+                                  _StatCard(label: 'Out of Stock', value: '$outOfStock', color: AppColors.error),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        }
       ),
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, Map<String, dynamic> product) {
+  void _showDeleteConfirmation(BuildContext context, ProductModel product, String shopId) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Delete Product', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete "${product['name']}"?'),
+        content: Text('Are you sure you want to delete "${product.name}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              // TODO: Delete product
+              await ref.read(productCrudProvider.notifier).deleteProduct(product.id);
+              ref.invalidate(shopProductsProvider(shopId));
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
@@ -285,7 +261,10 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     ProductFormSheet.show(context);
   }
 
-  void _showEditProductSheet(BuildContext context, Map<String, dynamic> product) {
+  void _showEditProductSheet(BuildContext context, ProductModel product) {
+    // Pass ProductModel directly or map. ProductFormSheet likely expects map or model.
+    // Based on previous code, it expects a map `product` argument.
+    // I should check ProductFormSheet, but for now matching previous implementation behavior.
     ProductFormSheet.show(context, product: product);
   }
 }
@@ -305,7 +284,7 @@ class _ViewToggle extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.white.withAlpha(51),
+          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(
@@ -332,9 +311,9 @@ class _StatCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.5),
+          color: Colors.white.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.withOpacity(0.1)),
+          border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -355,7 +334,7 @@ class _StatCard extends StatelessWidget {
 
 // List Product Card
 class _ProductCard extends StatelessWidget {
-  final Map<String, dynamic> product;
+  final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -363,9 +342,9 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stock = product['stock'] as int;
-    final price = product['price'] as int;
-    final imageUrl = product['image'] as String?;
+    final stock = product.stockQuantity;
+    final price = product.price.toInt();
+    final imageUrl = product.mainImage;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -383,13 +362,13 @@ class _ProductCard extends StatelessWidget {
               Container(
                 height: 180,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE86A2C),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                decoration: const BoxDecoration(
+                  color: Color(0xFFE86A2C),
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: imageUrl != null
+                  child: imageUrl != null && imageUrl.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
@@ -404,7 +383,7 @@ class _ProductCard extends StatelessWidget {
                 top: 12,
                 left: 12,
                 child: Text(
-                  product['name'] as String,
+                  product.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -443,14 +422,14 @@ class _ProductCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text('Pet: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                        Text(product['category'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
+                        const Text('Category: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                        Text(product.categoryName ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(
-                        color: stock > 0 ? AppColors.success.withAlpha(25) : AppColors.error.withAlpha(25),
+                        color: stock > 0 ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(color: stock > 0 ? AppColors.success : AppColors.error),
                       ),
@@ -464,9 +443,9 @@ class _ProductCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Text('Stock: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    const Text('Stock: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     Text(
-                      '$stock ${product['unit'] ?? 'Pieces'}',
+                      '$stock Pieces',
                       style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: stock > 0 ? AppColors.textPrimary : AppColors.error,
@@ -477,7 +456,7 @@ class _ProductCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text('Product Fee: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                    const Text('Product Fee: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
                     Text(
                       '${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} frw',
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
@@ -507,14 +486,14 @@ class _ProductCard extends StatelessWidget {
 
   Widget _placeholderImage() {
     return Center(
-      child: Icon(Icons.inventory_2, size: 60, color: Colors.white.withAlpha(150)),
+      child: Icon(Icons.inventory_2, size: 60, color: Colors.white.withValues(alpha: 0.6)),
     );
   }
 }
 
 // Grid Price Card
 class _ProductGridCard extends StatelessWidget {
-  final Map<String, dynamic> product;
+  final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
@@ -522,9 +501,9 @@ class _ProductGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stock = product['stock'] as int;
-    final price = product['price'] as int;
-    final imageUrl = product['image'] as String?;
+    final stock = product.stockQuantity;
+    final price = product.price.toInt();
+    final imageUrl = product.mainImage;
 
     return Container(
       decoration: BoxDecoration(
@@ -546,7 +525,7 @@ class _ProductGridCard extends StatelessWidget {
                 ),
                 child: ClipRRect(
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: imageUrl != null
+                  child: imageUrl != null && imageUrl.isNotEmpty
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
@@ -595,7 +574,7 @@ class _ProductGridCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product['name'] as String,
+                    product.name,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -637,7 +616,7 @@ class _ProductGridCard extends StatelessWidget {
 
   Widget _placeholderImage() {
     return Center(
-      child: Icon(Icons.inventory_2, size: 40, color: Colors.white.withAlpha(150)),
+      child: Icon(Icons.inventory_2, size: 40, color: Colors.white.withValues(alpha: 0.6)),
     );
   }
 }

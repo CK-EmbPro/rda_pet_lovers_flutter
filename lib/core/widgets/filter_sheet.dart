@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
-import '../../data/providers/mock_data_provider.dart';
+import '../../data/providers/species_provider.dart';
+import '../../data/providers/location_providers.dart';
 
 /// Filter Sheet for pets and services
 class FilterSheet extends ConsumerStatefulWidget {
@@ -32,8 +33,8 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final breeds = ref.watch(breedsProvider);
-    final locations = ref.watch(locationsProvider);
+    final breedsAsync = ref.watch(allBreedsProvider);
+    final locationsAsync = ref.watch(locationsProvider);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.75,
@@ -87,14 +88,18 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   // Breed
                   _buildSectionHeader('Breed', onReset: () => setState(() => selectedBreed = null)),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: breeds.map((breed) => _FilterChip(
-                      label: breed.name,
-                      isSelected: selectedBreed == breed.id,
-                      onTap: () => setState(() => selectedBreed = breed.id),
-                    )).toList(),
+                  breedsAsync.when(
+                    data: (breeds) => Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: breeds.map((breed) => _FilterChip(
+                        label: breed.name,
+                        isSelected: selectedBreed == breed.id,
+                        onTap: () => setState(() => selectedBreed = breed.id),
+                      )).toList(),
+                    ),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, r) => Text('Error loading breeds: $e'),
                   ),
                   const SizedBox(height: 24),
 
@@ -115,14 +120,18 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
                   // Location
                   _buildSectionHeader('Location'),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: locations.map((loc) => _FilterChip(
-                      label: loc.name,
-                      isSelected: selectedLocation == loc.id,
-                      onTap: () => setState(() => selectedLocation = loc.id),
-                    )).toList(),
+                  locationsAsync.when(
+                    data: (locations) => Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: locations.map((loc) => _FilterChip(
+                        label: loc.name,
+                        isSelected: selectedLocation == loc.id,
+                        onTap: () => setState(() => selectedLocation = loc.id),
+                      )).toList(),
+                    ),
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, r) => Text('Error loading locations: $e'),
                   ),
                   const SizedBox(height: 24),
 

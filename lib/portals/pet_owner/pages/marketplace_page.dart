@@ -4,7 +4,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
-import '../../../data/providers/mock_data_provider.dart';
+// import '../../../data/providers/mock_data_provider.dart'; // No longer needed
+import '../../../data/providers/shop_providers.dart';
+import '../../../data/providers/product_providers.dart';
 import '../../../data/models/models.dart';
 
 class MarketplacePage extends ConsumerStatefulWidget {
@@ -19,8 +21,9 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
 
   @override
   Widget build(BuildContext context) {
-    final shops = ref.watch(shopsProvider);
-    final products = ref.watch(productsProvider);
+    // Real async providers
+    final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 10)));
+    final productsAsync = ref.watch(allProductsProvider(const ProductQueryParams(limit: 20)));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -56,27 +59,38 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  
                   // Shops Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Featured Shops', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                      TextButton(onPressed: () {}, child: const Text('See all', style: TextStyle(color: AppColors.secondary))),
+                      // TextButton(onPressed: () {}, child: const Text('See all', style: TextStyle(color: AppColors.secondary))),
                     ],
                   ),
                   const SizedBox(height: 12),
                   SizedBox(
-                    height: 140,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: shops.length,
-                      itemBuilder: (context, index) {
-                        final shop = shops[index];
-                        return _ShopCard(shop: shop);
+                    height: 160,
+                    child: shopsAsync.when(
+                      loading: () => const Center(child: CircularProgressIndicator()),
+                      error: (_, __) => const Center(child: Text('Failed to load shops')),
+                      data: (paginated) {
+                        final shops = paginated.data;
+                        if (shops.isEmpty) return const Center(child: Text('No shops found'));
+                        return ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: shops.length,
+                          itemBuilder: (context, index) {
+                            final shop = shops[index];
+                            return _ShopCard(shop: shop);
+                          },
+                        );
                       },
                     ),
                   ),
+                  
                   const SizedBox(height: 24),
+                  
                   // Products Section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -97,38 +111,49 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  if (_isGridView)
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        mainAxisSpacing: 16,
-                        crossAxisSpacing: 16,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-                        return GestureDetector(
-                          onTap: () => context.push('/product-details/${product.id}'),
-                          child: _ProductCard(product: product),
+                  
+                  productsAsync.when(
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (_, __) => const Center(child: Text('Failed to load products')),
+                    data: (paginated) {
+                      final products = paginated.data;
+                      if (products.isEmpty) return const Center(child: Text('No products found'));
+                      
+                      if (_isGridView) {
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            mainAxisSpacing: 16,
+                            crossAxisSpacing: 16,
+                            childAspectRatio: 0.75,
+                          ),
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            final product = products[index];
+                            return GestureDetector(
+                              onTap: () => context.push('/product-details/${product.id}'),
+                              child: _ProductCard(product: product),
+                            );
+                          },
                         );
-                      },
-                    )
-                  else
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: products.length,
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-                        return GestureDetector(
-                          onTap: () => context.push('/product-details/${product.id}'),
-                          child: _ProductListItem(product: product),
+                      } else {
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: products.length,
+                          itemBuilder: (context, index) {
+                            final product = products[index];
+                            return GestureDetector(
+                              onTap: () => context.push('/product-details/${product.id}'),
+                              child: _ProductListItem(product: product),
+                            );
+                          },
                         );
-                      },
-                    ),
+                      }
+                    },
+                  ),
                 ],
               ),
             ),
@@ -150,7 +175,7 @@ class _ShopCard extends StatelessWidget {
       child: Container(
         width: 200,
         margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12), // Reduced padding
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -158,6 +183,7 @@ class _ShopCard extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min, // shrink wrap
           children: [
             Row(
               children: [
@@ -185,14 +211,14 @@ class _ShopCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             Text(
               shop.description ?? 'Quality pet products',
               style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const Spacer(),
+            const SizedBox(height: 8), 
             Text('${shop.productCount} products', style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w500)),
           ],
         ),
@@ -210,7 +236,7 @@ class _ProductCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
@@ -218,12 +244,13 @@ class _ProductCard extends StatelessWidget {
           Expanded(
             flex: 3,
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: product.mainImage != null
                   ? CachedNetworkImage(
                       imageUrl: product.mainImage!,
                       width: double.infinity,
                       fit: BoxFit.cover,
+                      errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: const Icon(Icons.error)),
                     )
                   : Container(
                       color: AppColors.inputFill,
@@ -234,7 +261,7 @@ class _ProductCard extends StatelessWidget {
           Expanded(
             flex: 2,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -316,4 +343,3 @@ class _ProductListItem extends StatelessWidget {
     );
   }
 }
-

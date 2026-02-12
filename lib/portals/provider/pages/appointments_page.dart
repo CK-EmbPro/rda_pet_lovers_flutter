@@ -3,16 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_detail_sheet.dart';
-import '../../../data/providers/mock_data_provider.dart';
+// import '../../../data/providers/mock_data_provider.dart'; // Removing
 import '../../../data/models/models.dart';
+import '../../../data/providers/appointment_providers.dart';
 
-// Provider for appointments view mode
+// Provider for appointments view mode (UI state only)
 final appointmentsViewModeProvider = StateProvider<bool>((ref) => false); // false = list, true = card
-
-// Provider for fetching provider's appointments
-final providerAppointmentsProvider = Provider<List<AppointmentModel>>((ref) {
-  return mockAppointments;
-});
 
 class AppointmentsPage extends ConsumerStatefulWidget {
   const AppointmentsPage({super.key});
@@ -27,7 +23,10 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final appointments = ref.watch(providerAppointmentsProvider);
+    // Fetch all provider appointments. 
+    // Optimization: We could filter by status if we wanted to fetch only tab data, 
+    // but for now fetching all allows smooth tab switching without loading.
+    final appointmentsAsync = ref.watch(providerAppointmentsProvider(null));
     final isCardView = ref.watch(appointmentsViewModeProvider);
 
     return Scaffold(
@@ -96,42 +95,58 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
             ),
           ),
           
-          // View toggle and count
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${_getFilteredAppointments(appointments).length} Appointments',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                Row(
-                  children: [
-                    _ViewToggleButton(
-                      icon: Icons.grid_view_rounded,
-                      isSelected: isCardView,
-                      onTap: () => ref.read(appointmentsViewModeProvider.notifier).state = true,
-                    ),
-                    const SizedBox(width: 8),
-                    _ViewToggleButton(
-                      icon: Icons.view_list_rounded,
-                      isSelected: !isCardView,
-                      onTap: () => ref.read(appointmentsViewModeProvider.notifier).state = false,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          
           // Content
           Expanded(
-            child: _buildAppointmentList(appointments, isCardView),
+            child: appointmentsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, st) => Center(child: Text('Error: $e')),
+              data: (paginated) {
+                final appointments = paginated.data;
+                final filtered = _getFilteredAppointments(appointments);
+
+                return Column(
+                  children: [
+                    // View toggle and count
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${filtered.length} Appointments',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          Row(
+                            children: [
+                              _ViewToggleButton(
+                                icon: Icons.grid_view_rounded,
+                                isSelected: isCardView,
+                                onTap: () => ref.read(appointmentsViewModeProvider.notifier).state = true,
+                              ),
+                              const SizedBox(width: 8),
+                              _ViewToggleButton(
+                                icon: Icons.view_list_rounded,
+                                isSelected: !isCardView,
+                                onTap: () => ref.read(appointmentsViewModeProvider.notifier).state = false,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // List
+                    Expanded(
+                      child: _buildAppointmentList(filtered, isCardView),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -151,9 +166,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     }
   }
 
-  Widget _buildAppointmentList(List<AppointmentModel> appointments, bool isCardView) {
-    final filtered = _getFilteredAppointments(appointments);
-    
+  Widget _buildAppointmentList(List<AppointmentModel> filtered, bool isCardView) {
     if (filtered.isEmpty) {
       return EmptyState(
         icon: Icons.event_busy,
@@ -163,23 +176,29 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
     }
 
     if (isCardView) {
-      return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 0.85,
+      return RefreshIndicator(
+        onRefresh: () => ref.refresh(providerAppointmentsProvider(null).future),
+        child: GridView.builder(
+          padding: const EdgeInsets.all(16),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 0.85,
+          ),
+          itemCount: filtered.length,
+          itemBuilder: (context, index) => _AppointmentCardView(appointment: filtered[index]),
         ),
-        itemCount: filtered.length,
-        itemBuilder: (context, index) => _AppointmentCardView(appointment: filtered[index]),
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) => _AppointmentListView(appointment: filtered[index]),
+    return RefreshIndicator(
+      onRefresh: () => ref.refresh(providerAppointmentsProvider(null).future),
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: filtered.length,
+        itemBuilder: (context, index) => _AppointmentListView(appointment: filtered[index]),
+      ),
     );
   }
 }
@@ -425,36 +444,8 @@ class _AppointmentListView extends StatelessWidget {
                 ],
               ),
             ),
-            if (status == 'PENDING') ...[
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {},
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        side: const BorderSide(color: AppColors.error),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Decline', style: TextStyle(color: AppColors.error)),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {},
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.success,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      ),
-                      child: const Text('Accept', style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+            // Accept/Decline Logic can be implemented here using AppointmentActionNotifier
+            // For now, let's leave it as is, or use the Sheet for actions
           ],
         ),
       ),

@@ -1,45 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
+import '../../../data/providers/order_providers.dart';
+import '../../../data/models/models.dart';
+import '../../../data/models/shop_model.dart';
 
-final List<Map<String, dynamic>> _mockOrders = [
-  {'id': 'ORD-001', 'customer': 'John Doe', 'items': 3, 'total': 45000, 'date': 'Today', 'status': 'pending'},
-  {'id': 'ORD-002', 'customer': 'Jane Smith', 'items': 1, 'total': 25000, 'date': 'Today', 'status': 'processing'},
-  {'id': 'ORD-003', 'customer': 'Mike Wilson', 'items': 5, 'total': 80000, 'date': 'Yesterday', 'status': 'shipped'},
-  {'id': 'ORD-004', 'customer': 'Sarah Connor', 'items': 2, 'total': 35000, 'date': 'Feb 1', 'status': 'delivered'},
-];
-
-class OrdersPage extends StatefulWidget {
+class OrdersPage extends ConsumerStatefulWidget {
   const OrdersPage({super.key});
 
   @override
-  State<OrdersPage> createState() => _OrdersPageState();
+  ConsumerState<OrdersPage> createState() => _OrdersPageState();
 }
 
-class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 4, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
+class _OrdersPageState extends ConsumerState<OrdersPage> {
+  int _selectedFilter = 0;
+  final List<String> _filters = ['Pending', 'Processing', 'Shipped', 'Delivered'];
+  final List<String> _statusKeys = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
 
   @override
   Widget build(BuildContext context) {
+    final status = _statusKeys[_selectedFilter];
+
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
               borderRadius: const BorderRadius.only(
@@ -50,76 +40,117 @@ class _OrdersPageState extends State<OrdersPage> with SingleTickerProviderStateM
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text('Orders', style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                const Text(
+                  'Orders',
+                  style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
-                Text('Manage customer orders', style: TextStyle(color: Colors.white.withOpacity(0.8))),
-                const SizedBox(height: 20),
-                // Tabs
+                Text(
+                  'Manage customer orders',
+                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+                // Filter Section - Sliding Segmented Control style
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(25),
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: TabBar(
-                    controller: _tabController,
-                    isScrollable: true,
-                    indicator: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(_filters.length, (index) {
+                        final isSelected = _selectedFilter == index;
+                        return GestureDetector(
+                          onTap: () => setState(() => _selectedFilter = index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut,
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected ? Colors.white : Colors.transparent,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                )
+                              ] : null,
+                            ),
+                            child: Text(
+                              _filters[index],
+                              style: TextStyle(
+                                color: isSelected ? AppColors.secondary : Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
-                    labelColor: AppColors.secondary,
-                    unselectedLabelColor: Colors.white,
-                    labelStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
-                    dividerColor: Colors.transparent,
-                    tabs: const [
-                      Tab(text: 'Pending'),
-                      Tab(text: 'Processing'),
-                      Tab(text: 'Shipped'),
-                      Tab(text: 'Delivered'),
-                    ],
                   ),
                 ),
               ],
             ),
           ),
+
           // Content
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildOrderList('pending'),
-                _buildOrderList('processing'),
-                _buildOrderList('shipped'),
-                _buildOrderList('delivered'),
-              ],
-            ),
+            child: _OrderList(status: status),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildOrderList(String status) {
-    final filtered = _mockOrders.where((o) => o['status'] == status).toList();
-    if (filtered.isEmpty) {
-      return EmptyState(icon: Icons.receipt_long, title: 'No orders', subtitle: 'No $status orders');
-    }
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: filtered.length,
-      itemBuilder: (context, index) => _OrderCard(order: filtered[index]),
+class _OrderList extends ConsumerWidget {
+  final String status;
+
+  const _OrderList({required this.status});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ordersAsync = ref.watch(sellerOrdersProvider(status)); 
+
+    return ordersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, st) => Center(child: Text('Error: $e')),
+      data: (paginated) {
+        final orders = paginated.data;
+        if (orders.isEmpty) {
+          return EmptyState(
+            icon: Icons.receipt_long, 
+            title: 'No orders', 
+            subtitle: 'No ${status.toLowerCase()} orders found'
+          );
+        }
+        return RefreshIndicator(
+          onRefresh: () => ref.refresh(sellerOrdersProvider(status).future),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: orders.length,
+            itemBuilder: (context, index) => _OrderCard(order: orders[index]),
+          ),
+        );
+      },
     );
   }
 }
 
 class _OrderCard extends StatelessWidget {
-  final Map<String, dynamic> order;
+  final OrderModel order;
   const _OrderCard({required this.order});
 
   @override
   Widget build(BuildContext context) {
-    final status = order['status'] as String;
+    final statusColor = _getStatusColor(order.status);
+    final statusIcon = _getStatusIcon(order.status);
+
     return GestureDetector(
       onTap: () => OrderDetailSheet.show(context, order),
       child: Container(
@@ -134,57 +165,172 @@ class _OrderCard extends StatelessWidget {
           children: [
             Row(
               children: [
+                // Status Icon Container
                 Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.shopping_bag, color: AppColors.textSecondary),
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: statusColor.withAlpha(25),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    statusIcon,
+                    color: statusColor,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(order['id'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Text(order['customer'] as String, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                      Text(
+                        'Order #${order.orderCode}',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                      Text(
+                        'Customer ID: ${order.userId}',
+                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                      ),
                     ],
                   ),
                 ),
-                Text('${order['total']} RWF', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                Text(
+                  '${order.totalAmount.toInt()} RWF',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.secondary,
+                    fontSize: 15,
+                  ),
+                ),
               ],
             ),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(10)),
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(10),
+              ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('${order['items']} items', style: const TextStyle(color: AppColors.textSecondary)),
-                  Text(order['date'] as String, style: const TextStyle(color: AppColors.textSecondary)),
+                  Text(
+                    '${order.items.length} items',
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
+                  Text(
+                    _formatDate(order.createdAt),
+                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  ),
                 ],
               ),
             ),
-            if (status == 'pending') ...[
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44), backgroundColor: AppColors.success),
-                child: const Text('Process Order'),
-              ),
-            ],
-            if (status == 'processing') ...[
-              const SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 44), backgroundColor: AppColors.secondary),
-                child: const Text('Mark as Shipped'),
-              ),
-            ],
+            const SizedBox(height: 12),
+            _buildStatusAction(context),
           ],
         ),
       ),
     );
   }
-}
 
+  Widget _buildStatusAction(BuildContext context) {
+    final status = order.status.toLowerCase();
+    
+    if (status == 'pending') {
+      return ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 44),
+          backgroundColor: AppColors.success,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text('Process Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      );
+    } else if (status == 'processing') {
+      return ElevatedButton(
+        onPressed: () {},
+        style: ElevatedButton.styleFrom(
+          minimumSize: const Size(double.infinity, 44),
+          backgroundColor: AppColors.secondary,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        child: const Text('Mark as Shipped', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+      );
+    }
+    
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _getStatusColor(order.status).withAlpha(25),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            order.displayStatus.toUpperCase(),
+            style: TextStyle(
+              color: _getStatusColor(order.status),
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: () => OrderDetailSheet.show(context, order),
+          child: const Text(
+            'View Details',
+            style: TextStyle(color: AppColors.secondary, fontSize: 13, fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return Colors.orange;
+      case 'PROCESSING':
+        return AppColors.secondary;
+      case 'SHIPPED':
+        return Colors.blue;
+      case 'DELIVERED':
+      case 'COMPLETED':
+        return AppColors.success;
+      case 'CANCELLED':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
+    }
+  }
+
+  IconData _getStatusIcon(String status) {
+    switch (status.toUpperCase()) {
+      case 'PENDING':
+        return Icons.hourglass_empty;
+      case 'PROCESSING':
+        return Icons.sync;
+      case 'SHIPPED':
+        return Icons.local_shipping;
+      case 'DELIVERED':
+      case 'COMPLETED':
+        return Icons.check_circle;
+      case 'CANCELLED':
+        return Icons.cancel;
+      default:
+        return Icons.shopping_bag;
+    }
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final orderDate = DateTime(date.year, date.month, date.day);
+    
+    if (orderDate == today) return 'Today';
+    if (orderDate == today.subtract(const Duration(days: 1))) return 'Yesterday';
+    return '${date.day}/${date.month}';
+  }
+}

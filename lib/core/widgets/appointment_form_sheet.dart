@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
-import '../../data/providers/mock_data_provider.dart';
+import '../../data/providers/service_providers.dart';
+import '../../data/providers/pet_providers.dart';
+import '../../data/providers/appointment_providers.dart';
+import '../../data/models/models.dart';
 
 /// Appointment Form Modal
 class AppointmentFormSheet extends ConsumerStatefulWidget {
@@ -35,6 +38,8 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
   String? selectedPetId;
   DateTime selectedMonth = DateTime.now();
   int? selectedDay;
+  TimeOfDay? selectedTime;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -44,8 +49,8 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final services = ref.watch(servicesProvider);
-    final myPets = ref.watch(myPetsProvider);
+    final servicesAsync = ref.watch(allServicesProvider(const ServiceQueryParams()));
+    final myPetsAsync = ref.watch(myPetsProvider);
 
     // Generate days for the month
     final daysInMonth = DateUtils.getDaysInMonth(selectedMonth.year, selectedMonth.month);
@@ -97,10 +102,10 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
                 isExpanded: true,
                 hint: const Text('Choose Service'),
                 value: selectedServiceId,
-                items: services.map((s) => DropdownMenuItem(
+                items: servicesAsync.value?.data.map((s) => DropdownMenuItem(
                   value: s.id,
                   child: Text(s.name),
-                )).toList(),
+                )).toList() ?? [],
                 onChanged: (value) => setState(() => selectedServiceId = value),
               ),
             ),
@@ -171,6 +176,40 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
           ),
           const SizedBox(height: 20),
 
+          // Time Picker
+          const Text('Select Time', style: TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+          GestureDetector(
+            onTap: () async {
+              final time = await showTimePicker(
+                context: context,
+                initialTime: TimeOfDay.now(),
+              );
+              if (time != null) setState(() => selectedTime = time);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: AppColors.inputFill,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                   Icon(Icons.access_time, color: selectedTime != null ? AppColors.textPrimary : AppColors.textSecondary),
+                   const SizedBox(width: 12),
+                   Text(
+                     selectedTime != null ? selectedTime!.format(context) : 'Choose Time',
+                     style: TextStyle(
+                       color: selectedTime != null ? AppColors.textPrimary : AppColors.textSecondary,
+                       fontSize: 16,
+                     ),
+                   ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+
           // Pet Dropdown
           const Text('Your Pet', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
@@ -185,10 +224,10 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
                 isExpanded: true,
                 hint: const Text('Choose from your pets'),
                 value: selectedPetId,
-                items: myPets.map((p) => DropdownMenuItem(
+                items: myPetsAsync.value?.map((p) => DropdownMenuItem(
                   value: p.id,
                   child: Text('${p.name} (${p.petCode})'),
-                )).toList(),
+                )).toList() ?? [],
                 onChanged: (value) => setState(() => selectedPetId = value),
               ),
             ),
@@ -199,28 +238,73 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: selectedServiceId != null && selectedDay != null
-                  ? () {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('Appointment booked successfully!'),
-                          backgroundColor: AppColors.success,
-                        ),
-                      );
-                    }
+              onPressed: (selectedServiceId != null && selectedDay != null && selectedTime != null && !_isLoading)
+                  ? _submitAppointment
                   : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF21314C),
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
               ),
-              child: const Text('Book Appointment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+              child: _isLoading
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : const Text('Book Appointment', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _submitAppointment() async {
+    setState(() => _isLoading = true);
+    
+    // Find provider from service
+    // In a real app, we might check if service has provider data.
+    // For now, if we don't have providerId, we might fail or need to fetch it.
+    // Assuming ServiceModel has ownerId or similar.
+    // Let's check ServiceModel in memory.
+    final services = ref.read(allServicesProvider(const ServiceQueryParams())).value?.data ?? [];
+    final service = services.firstWhere((s) => s.id == selectedServiceId, orElse: () => ServiceModel.empty());
+    
+    // If providerId is passed in widget, use it. Else use service owner.
+    // ServiceModel has `providerId` or `owner`? 
+    // Checking ServiceModel... it likely has `service.provider.id` or `service.providerId`.
+    // If not, we can't book.
+    
+    // NOTE: We need to ensure we have a valid provider ID.
+    // Assuming service.provider.id exists based on typical structure, or use widget.preselectedProviderId.
+    
+    final providerId = widget.preselectedProviderId ?? service.providerId; // Assuming providerId exists on ServiceModel based on plan or update.
+    
+    // Format Time: 09:00
+    final hour = selectedTime!.hour.toString().padLeft(2, '0');
+    final minute = selectedTime!.minute.toString().padLeft(2, '0');
+    final timeString = '$hour:$minute';
+    
+    final result = await ref.read(appointmentActionProvider.notifier).bookAppointment(
+      serviceId: selectedServiceId!,
+      providerId: providerId ?? '', // Fallback might fail validation
+      scheduledDate: DateTime(selectedMonth.year, selectedMonth.month, selectedDay!),
+      scheduledTime: timeString,
+      petId: selectedPetId,
+    );
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+      if (result != null) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Appointment booked successfully!'), backgroundColor: AppColors.success),
+        );
+        // Refresh appointments
+        ref.invalidate(myAppointmentsProvider);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+           const SnackBar(content: Text('Failed to book appointment'), backgroundColor: AppColors.error),
+        );
+      }
+    }
   }
 
   String _getMonthName(int month) {

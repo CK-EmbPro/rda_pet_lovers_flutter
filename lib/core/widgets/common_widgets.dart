@@ -112,6 +112,39 @@ class FloatingNavItem {
   });
 }
 
+/// Section Header with title and "See all" button
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final VoidCallback? onSeeAll;
+
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.onSeeAll,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        if (onSeeAll != null)
+          TextButton(
+            onPressed: onSeeAll,
+            child: const Text(
+              'See all',
+              style: TextStyle(color: AppColors.secondary),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Gradient Header for portal dashboards
 class GradientHeader extends StatelessWidget {
   final String title;

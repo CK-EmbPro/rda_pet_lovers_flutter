@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
-import '../../../data/providers/mock_data_provider.dart';
+import '../../../data/providers/service_providers.dart';
 import '../../../data/models/models.dart';
 
 class ServicesPage extends ConsumerStatefulWidget {
@@ -29,7 +29,9 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final services = ref.watch(servicesByTypeProvider(_selectedCategory == 'All' ? null : _selectedCategory));
+    final servicesAsync = ref.watch(allServicesProvider(ServiceQueryParams(
+      serviceType: _selectedCategory == 'All' ? null : _selectedCategory,
+    )));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -151,8 +153,27 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
 
           // Services List
           Expanded(
-            child: services.isEmpty
-                ? Center(
+            child: servicesAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    const SizedBox(height: 12),
+                    Text('Failed to load services', style: AppTypography.body),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ref.invalidate(allServicesProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+              data: (paginatedResult) {
+                final services = paginatedResult.data;
+                if (services.isEmpty) {
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -163,15 +184,18 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                         const Text('No services available in this category', style: TextStyle(color: AppColors.textSecondary)),
                       ],
                     ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: services.length,
-                    itemBuilder: (context, index) {
-                      final service = services[index];
-                      return _ProviderCard(service: service);
-                    },
-                  ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: services.length,
+                  itemBuilder: (context, index) {
+                    final service = services[index];
+                    return _ProviderCard(service: service);
+                  },
+                );
+              },
+            ),
           ),
         ],
       ),

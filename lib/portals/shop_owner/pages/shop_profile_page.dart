@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/providers/auth_providers.dart';
+import '../../../data/providers/shop_providers.dart';
+// import '../../../data/providers/product_providers.dart'; // Uncomment if fetching stats
 
-class ShopProfilePage extends StatelessWidget {
+class ShopProfilePage extends ConsumerWidget {
   const ShopProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final myShopAsync = ref.watch(myShopProvider);
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -22,31 +29,55 @@ class ShopProfilePage extends StatelessWidget {
                   bottomRight: Radius.circular(40),
                 ),
               ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: const Icon(Icons.store, size: 50, color: AppColors.secondary),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text('Pet Paradise', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  const SizedBox(height: 4),
-                  Text('Premium Pet Supplies', style: TextStyle(color: Colors.white.withOpacity(0.8))),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+              child: myShopAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
+                error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
+                data: (shop) {
+                  if (shop == null) {
+                    return Column(
+                      children: [
+                        const Icon(Icons.store, size: 50, color: Colors.white),
+                        const SizedBox(height: 16),
+                        Text(user?.fullName ?? 'Shop Owner', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 4),
+                        const Text('No shop created yet', style: TextStyle(color: Colors.white70)),
+                      ],
+                    );
+                  }
+                  return Column(
                     children: [
-                      _StatItem(label: 'Rating', value: '4.8'),
-                      _StatItem(label: 'Products', value: '48'),
-                      _StatItem(label: 'Orders', value: '156'),
+                      Container(
+                        width: 100,
+                        height: 100,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(25),
+                          image: shop.logoUrl != null 
+                              ? DecorationImage(image: NetworkImage(shop.logoUrl!), fit: BoxFit.cover)
+                              : null,
+                        ),
+                        child: shop.logoUrl == null 
+                            ? const Icon(Icons.store, size: 50, color: AppColors.secondary)
+                            : null,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(shop.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(shop.description ?? 'Premium Pet Supplies', 
+                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _StatItem(label: 'Rating', value: shop.rating.toString()),
+                          const _StatItem(label: 'Products', value: '0'), 
+                          const _StatItem(label: 'Orders', value: '0'),
+                        ],
+                      ),
                     ],
-                  ),
-                ],
+                  );
+                }
               ),
             ),
             // Menu Items
@@ -54,15 +85,31 @@ class ShopProfilePage extends StatelessWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  _MenuItem(icon: Icons.store_outlined, label: 'Shop Settings', onTap: () {}),
-                  _MenuItem(icon: Icons.inventory_2_outlined, label: 'Products', onTap: () {}),
-                  _MenuItem(icon: Icons.receipt_long_outlined, label: 'Orders', onTap: () {}),
+                  _MenuItem(icon: Icons.store_outlined, label: 'Shop Settings', onTap: () {
+                    // Navigate to shop settings
+                  }),
+                  _MenuItem(icon: Icons.inventory_2_outlined, label: 'Products', onTap: () {
+                     // Navigate to products tab (via portal controller if possible, or direct route)
+                  }),
+                  _MenuItem(icon: Icons.receipt_long_outlined, label: 'Orders', onTap: () {
+                    // Navigate to orders
+                  }),
                   _MenuItem(icon: Icons.monetization_on_outlined, label: 'Earnings', onTap: () {}),
                   _MenuItem(icon: Icons.local_shipping_outlined, label: 'Shipping Settings', onTap: () {}),
                   _MenuItem(icon: Icons.settings_outlined, label: 'Settings', onTap: () {}),
                   _MenuItem(icon: Icons.help_outline, label: 'Help & Support', onTap: () {}),
                   const SizedBox(height: 20),
-                  _MenuItem(icon: Icons.logout, label: 'Logout', isDestructive: true, onTap: () => context.go('/login')),
+                  _MenuItem(
+                    icon: Icons.logout, 
+                    label: 'Logout', 
+                    isDestructive: true, 
+                    onTap: () async {
+                      await ref.read(authStateProvider.notifier).logout();
+                      if (context.mounted) {
+                        context.go('/login');
+                      }
+                    }
+                  ),
                 ],
               ),
             ),
@@ -86,7 +133,7 @@ class _StatItem extends StatelessWidget {
         children: [
           Text(value, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 4),
-          Text(label, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12)),
         ],
       ),
     );
@@ -108,7 +155,7 @@ class _MenuItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(15),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2))],
       ),
       child: ListTile(
         onTap: onTap,
@@ -119,4 +166,3 @@ class _MenuItem extends StatelessWidget {
     );
   }
 }
-

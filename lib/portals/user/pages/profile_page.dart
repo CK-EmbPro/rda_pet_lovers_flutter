@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../data/providers/mock_data_provider.dart';
+import '../../../data/providers/auth_providers.dart';
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
@@ -79,7 +79,11 @@ class ProfilePage extends ConsumerWidget {
                 children: [
                   _MenuItem(icon: Icons.person_outline, label: 'Edit Profile', onTap: () {}),
                   _MenuItem(icon: Icons.pets_outlined, label: 'My Pets', onTap: () {}),
-                  _MenuItem(icon: Icons.shopping_bag_outlined, label: 'My Orders', onTap: () {}),
+                  _MenuItem(
+                    icon: Icons.shopping_bag_outlined,
+                    label: 'My Orders',
+                    onTap: () => context.push('/user/orders'),
+                  ),
                   _MenuItem(icon: Icons.calendar_today_outlined, label: 'Appointments', onTap: () {}),
                   _MenuItem(icon: Icons.notifications_outlined, label: 'Notifications', onTap: () {}),
                   _MenuItem(icon: Icons.settings_outlined, label: 'Settings', onTap: () {}),
@@ -90,7 +94,7 @@ class ProfilePage extends ConsumerWidget {
                     label: 'Logout',
                     isDestructive: true,
                     onTap: () {
-                      ref.read(currentUserProvider.notifier).state = null;
+                      ref.read(authStateProvider.notifier).logout();
                       context.go('/login');
                     },
                   ),

@@ -1,36 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../data/models/models.dart';
+import '../../../data/providers/order_providers.dart';
+import '../../../data/providers/product_providers.dart'; // For real product count if needed
 
-class ShopReportsPage extends StatefulWidget {
+class ShopReportsPage extends ConsumerStatefulWidget {
   const ShopReportsPage({super.key});
 
   @override
-  State<ShopReportsPage> createState() => _ShopReportsPageState();
+  ConsumerState<ShopReportsPage> createState() => _ShopReportsPageState();
 }
 
-class _ShopReportsPageState extends State<ShopReportsPage> {
+class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
   String _selectedPeriod = 'This Month';
   DateTimeRange? _customRange;
-  
-  // Mock data for reports
-  final List<Map<String, dynamic>> _topProducts = [
-    {'name': 'Premium Dog Food', 'sales': 156, 'revenue': 3900000, 'category': 'Dog', 'price': 25000, 'stock': 42, 'image': null},
-    {'name': 'Cat Toys Bundle', 'sales': 98, 'revenue': 1470000, 'category': 'Cat', 'price': 15000, 'stock': 30, 'image': null},
-    {'name': 'Pet Collar Set', 'sales': 75, 'revenue': 600000, 'category': 'Dog', 'price': 8000, 'stock': 18, 'image': null},
-    {'name': 'Dog Shampoo', 'sales': 62, 'revenue': 744000, 'category': 'Dog', 'price': 12000, 'stock': 8, 'image': null},
-    {'name': 'Bird Cage', 'sales': 45, 'revenue': 900000, 'category': 'Bird', 'price': 45000, 'stock': 0, 'image': null},
-  ];
-
-  final List<Map<String, dynamic>> _monthlySales = [
-    {'month': 'Jan', 'sales': 450000, 'orders': 32},
-    {'month': 'Feb', 'sales': 620000, 'orders': 45},
-    {'month': 'Mar', 'sales': 580000, 'orders': 41},
-    {'month': 'Apr', 'sales': 750000, 'orders': 52},
-    {'month': 'May', 'sales': 820000, 'orders': 58},
-    {'month': 'Jun', 'sales': 950000, 'orders': 67},
-  ];
 
   String get _displayPeriod {
     if (_selectedPeriod == 'Custom' && _customRange != null) {
@@ -38,6 +24,33 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
       return '${fmt.format(_customRange!.start)} - ${fmt.format(_customRange!.end)}';
     }
     return _selectedPeriod;
+  }
+
+  // Filter orders based on selected period
+  List<OrderModel> _filterOrders(List<OrderModel> orders) {
+    final now = DateTime.now();
+    DateTime start;
+    DateTime end = now;
+
+    if (_selectedPeriod == 'Custom' && _customRange != null) {
+      start = _customRange!.start;
+      end = _customRange!.end.add(const Duration(days: 1)); // Includes the end day
+    } else if (_selectedPeriod == 'This Week') {
+      // Start of week (Monday)
+      start = now.subtract(Duration(days: now.weekday - 1));
+      start = DateTime(start.year, start.month, start.day);
+    } else if (_selectedPeriod == 'This Month') {
+      start = DateTime(now.year, now.month, 1);
+    } else if (_selectedPeriod == 'This Year') {
+      start = DateTime(now.year, 1, 1);
+    } else {
+      start = DateTime(2000); // All time fallback
+    }
+
+    return orders.where((o) {
+      if (o.createdAt == null) return false;
+      return o.createdAt!.isAfter(start) && o.createdAt!.isBefore(end.add(const Duration(days: 1)));
+    }).toList();
   }
 
   Future<void> _pickCustomRange() async {
@@ -180,228 +193,295 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Fetch up to 100 orders for reporting
+    final ordersAsync = ref.watch(sellerReportOrdersProvider(100));
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          child: ordersAsync.when(
+            loading: () => SizedBox(height: MediaQuery.of(context).size.height, child: const Center(child: CircularProgressIndicator())),
+            error: (e, _) => SizedBox(height: MediaQuery.of(context).size.height, child: Center(child: Text('Error: $e'))),
+            data: (paginatedResponse) {
+              final allOrders = paginatedResponse.data; // Raw orders
+              final orders = _filterOrders(allOrders);  // Filtered orders
+
+              // Compute Stats
+              final totalSales = orders.fold<double>(0, (sum, o) => sum + o.totalAmount);
+              final orderCount = orders.length;
+              final avgOrder = orderCount > 0 ? totalSales / orderCount : 0.0;
+              final productCount = orders.fold<int>(0, (sum, o) => sum + o.items.length); // Total distinct items sold
+
+              // Compute Top Products
+              final productStats = <String, Map<String, dynamic>>{};
+              for (var o in orders) {
+                for (var item in o.items) {
+                  // Assuming item.productName exists and is unique enough for now
+                  // Use productId if available for key
+                  final key = item.productName; 
+                  if (!productStats.containsKey(key)) {
+                    productStats[key] = {
+                      'name': item.productName,
+                      'sales': 0,
+                      'revenue': 0.0,
+                      'image': item.imageUrl, // Assumption: item has image or we don't have it easily
+                      'price': item.unitPrice,
+                    };
+                  }
+                  productStats[key]!['sales'] = (productStats[key]!['sales'] as int) + item.quantity;
+                  productStats[key]!['revenue'] = (productStats[key]!['revenue'] as double) + (item.unitPrice * item.quantity);
+                }
+              }
+              final topProducts = productStats.values.toList()
+                ..sort((a, b) => (b['sales'] as int).compareTo(a['sales'] as int));
+              final top5 = topProducts.take(5).toList();
+
+              // Compute Chart Data (Monthly for 'This Year', Daily for others?)
+              // For simplicity, let's just do Monthly aggregation of the filtered orders
+              final monthlyStats = <String, Map<String, dynamic>>{};
+              // Initialize last 6 months 
+              // (Or just aggregate existing orders logic)
+              for (var o in orders) {
+                if (o.createdAt == null) continue;
+                final monthKey = DateFormat('MMM').format(o.createdAt!);
+                if (!monthlyStats.containsKey(monthKey)) {
+                  monthlyStats[monthKey] = {'month': monthKey, 'sales': 0.0, 'orders': 0};
+                }
+                monthlyStats[monthKey]!['sales'] = (monthlyStats[monthKey]!['sales'] as double) + o.totalAmount;
+                monthlyStats[monthKey]!['orders'] = (monthlyStats[monthKey]!['orders'] as int) + 1;
+              }
+              final chartData = monthlyStats.values.toList(); 
+              // Sort chart data? Map key sorting is tricky without proper date.
+              // If filtered by "This Year", we can enforce Jan-Dec order.
+              // For now, let's just use what we have.
+
+              final salesFmt = NumberFormat.currency(symbol: 'RWF', decimalDigits: 0, customPattern: '#,##0 \u00A4');
+              
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Sales Report', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 4),
-                        Text('Track your shop performance', style: TextStyle(color: AppColors.textSecondary)),
+                        const Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Sales Report', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 4),
+                            Text('Track your shop performance', style: TextStyle(color: AppColors.textSecondary)),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.download, color: AppColors.secondary),
+                        ),
                       ],
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.download, color: AppColors.secondary),
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Date Range Picker
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: AppColors.inputFill,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: ['This Week', 'This Month', 'This Year', 'Custom'].map((period) {
-                          final isSelected = _selectedPeriod == period;
-                          return Expanded(
+                  ),
+                  
+                  // Date Range Picker
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: AppColors.inputFill,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            children: ['This Week', 'This Month', 'This Year', 'Custom'].map((period) {
+                              final isSelected = _selectedPeriod == period;
+                              return Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    if (period == 'Custom') {
+                                      _pickCustomRange();
+                                    } else {
+                                      setState(() {
+                                        _selectedPeriod = period;
+                                        _customRange = null;
+                                      });
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(vertical: 10),
+                                    decoration: BoxDecoration(
+                                      color: isSelected ? AppColors.secondary : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        if (period == 'Custom')
+                                          Icon(
+                                            Icons.calendar_month,
+                                            size: 14,
+                                            color: isSelected ? Colors.white : AppColors.textSecondary,
+                                          ),
+                                        if (period == 'Custom') const SizedBox(width: 4),
+                                        Flexible(
+                                          child: Text(
+                                            period == 'Custom' && isSelected && _customRange != null
+                                                ? _displayPeriod
+                                                : period,
+                                            textAlign: TextAlign.center,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              color: isSelected ? Colors.white : AppColors.textSecondary,
+                                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                                              fontSize: period == 'Custom' && isSelected && _customRange != null ? 10 : 13,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        // Custom range display below filter bar
+                        if (_selectedPeriod == 'Custom' && _customRange != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
                             child: GestureDetector(
-                              onTap: () {
-                                if (period == 'Custom') {
-                                  _pickCustomRange();
-                                } else {
-                                  setState(() {
-                                    _selectedPeriod = period;
-                                    _customRange = null;
-                                  });
-                                }
-                              },
+                              onTap: _pickCustomRange,
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.secondary : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: AppColors.secondary.withValues(alpha: 80/255)),
+                                  boxShadow: AppTheme.cardShadow,
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    if (period == 'Custom')
-                                      Icon(
-                                        Icons.calendar_month,
-                                        size: 14,
-                                        color: isSelected ? Colors.white : AppColors.textSecondary,
-                                      ),
-                                    if (period == 'Custom') const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        period == 'Custom' && isSelected && _customRange != null
-                                            ? _displayPeriod
-                                            : period,
-                                        textAlign: TextAlign.center,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          color: isSelected ? Colors.white : AppColors.textSecondary,
-                                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                                          fontSize: period == 'Custom' && isSelected && _customRange != null ? 10 : 13,
-                                        ),
+                                    const Icon(Icons.date_range, color: AppColors.secondary, size: 18),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '${DateFormat('dd MMM yyyy').format(_customRange!.start)}  →  ${DateFormat('dd MMM yyyy').format(_customRange!.end)}',
+                                      style: const TextStyle(
+                                        color: AppColors.secondary,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    // Custom range display below filter bar
-                    if (_selectedPeriod == 'Custom' && _customRange != null)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: GestureDetector(
-                          onTap: _pickCustomRange,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.secondary.withAlpha(80)),
-                              boxShadow: AppTheme.cardShadow,
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.date_range, color: AppColors.secondary, size: 18),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '${DateFormat('dd MMM yyyy').format(_customRange!.start)}  →  ${DateFormat('dd MMM yyyy').format(_customRange!.end)}',
-                                  style: const TextStyle(
-                                    color: AppColors.secondary,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 13,
-                                  ),
-                                ),
-                              ],
-                            ),
                           ),
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Key Stats
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    _buildStatCard('Total Sales', '4.17M RWF', Icons.monetization_on, AppColors.success, '+12.5%'),
-                    const SizedBox(width: 12),
-                    _buildStatCard('Orders', '295', Icons.receipt_long, AppColors.secondary, '+8.2%'),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    _buildStatCard('Avg Order', '14,135 RWF', Icons.shopping_cart, Colors.orange, '+3.1%'),
-                    const SizedBox(width: 12),
-                    _buildStatCard('Products', '48', Icons.inventory_2, Colors.purple, ''),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Sales Chart
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: AppTheme.cardShadow,
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  const SizedBox(height: 24),
+                  
+                  // Key Stats
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        _buildStatCard('Total Sales', salesFmt.format(totalSales), Icons.monetization_on, AppColors.success),
+                        const SizedBox(width: 12),
+                        _buildStatCard('Orders', '$orderCount', Icons.receipt_long, AppColors.secondary),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      children: [
+                        _buildStatCard('Avg Order', salesFmt.format(avgOrder), Icons.shopping_cart, Colors.orange),
+                        const SizedBox(width: 12),
+                        _buildStatCard('Items Sold', '$productCount', Icons.inventory_2, Colors.purple),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Sales Chart
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: AppTheme.cardShadow,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text('Sales Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              _buildLegendItem('Sales', AppColors.secondary),
-                              const SizedBox(width: 16),
-                              _buildLegendItem('Orders', AppColors.success),
+                              const Text('Sales Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                              Row(
+                                children: [
+                                  _buildLegendItem('Sales', AppColors.secondary),
+                                  const SizedBox(width: 16),
+                                  _buildLegendItem('Orders', AppColors.success),
+                                ],
+                              ),
                             ],
                           ),
+                          const SizedBox(height: 20),
+                          chartData.isEmpty 
+                              ? const SizedBox(height: 100, child: Center(child: Text("No data for chart")))
+                              : SizedBox(
+                                  height: 200,
+                                  child: CustomPaint(
+                                    size: const Size(double.infinity, 200),
+                                    painter: _BarChartPainter(chartData),
+                                  ),
+                                ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      SizedBox(
-                        height: 200,
-                        child: CustomPaint(
-                          size: const Size(double.infinity, 200),
-                          painter: _BarChartPainter(_monthlySales),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Top Selling Products
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Top Selling Products', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 16),
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _topProducts.length,
-                      itemBuilder: (context, index) {
-                        final product = _topProducts[index];
-                        return GestureDetector(
-                          onTap: () => _showProductDetailSheet(context, product, index + 1),
-                          child: _buildProductRankCard(index + 1, product),
-                        );
-                      },
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 100),
-            ],
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Top Selling Products
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Top Selling Products', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 16),
+                        top5.isEmpty
+                            ? const Text("No sales yet")
+                            : ListView.builder(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: top5.length,
+                                itemBuilder: (context, index) {
+                                  final product = top5[index];
+                                  return GestureDetector(
+                                    onTap: () => _showProductDetailSheet(context, product, index + 1),
+                                    child: _buildProductRankCard(index + 1, product, salesFmt),
+                                  );
+                                },
+                              ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 100),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -409,12 +489,11 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
   }
 
   void _showProductDetailSheet(BuildContext context, Map<String, dynamic> product, int rank) {
-    final price = product['price'] as int;
-    final stock = product['stock'] as int;
+    final price = product['price'] as double;
     final sales = product['sales'] as int;
-    final revenue = product['revenue'] as int;
+    final revenue = product['revenue'] as double;
     final imageUrl = product['image'] as String?;
-    final fmt = (int v) => v.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},');
+    final fmt = NumberFormat.currency(symbol: 'RWF', decimalDigits: 0, customPattern: '#,##0 \u00A4');
 
     showModalBottomSheet(
       context: context,
@@ -461,20 +540,12 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withAlpha(25),
+                      color: AppColors.secondary.withValues(alpha: 25/255),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text('#$rank Top Seller', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600, fontSize: 12)),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(height: 4),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Category: ${product['category']}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
               ),
             ),
             const SizedBox(height: 16),
@@ -484,9 +555,9 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  _detailStat('Price', '${fmt(price)} RWF', Icons.monetization_on, AppColors.secondary),
+                  _detailStat('Price', fmt.format(price), Icons.monetization_on, AppColors.secondary),
                   const SizedBox(width: 12),
-                  _detailStat('Stock', '$stock left', Icons.inventory, stock > 0 ? AppColors.success : AppColors.error),
+                  _detailStat('Units Sold', '$sales', Icons.shopping_cart, Colors.orange),
                 ],
               ),
             ),
@@ -495,9 +566,7 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  _detailStat('Units Sold', '$sales', Icons.shopping_cart, Colors.orange),
-                  const SizedBox(width: 12),
-                  _detailStat('Revenue', '${fmt(revenue)} RWF', Icons.trending_up, AppColors.success),
+                  _detailStat('Revenue', fmt.format(revenue), Icons.trending_up, AppColors.success),
                 ],
               ),
             ),
@@ -517,9 +586,9 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withAlpha(15),
+          color: color.withValues(alpha: 15/255),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withAlpha(40)),
+          border: Border.all(color: color.withValues(alpha: 40/255)),
         ),
         child: Row(
           children: [
@@ -540,7 +609,7 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
     );
   }
 
-  Widget _buildStatCard(String label, String value, IconData icon, Color color, String growth) {
+  Widget _buildStatCard(String label, String value, IconData icon, Color color) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -552,31 +621,14 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, color: color, size: 20),
-                ),
-                if (growth.isNotEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      growth,
-                      style: const TextStyle(color: AppColors.success, fontSize: 10, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-              ],
-            ),
+             Container(
+               padding: const EdgeInsets.all(8),
+               decoration: BoxDecoration(
+                 color: color.withValues(alpha: 0.1),
+                 borderRadius: BorderRadius.circular(10),
+               ),
+               child: Icon(icon, color: color, size: 20),
+             ),
             const SizedBox(height: 12),
             Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 4),
@@ -604,7 +656,7 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
     );
   }
 
-  Widget _buildProductRankCard(int rank, Map<String, dynamic> product) {
+  Widget _buildProductRankCard(int rank, Map<String, dynamic> product, NumberFormat fmt) {
     Color rankColor;
     switch (rank) {
       case 1:
@@ -634,7 +686,7 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
             width: 32,
             height: 32,
             decoration: BoxDecoration(
-              color: rankColor.withOpacity(0.15),
+              color: rankColor.withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -678,8 +730,8 @@ class _ShopReportsPageState extends State<ShopReportsPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                '${(product['revenue'] as int) ~/ 1000}K RWF',
-                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary),
+                fmt.format(product['revenue']),
+                style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary, fontSize: 12),
               ),
               const Text(
                 'Revenue',
@@ -700,9 +752,15 @@ class _BarChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final barWidth = (size.width - 60) / data.length / 2.5;
-    final maxSales = data.fold<double>(0, (max, item) => item['sales'] as int > max ? (item['sales'] as int).toDouble() : max);
+    if (data.isEmpty) return;
     
+    // Safety check for empty data
+    final barUnitWidth = (size.width - 60) / data.length;
+    final barWidth = barUnitWidth / 2.5;
+    
+    final maxSales = data.fold<double>(0, (max, item) => (item['sales'] as double) > max ? (item['sales'] as double) : max);
+    final maxOrders = data.fold<int>(0, (max, item) => (item['orders'] as int) > max ? (item['orders'] as int) : max);
+
     final salesPaint = Paint()
       ..color = AppColors.secondary
       ..style = PaintingStyle.fill;
@@ -717,23 +775,28 @@ class _BarChartPainter extends CustomPainter {
 
     for (var i = 0; i < data.length; i++) {
       final item = data[i];
-      final x = 30 + (i * (size.width - 60) / data.length) + barWidth / 2;
+      final x = 30 + (i * barUnitWidth) + (barUnitWidth - barWidth * 2 - 4) / 2;
       
       // Sales bar
-      final salesHeight = ((item['sales'] as int) / maxSales) * (size.height - 40);
-      final salesRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x, size.height - 30 - salesHeight, barWidth, salesHeight),
-        const Radius.circular(4),
-      );
-      canvas.drawRRect(salesRect, salesPaint);
+      if (maxSales > 0) {
+        final salesHeight = ((item['sales'] as double) / maxSales) * (size.height - 40);
+        final salesRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(x, size.height - 30 - salesHeight, barWidth, salesHeight),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(salesRect, salesPaint);
+      }
       
-      // Orders bar (scaled differently)
-      final ordersHeight = ((item['orders'] as int) / 70) * (size.height - 40);
-      final ordersRect = RRect.fromRectAndRadius(
-        Rect.fromLTWH(x + barWidth + 4, size.height - 30 - ordersHeight, barWidth, ordersHeight),
-        const Radius.circular(4),
-      );
-      canvas.drawRRect(ordersRect, orderPaint);
+      // Orders bar (Use separate scale or normalized? Users usually prefer dual axis but here we just show relative height or normalized to maxOrders)
+      // To show them side-by-side but with reasonable visibility, let's normalize to available height independently.
+      if (maxOrders > 0) {
+        final ordersHeight = ((item['orders'] as int) / maxOrders) * (size.height - 40);
+        final ordersRect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(x + barWidth + 4, size.height - 30 - ordersHeight, barWidth, ordersHeight),
+          const Radius.circular(4),
+        );
+        canvas.drawRRect(ordersRect, orderPaint);
+      }
       
       // Month label
       textPainter.text = TextSpan(
@@ -741,7 +804,7 @@ class _BarChartPainter extends CustomPainter {
         style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
       );
       textPainter.layout();
-      textPainter.paint(canvas, Offset(x + barWidth / 2 - textPainter.width / 2, size.height - 20));
+      textPainter.paint(canvas, Offset(x + barWidth - textPainter.width / 2, size.height - 20));
     }
   }
 

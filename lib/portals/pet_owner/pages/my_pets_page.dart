@@ -4,7 +4,8 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
-import '../../../data/providers/mock_data_provider.dart';
+import '../widgets/pet_form_sheet.dart';
+import '../../../data/providers/pet_providers.dart';
 import '../../../data/models/models.dart';
 
 class MyPetsPage extends ConsumerStatefulWidget {
@@ -19,7 +20,7 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final myPets = ref.watch(myPetsProvider);
+    final myPetsAsync = ref.watch(myPetsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -67,19 +68,28 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
                 ),
                 const SizedBox(height: 16),
                 // Search
+                // Search
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: const TextField(
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: AppColors.textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Search pets...',
-                      hintStyle: TextStyle(color: Colors.white70),
+                      hintStyle: TextStyle(color: AppColors.textMuted),
                       border: InputBorder.none,
-                      icon: Icon(Icons.search, color: Colors.white70),
+                      icon: Icon(Icons.search, color: AppColors.textSecondary),
+                      contentPadding: EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
                 ),
@@ -88,15 +98,37 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
           ),
           // Content
           Expanded(
-            child: myPets.isEmpty
-                ? const EmptyState(
-                    icon: Icons.pets,
-                    title: 'No Pets Found',
-                    subtitle: 'Register your first pet to see it here!',
-                  )
-                : _isGridView 
-                    ? _buildGridView(myPets) 
-                    : _buildSliderView(myPets),
+            child: myPetsAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Failed to load pets: ${error.toString()}',
+                      textAlign: TextAlign.center,
+                      style: AppTypography.body.copyWith(color: AppColors.error),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: () => ref.invalidate(myPetsProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+              data: (myPets) => myPets.isEmpty
+                  ? const EmptyState(
+                      icon: Icons.pets,
+                      title: 'No Pets Found',
+                      subtitle: 'Register your first pet to see it here!',
+                    )
+                  : _isGridView
+                      ? _buildGridView(myPets)
+                      : _buildSliderView(myPets),
+            ),
           ),
         ],
       ),
@@ -126,136 +158,7 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
   }
 
   void _showAddPetModal(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.85,
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: GestureDetector(
-                        onTap: () {},
-                        child: Container(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            color: AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: AppColors.secondary, width: 2),
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, size: 40, color: AppColors.secondary),
-                              const SizedBox(height: 4),
-                              Text('Add Photo', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const AppTextField(label: 'Pet Name', hint: 'e.g. Buddy'),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildDropdownField('Species', 'Select species')),
-                        const SizedBox(width: 16),
-                        Expanded(child: _buildDropdownField('Breed', 'Select breed')),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(child: _buildDropdownField('Gender', 'Select gender')),
-                        const SizedBox(width: 16),
-                        Expanded(child: const AppTextField(label: 'Age', hint: 'e.g. 2 years')),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    const AppTextField(label: 'Weight (kg)', hint: 'e.g. 15'),
-                    const SizedBox(height: 16),
-                    const AppTextField(label: 'Location', hint: 'e.g. Kicukiro, Kigali'),
-                    const SizedBox(height: 16),
-                    const AppTextField(
-                      label: 'Health Summary',
-                      hint: 'e.g. Vaccinated, healthy...',
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: 16),
-                    const AppTextField(
-                      label: 'Description',
-                      hint: 'Tell us more about your pet...',
-                      maxLines: 4,
-                    ),
-                    const SizedBox(height: 24),
-                    PrimaryButton(
-                      label: 'Register Pet',
-                      onPressed: () {
-                        Navigator.pop(context);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Pet registered successfully!'), backgroundColor: AppColors.success),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDropdownField(String label, String hint) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.inputFill,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              hint: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
-              items: [],
-              onChanged: (val) {},
-            ),
-          ),
-        ),
-      ],
-    );
+    PetFormSheet.show(context);
   }
 }
 
@@ -325,7 +228,14 @@ class _PetDetailCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(pet.name, style: AppTypography.h2),
+                      Expanded(
+                        child: Text(
+                          pet.name,
+                          style: AppTypography.h2,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       Icon(
                         pet.gender == 'MALE' ? Icons.male : Icons.female,
                         color: pet.gender == 'MALE' ? AppColors.secondary : Colors.pink,
@@ -402,7 +312,12 @@ class _PetGridCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text(
+                    pet.name,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   Text(
                     pet.breed?.name ?? pet.species?.name ?? '',
                     style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),

@@ -1,32 +1,36 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/common_widgets.dart';
+import '../../../../core/utils/toast_service.dart';
+import '../../../../data/providers/auth_providers.dart';
 
-class RegisterPage extends StatefulWidget {
+class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
 
   @override
-  State<RegisterPage> createState() => _RegisterPageState();
+  ConsumerState<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   
-  bool _isLoading = false;
   bool _obscurePassword = true;
   int _currentStep = 0; // 0 = info, 1 = persona selection
   String? _selectedPersona;
 
   final List<Map<String, dynamic>> _personas = [
-    {'id': 'user', 'label': 'User', 'icon': Icons.person},
-    {'id': 'pet_owner', 'label': 'Pet Owner', 'icon': Icons.pets},
-    {'id': 'shop_owner', 'label': 'Shop Owner', 'icon': Icons.store},
-    {'id': 'provider', 'label': 'Service Provider', 'icon': Icons.medical_services},
+    {'id': 'USER', 'label': 'User', 'icon': Icons.person},
+    {'id': 'PET_OWNER', 'label': 'Pet Owner', 'icon': Icons.pets},
+    {'id': 'SHOP_OWNER', 'label': 'Shop Owner', 'icon': Icons.store},
+    {'id': 'VETERINARY', 'label': 'Veterinary', 'icon': Icons.medical_services},
+    {'id': 'PET_GROOMER', 'label': 'Pet Groomer', 'icon': Icons.content_cut},
+    // {'id': 'PET_TRAINER', 'label': 'Pet Trainer', 'icon': Icons.sports},
   ];
 
   @override
@@ -48,30 +52,45 @@ class _RegisterPageState extends State<RegisterPage> {
     }
   }
 
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     if (_selectedPersona == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a persona')),
-      );
+      ToastService.error(context, 'Please select a persona');
       return;
     }
 
-    setState(() => _isLoading = true);
-    
-    // Mock registration
-    Future.delayed(const Duration(seconds: 1), () {
+    // Hide keyboard
+    FocusScope.of(context).unfocus();
+
+    await ref.read(authStateProvider.notifier).register(
+      fullName: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      password: _passwordController.text,
+      phone: _phoneController.text.trim(),
+      role: _selectedPersona!,
+    );
+
+    final authState = ref.read(authStateProvider);
+
+    if (authState.hasError) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        ToastService.error(context, authState.error.toString());
+      }
+    } else if (authState.value != null) {
+      if (mounted) {
+        ToastService.success(context, 'Account created successfully! Please login.');
         context.go('/login');
       }
-    });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authStateProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       body: LoadingOverlay(
-        isLoading: _isLoading,
+        isLoading: isLoading,
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -108,7 +127,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     Text(
                       'Provide required credentials below\nto create your account',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                     ),
                   ],
                 ),
@@ -200,7 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     PrimaryButton(
                       label: _currentStep == 0 ? 'Next' : 'Submit',
                       onPressed: _handleNext,
-                      isLoading: _isLoading,
+                      isLoading: isLoading,
                     ),
                     const SizedBox(height: 16),
                     Row(
@@ -236,24 +255,19 @@ class _RegisterPageState extends State<RegisterPage> {
             validator: (v) => v!.isEmpty ? 'Name is required' : null,
           ),
           const SizedBox(height: 16),
-          AppTextField(
-            label: 'ID *',
-            hint: '********',
-            prefixIcon: Icons.badge_outlined,
-            keyboardType: TextInputType.number,
-          ),
-          const SizedBox(height: 16),
+          // Removed National ID field as it is not present in DTO
           AppTextField(
             label: 'Email',
             hint: 'pet@gmail.com',
             prefixIcon: Icons.email_outlined,
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            validator: (v) => v!.isEmpty ? 'Email is required' : null, // Added validator
           ),
           const SizedBox(height: 16),
           AppTextField(
             label: 'Phone *',
-            hint: '+ (250) *** *** ***',
+            hint: '+250788123456', // Updated hint to match backend requirement
             prefixIcon: Icons.phone_outlined,
             controller: _phoneController,
             keyboardType: TextInputType.phone,
@@ -270,8 +284,10 @@ class _RegisterPageState extends State<RegisterPage> {
       children: [
         const Text('Choose your persona', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
+        Wrap( // Changed Row to Wrap to handle more items
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.center,
           children: _personas.map((p) {
             final isSelected = _selectedPersona == p['id'];
             return GestureDetector(
@@ -283,7 +299,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     width: 70,
                     height: 70,
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.secondary.withOpacity(0.2) : AppColors.inputFill,
+                      color: isSelected ? AppColors.secondary.withValues(alpha: 0.2) : AppColors.inputFill,
                       borderRadius: BorderRadius.circular(20),
                       border: isSelected ? Border.all(color: AppColors.secondary, width: 2) : null,
                     ),
@@ -316,7 +332,7 @@ class _RegisterPageState extends State<RegisterPage> {
           ),
         ),
         const SizedBox(height: 8),
-        const Text('Must be at least 8 characters', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+        const Text('Must be at least 8 characters (Upper, Lower, Number, Special)', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
       ],
     );
   }

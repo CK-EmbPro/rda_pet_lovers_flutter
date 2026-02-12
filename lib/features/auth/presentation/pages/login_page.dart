@@ -1,29 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/common_widgets.dart';
+import '../../../../data/providers/auth_providers.dart';
+import '../../../../data/models/user_model.dart';
+import '../../../../core/utils/toast_service.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _isLoading = false;
   bool _obscurePassword = true;
-
-  // Mock credentials for different portals
-  static const Map<String, String> _mockCredentials = {
-    'user@test.com': '/user',           // User Portal
-    'owner@test.com': '/pet-owner',     // Pet Owner Portal
-    'provider@test.com': '/provider',   // Provider Portal
-    'shop@test.com': '/shop-owner',     // Shop Owner Portal
-  };
 
   @override
   void dispose() {
@@ -32,49 +27,73 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+      // Hide keyboard
+      FocusScope.of(context).unfocus();
       
-      final email = _emailController.text.trim().toLowerCase();
+      final email = _emailController.text.trim();
+      final password = _passwordController.text;
+
+      // Call real login API
+      await ref.read(authStateProvider.notifier).login(email, password);
+
+      // Check result via state (AuthNotifier sets state.error on failure)
+      final authState = ref.read(authStateProvider);
       
-      // Role-based routing with mock credentials
-      Future.delayed(const Duration(seconds: 1), () {
+      if (authState.hasError) {
         if (mounted) {
-          setState(() => _isLoading = false);
-          
-          // Get portal route based on email, default to user portal
-          final route = _mockCredentials[email] ?? '/user';
-          context.go(route);
-          
-          // Show snackbar with portal info
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome! Logged in as ${_getPortalName(route)}'),
-              backgroundColor: AppColors.success,
-              duration: const Duration(seconds: 2),
-            ),
-          );
+           ToastService.error(context, authState.error.toString());
         }
-      });
+      } else if (authState.value != null) {
+        // Success
+        if (mounted) {
+          final user = authState.value!;
+          _navigateToPortal(user);
+        }
+      }
     }
   }
-  
-  String _getPortalName(String route) {
-    switch (route) {
-      case '/user': return 'User';
-      case '/pet-owner': return 'Pet Owner';
-      case '/provider': return 'Service Provider';
-      case '/shop-owner': return 'Shop Owner';
-      default: return 'User';
+
+  void _navigateToPortal(UserModel user) {
+    String route = '/user';
+    String portalName = 'User';
+
+    switch (user.primaryRole) {
+      case 'admin':
+        // route = '/admin'; // If admin exists
+        portalName = 'Admin';
+        break;
+      case 'provider':
+        route = '/provider';
+        portalName = 'Service Provider';
+        break;
+      case 'shop_owner':
+        route = '/shop-owner';
+        portalName = 'Shop Owner';
+        break;
+      case 'pet_owner':
+        route = '/pet-owner';
+        portalName = 'Pet Owner';
+        break;
+      default:
+        route = '/user';
+        portalName = 'User';
     }
+
+    ToastService.success(context, 'Welcome back, ${user.fullName}! ($portalName)');
+    context.go(route);
   }
 
   @override
   Widget build(BuildContext context) {
+    // Watch auth state for loading status
+    final authState = ref.watch(authStateProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       body: LoadingOverlay(
-        isLoading: _isLoading,
+        isLoading: isLoading,
         child: SingleChildScrollView(
           child: Column(
             children: [
@@ -117,7 +136,7 @@ class _LoginPageState extends State<LoginPage> {
                       'Welcome back! Please enter your credentials',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.8),
+                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
                       ),
                     ),
@@ -170,7 +189,7 @@ class _LoginPageState extends State<LoginPage> {
                                   borderRadius: BorderRadius.circular(25),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: Colors.black.withOpacity(0.05),
+                                      color: Colors.black.withValues(alpha: 0.05),
                                       blurRadius: 10,
                                     ),
                                   ],
@@ -243,7 +262,7 @@ class _LoginPageState extends State<LoginPage> {
                       PrimaryButton(
                         label: 'Log In',
                         onPressed: _handleLogin,
-                        isLoading: _isLoading,
+                        isLoading: isLoading,
                       ),
                       const SizedBox(height: 24),
                       // Sign Up Link

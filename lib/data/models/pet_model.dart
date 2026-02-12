@@ -60,14 +60,14 @@ class PetModel {
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
     return PetModel(
-      id: json['id'] as String,
-      petCode: json['petCode'] as String,
-      ownerId: json['ownerId'] as String,
-      name: json['name'] as String,
-      speciesId: json['speciesId'] as String,
+      id: json['id'] as String? ?? '',
+      petCode: json['petCode'] as String? ?? '',
+      ownerId: json['ownerId'] as String? ?? '',
+      name: json['name'] as String? ?? 'Unknown Pet',
+      speciesId: json['speciesId'] as String? ?? '',
       breedId: json['breedId'] as String?,
-      gender: json['gender'] as String,
-      weightKg: (json['weightKg'] as num?)?.toDouble(),
+      gender: json['gender'] as String? ?? 'UNKNOWN',
+      weightKg: _parseDouble(json['weightKg']),
       ageYears: json['ageYears'] as int?,
       birthDate: json['birthDate'] != null
           ? DateTime.parse(json['birthDate'] as String)
@@ -75,18 +75,20 @@ class PetModel {
       locationId: json['locationId'] as String?,
       nationality: json['nationality'] as String?,
       images: (json['images'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.where((e) => e != null)
+              .map((e) => e.toString())
               .toList() ??
           [],
       videos: (json['videos'] as List<dynamic>?)
-              ?.map((e) => e as String)
+              ?.where((e) => e != null)
+              .map((e) => e.toString())
               .toList() ??
           [],
       description: json['description'] as String?,
       healthSummary: json['healthSummary'] as String?,
       vaccinationStatus: json['vaccinationStatus'] as Map<String, dynamic>?,
-      donationStatus: json['donationStatus'] as String,
-      sellingStatus: json['sellingStatus'] as String,
+      donationStatus: json['donationStatus'] as String? ?? 'ACTIVE',
+      sellingStatus: json['sellingStatus'] as String? ?? 'ACTIVE',
       isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: json['updatedAt'] != null
@@ -105,6 +107,13 @@ class PetModel {
           ? LocationModel.fromJson(json['location'] as Map<String, dynamic>)
           : null,
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -159,8 +168,8 @@ class SpeciesModel {
 
   factory SpeciesModel.fromJson(Map<String, dynamic> json) {
     return SpeciesModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
       icon: json['icon'] as String?,
     );
   }
@@ -176,9 +185,9 @@ class BreedModel {
 
   factory BreedModel.fromJson(Map<String, dynamic> json) {
     return BreedModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      speciesId: json['speciesId'] as String,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      speciesId: json['speciesId'] as String? ?? '',
     );
   }
 }
@@ -201,8 +210,8 @@ class UserBasicModel {
 
   factory UserBasicModel.fromJson(Map<String, dynamic> json) {
     return UserBasicModel(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
+      id: json['id'] as String? ?? '',
+      fullName: json['fullName'] as String? ?? 'Unknown User',
       avatarUrl: json['avatarUrl'] as String?,
       phone: json['phone'] as String?,
       email: json['email'] as String?,
@@ -228,10 +237,10 @@ class LocationModel {
 
   factory LocationModel.fromJson(Map<String, dynamic> json) {
     return LocationModel(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      province: json['province'] as String?,
-      district: json['district'] as String?,
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? json['districtName'] as String? ?? 'Unknown Location',
+      province: json['province'] as String? ?? json['provinceName'] as String?,
+      district: json['district'] as String? ?? json['districtName'] as String?,
       sector: json['sector'] as String?,
     );
   }

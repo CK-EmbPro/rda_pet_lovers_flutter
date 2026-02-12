@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
-import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
+import '../../../data/providers/auth_providers.dart';
+import '../../../data/providers/shop_providers.dart';
+import '../../../data/providers/product_providers.dart';
+import '../../../data/providers/order_providers.dart';
 import '../shop_owner_portal.dart';
 import '../widgets/product_form_sheet.dart';
-
-// Mock orders for dashboard
-final List<Map<String, dynamic>> _mockRecentOrders = [
-  {'id': 'ORD-001', 'customer': 'John Doe', 'items': 3, 'total': 45000, 'status': 'pending', 'date': 'Today'},
-  {'id': 'ORD-002', 'customer': 'Jane Smith', 'items': 1, 'total': 25000, 'status': 'shipped', 'date': 'Today'},
-  {'id': 'ORD-003', 'customer': 'Mike Wilson', 'items': 5, 'total': 80000, 'status': 'delivered', 'date': 'Yesterday'},
-];
 
 class ShopDashboardPage extends ConsumerWidget {
   const ShopDashboardPage({super.key});
@@ -23,7 +18,7 @@ class ShopDashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final shopName = 'Pet Paradise'; // Would come from shop data
+    final myShopAsync = ref.watch(myShopProvider);
     
     // Get user initials
     String getInitials(String? name) {
@@ -37,159 +32,254 @@ class ShopDashboardPage extends ConsumerWidget {
     
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+        child: myShopAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, st) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.error_outline, color: AppColors.error, size: 48),
+                const SizedBox(height: 16),
+                Text('Error loading shop', style: AppTypography.h3),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                  child: Text(e.toString(), textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () => ref.refresh(myShopProvider),
+                  child: const Text('Retry'),
+                ),
+              ],
+            ),
+          ),
+          data: (shop) {
+             if (shop == null) {
+               return Center(
+                 child: Column(
+                   mainAxisAlignment: MainAxisAlignment.center,
+                   children: [
+                     const Icon(Icons.store_mall_directory_outlined, size: 64, color: AppColors.textSecondary),
+                     const SizedBox(height: 16),
+                     const Text('You do not have a shop yet.', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                     const SizedBox(height: 8),
+                     Text('User ID: ${user?.id ?? "Unknown"}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                     const SizedBox(height: 24),
+                     ElevatedButton(
+                       onPressed: () {
+                          // TODO: Implement Create Shop Flow
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Create Shop flow not implemented yet')),
+                          );
+                       }, 
+                       style: ElevatedButton.styleFrom(
+                         backgroundColor: AppColors.primary,
+                         foregroundColor: Colors.white,
+                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                       ),
+                       child: const Text('Create Shop'),
+                     ),
+                     const SizedBox(height: 16),
+                     TextButton(
+                        onPressed: () => ref.refresh(myShopProvider),
+                        child: const Text('Refresh'),
+                     ),
+                   ],
+                 ),
+               );
+             }
+
+             // Fetch products and orders for stats
+             final productsAsync = ref.watch(shopProductsProvider(shop.id));
+             final ordersAsync = ref.watch(sellerOrdersProvider(null));
+
+             return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Welcome Back,', style: AppTypography.bodySmall),
-                        const SizedBox(height: 4),
-                        Text(shopName, style: AppTypography.h2),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        // Notification icon
-                        GestureDetector(
-                          onTap: () => NotificationsSheet.show(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.inputFill,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Badge(
-                              label: const Text('5'),
-                              child: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-                            ),
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Welcome Back,', style: AppTypography.bodySmall),
+                            const SizedBox(height: 4),
+                            Text(shop.name, style: AppTypography.h2),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        // Profile initials - circular, links to profile
-                        GestureDetector(
-                          onTap: () {
-                            final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
-                            portal?.navigateToTab(4); // Profile tab (will be index 4 after adding Reports)
-                          },
-                          child: Container(
-                            width: 44,
-                            height: 44,
-                            decoration: BoxDecoration(
-                              color: AppColors.secondary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: Text(
-                                getInitials(user?.fullName ?? shopName),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
+                        Row(
+                          children: [
+                            // Notification icon
+                            GestureDetector(
+                              onTap: () => NotificationsSheet.show(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: AppColors.inputFill,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Badge(
+                                  label: const Text('5'), // TODO: Real notification count
+                                  child: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
                                 ),
                               ),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            // Profile initials - circular, links to profile
+                            GestureDetector(
+                              onTap: () {
+                                final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
+                                portal?.navigateToTab(4); 
+                              },
+                              child: Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: AppColors.secondary,
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    getInitials(user?.fullName ?? shop.name),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              
-              // Stats Row
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  children: [
-                    _StatCard(icon: Icons.inventory_2, value: '48', label: 'Products', color: AppColors.secondary),
-                    const SizedBox(width: 12),
-                    _StatCard(icon: Icons.receipt_long, value: '156', label: 'Orders', color: Colors.orange),
-                    const SizedBox(width: 12),
-                    _StatCard(icon: Icons.monetization_on, value: '2.5M', label: 'Revenue', color: AppColors.success),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Quick Actions Section
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 12),
-                    Row(
+                  ),
+                  
+                  // Stats Row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
                       children: [
-                        Expanded(
-                          child: _ActionButton(
-                            icon: Icons.add,
-                            label: 'Add Product',
-                            color: AppColors.secondary,
-                            onTap: () => ProductFormSheet.show(context),
-                          ),
+                        productsAsync.when(
+                           data: (p) => _StatCard(icon: Icons.inventory_2, value: '${p.data.length}', label: 'Products', color: AppColors.secondary),
+                           loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
+                           error: (_,__) => _StatCard(icon: Icons.inventory_2, value: '-', label: 'Products', color: AppColors.secondary),
                         ),
                         const SizedBox(width: 12),
-                        Expanded(
-                          child: _ActionButton(
-                            icon: Icons.inventory,
-                            label: 'Manage Stock',
-                            color: Colors.orange,
-                            onTap: () {
-                              final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
-                              portal?.navigateToTab(1); // Products tab
-                            },
-                          ),
+                        ordersAsync.when(
+                           data: (o) => _StatCard(icon: Icons.receipt_long, value: '${o.data.length}', label: 'Orders', color: Colors.orange),
+                           loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
+                           error: (_,__) => _StatCard(icon: Icons.receipt_long, value: '-', label: 'Orders', color: Colors.orange),
+                        ),
+                        const SizedBox(width: 12),
+                        // Revenue placeholder or calculation
+                        ordersAsync.when(
+                           data: (o) {
+                             final revenue = o.data.fold<double>(0, (sum, order) => sum + order.totalAmount);
+                             // Simple formatting
+                             String valueArg = '${revenue.toInt()}'; // Default
+                             if (revenue > 1000000) {
+                               valueArg = '${(revenue/1000000).toStringAsFixed(1)}M';
+                             } else if (revenue > 1000) {
+                               valueArg = '${(revenue/1000).toStringAsFixed(1)}k';
+                             }
+
+                             return _StatCard(icon: Icons.monetization_on, value: valueArg, label: 'Revenue', color: AppColors.success);
+                           },
+                           loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
+                           error: (_,__) => _StatCard(icon: Icons.monetization_on, value: '-', label: 'Revenue', color: AppColors.success),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              
-              // Quick Report Section
-              _buildQuickReportSection(context),
-              const SizedBox(height: 24),
-              
-              // Recent Orders
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Recent Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                    TextButton(
-                      onPressed: () {
-                        final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
-                        portal?.navigateToTab(2); // Orders tab
-                      },
-                      child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Quick Actions Section
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Quick Actions', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _ActionButton(
+                                icon: Icons.add,
+                                label: 'Add Product',
+                                color: AppColors.secondary,
+                                onTap: () => ProductFormSheet.show(context),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _ActionButton(
+                                icon: Icons.inventory,
+                                label: 'Manage Stock',
+                                color: Colors.orange,
+                                onTap: () {
+                                  final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
+                                  portal?.navigateToTab(1); // Products tab
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Quick Report Section
+                  _buildQuickReportSection(context),
+                  const SizedBox(height: 24),
+                  
+                  // Recent Orders
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Recent Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                        TextButton(
+                          onPressed: () {
+                            final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
+                            portal?.navigateToTab(2); // Orders tab
+                          },
+                          child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ordersAsync.when(
+                    data: (paginated) {
+                       final recent = paginated.data.take(3).toList();
+                       if (recent.isEmpty) return const Padding(padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), child: Text("No recent orders"));
+                       return ListView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: recent.length,
+                        itemBuilder: (context, index) {
+                          return _RecentOrderCard(order: recent[index]);
+                        },
+                      );
+                    },
+                    loading: () => const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => const SizedBox(),
+                  ),
+                  const SizedBox(height: 100),
+                ],
               ),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                itemCount: _mockRecentOrders.length,
-                itemBuilder: (context, index) {
-                  final order = _mockRecentOrders[index];
-                  return _RecentOrderCard(order: order);
-                },
-              ),
-              const SizedBox(height: 100),
-            ],
-          ),
+            );
+          }
         ),
       ),
     );
@@ -233,14 +323,14 @@ class ShopDashboardPage extends ConsumerWidget {
                       Row(
                         children: [
                           const Text(
-                            '14,254',
+                            '14,254', // TODO: Calculate real monthly sales
                             style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                           ),
                           const SizedBox(width: 8),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withOpacity(0.1),
+                              color: AppColors.success.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: const Text(
@@ -268,13 +358,13 @@ class ShopDashboardPage extends ConsumerWidget {
             const SizedBox(height: 16),
             const Divider(),
             const SizedBox(height: 12),
-            // Top selling product
+            // Top selling product (Placeholder for now)
             Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.secondary.withOpacity(0.1),
+                    color: AppColors.secondary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: const Icon(Icons.trending_up, color: AppColors.secondary, size: 20),
@@ -313,8 +403,6 @@ class ShopDashboardPage extends ConsumerWidget {
       ),
     );
   }
-
-
 }
 
 // Stat Card Widget
@@ -366,7 +454,7 @@ class _ActionButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
@@ -384,7 +472,7 @@ class _ActionButton extends StatelessWidget {
 
 // Recent Order Card
 class _RecentOrderCard extends StatelessWidget {
-  final Map<String, dynamic> order;
+  final OrderModel order;
   const _RecentOrderCard({required this.order});
 
   @override
@@ -415,12 +503,13 @@ class _RecentOrderCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(order['customer'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text('${order['items']} items • ${order['total']} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  // Use customer ID or placeholder until name is available
+                  Text('Customer #${order.userId.substring(0, 4)}...', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('${order.items.length} items • ${order.totalAmount.toInt()} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 ],
               ),
             ),
-            _OrderStatusBadge(status: order['status'] as String),
+            _OrderStatusBadge(status: order.status),
           ],
         ),
       ),
@@ -436,7 +525,7 @@ class _OrderStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Color color;
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'pending':
         color = Colors.orange;
         break;
@@ -455,7 +544,7 @@ class _OrderStatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(

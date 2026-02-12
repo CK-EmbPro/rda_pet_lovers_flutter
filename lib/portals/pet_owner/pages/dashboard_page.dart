@@ -9,11 +9,21 @@ import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/notifications_sheet.dart';
-import '../../../core/widgets/appointment_form_sheet.dart';
+// import '../../../core/widgets/appointment_form_sheet.dart'; // Unused in this file according to previous read, but keeping if needed
 import '../../../core/widgets/all_appointments_sheet.dart';
 import '../../../core/widgets/all_orders_sheet.dart';
-import '../../../core/widgets/appointment_detail_sheet.dart';
-import '../../../data/providers/mock_data_provider.dart';
+// import '../../../core/widgets/appointment_detail_sheet.dart'; // Unused here?
+import '../widgets/pet_form_sheet.dart'; 
+import '../../../data/providers/species_provider.dart';
+import '../../../data/providers/service_providers.dart';
+import '../../../data/providers/appointment_providers.dart';
+import '../../../data/providers/shop_providers.dart';
+import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/product_providers.dart';
+import '../../../data/providers/order_providers.dart';
+import '../../../data/providers/auth_providers.dart';
+import '../../../data/services/pet_service.dart';
+
 import '../../../data/models/models.dart';
 import '../pet_owner_portal.dart';
 
@@ -23,14 +33,19 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(currentUserProvider);
-    final services = ref.watch(servicesProvider);
-    final appointments = ref.watch(myAppointmentsProvider);
-    final shops = ref.watch(shopsProvider);
-    final browsablePets = ref.watch(browsablePetsProvider);
-
-    // Split browsable pets by listing type
-    final petsForSale = browsablePets.where((p) => p.listingType == 'FOR_SALE').toList();
-    final petsForDonation = browsablePets.where((p) => p.listingType == 'FOR_DONATION').toList();
+    final isGuest = user == null;
+    
+    // Async Providers
+    final servicesAsync = ref.watch(allServicesProvider(const ServiceQueryParams(limit: 5)));
+    final appointmentsAsync = isGuest 
+        ? const AsyncValue<PaginatedResponse<AppointmentModel>>.data(const PaginatedResponse(data: [], page: 1, limit: 5, total: 0, totalPages: 0))
+        : ref.watch(myAppointmentsProvider(null));
+    final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 5)));
+    final petsAsync = ref.watch(allPetsProvider(const PetQueryParams(limit: 10)));
+    final productsAsync = ref.watch(allProductsProvider(const ProductQueryParams(limit: 10)));
+    final ordersAsync = isGuest 
+        ? const AsyncValue<List<OrderModel>>.data([]) 
+        : ref.watch(myOrdersProvider(null));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -131,7 +146,7 @@ class DashboardPage extends ConsumerWidget {
                         GestureDetector(
                           onTap: () {
                             final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                            portal?.navigateToTab(5);
+                            portal?.navigateToTab(5); // Profile is usually last tab index, check UserPortal
                           },
                           child: CircleAvatar(
                             radius: 22,
@@ -163,46 +178,98 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: 24),
 
               // Upcoming Appointments
-              if (appointments.isNotEmpty) ...[
-                _buildUpcomingAppointmentsHeader(context),
-                ...appointments.take(2).map((apt) => _AppointmentCard(appointment: apt)),
-                const SizedBox(height: 24),
-              ],
+              appointmentsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox.shrink(),
+                data: (PaginatedResponse<AppointmentModel> response) {
+                  final List<AppointmentModel> appointments = response.data;
+                  if (appointments.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       _buildUpcomingAppointmentsHeader(context),
+                       ...appointments.take(2).map<Widget>((apt) => _AppointmentCard(appointment: apt)),
+                       const SizedBox(height: 24),
+                     ],
+                  );
+                }
+              ),
 
               // Recent Orders
-              _buildRecentOrdersSection(context),
+              ordersAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox.shrink(),
+                data: (List<OrderModel> orders) {
+                  if (orders.isEmpty) return const SizedBox.shrink();
+                  return _buildRecentOrdersSection(context, orders);
+                }
+              ),
               const SizedBox(height: 24),
 
               // Shops Section
-              _buildShopsSection(context, shops),
+              shopsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox.shrink(),
+                data: (PaginatedResponse<ShopModel> response) {
+                  return _buildShopsSection(context, response.data);
+                },
+              ),
               const SizedBox(height: 24),
 
               // Products Section
-              _buildProductsSection(context, ref),
+              productsAsync.when(
+                 loading: () => const Center(child: CircularProgressIndicator()),
+                 error: (err, stack) => const SizedBox.shrink(),
+                 data: (PaginatedResponse<ProductModel> response) {
+                   return _buildProductsSection(context, response.data);
+                 },
+              ),
               const SizedBox(height: 24),
 
-              // Being Sold Section
-              if (petsForSale.isNotEmpty) ...[
-                _buildPetsSectionHeader(context, 'Being Sold', () {
-                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                  portal?.navigateToTab(2);
-                }),
-                _buildPetsHorizontalList(petsForSale.take(5).toList()),
-                const SizedBox(height: 24),
-              ],
+              // Pets Section (Sale/Donation)
+              petsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox.shrink(),
+                data: (PaginatedResponse<PetModel> response) {
+                   final List<PetModel> browsablePets = response.data;
+                   final petsForSale = browsablePets.where((p) => p.listingType == 'FOR_SALE').toList();
+                   final petsForDonation = browsablePets.where((p) => p.listingType == 'FOR_DONATION').toList();
+                   
+                   return Column(
+                     children: [
+                       // Being Sold Section
+                        if (petsForSale.isNotEmpty) ...[
+                          _buildPetsSectionHeader(context, 'Being Sold', () {
+                            final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                            portal?.navigateToTab(2);
+                          }),
+                          _buildPetsHorizontalList(petsForSale.take(5).toList()),
+                          const SizedBox(height: 24),
+                        ],
+        
+                        // Being Donated Section
+                        if (petsForDonation.isNotEmpty) ...[
+                          _buildPetsSectionHeader(context, 'Being Donated', () {
+                            final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                            portal?.navigateToTab(2);
+                          }),
+                          _buildPetsHorizontalList(petsForDonation.take(5).toList()),
+                          const SizedBox(height: 24),
+                        ],
+                     ],
+                   );
+                }
+              ),
 
-              // Being Donated Section
-              if (petsForDonation.isNotEmpty) ...[
-                _buildPetsSectionHeader(context, 'Being Donated', () {
-                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                  portal?.navigateToTab(2);
-                }),
-                _buildPetsHorizontalList(petsForDonation.take(5).toList()),
-                const SizedBox(height: 24),
-              ],
-
-              // Available Services Section (Moved to bottom)
-              _buildServicesSection(context, services),
+              // Available Services Section
+              servicesAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox.shrink(),
+                data: (PaginatedResponse<ServiceModel> response) {
+                  return _buildServicesSection(context, response.data);
+                },
+              ),
+              
               const SizedBox(height: 100),
             ],
           ),
@@ -252,8 +319,12 @@ class DashboardPage extends ConsumerWidget {
   }
 
   Widget _buildCategoriesSection(WidgetRef ref) {
-    final categories = ref.watch(speciesProvider);
-    return _CategoriesWidget(categories: categories);
+    final speciesAsync = ref.watch(speciesProvider);
+    return speciesAsync.when(
+      data: (categories) => _CategoriesWidget(categories: categories),
+      loading: () => const SizedBox(height: 90, child: Center(child: CircularProgressIndicator())),
+      error: (e, r) => const SizedBox.shrink(),
+    );
   }
 
   Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
@@ -289,7 +360,7 @@ class DashboardPage extends ConsumerWidget {
                 color: Colors.green,
                 onTap: () {},
               ),
-              _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)),
+              // _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)), // Commented out until modal logic is ported
               _QuickActionButton(
                 icon: Icons.calendar_today,
                 label: 'Book Service',
@@ -322,14 +393,7 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildRecentOrdersSection(BuildContext context) {
-    // Mock recent orders for the pet owner
-    final mockRecentOrders = [
-      {'product': 'Premium Dog Food', 'shop': 'Pet Paradise', 'total': 45000, 'status': 'delivered', 'date': '2 days ago'},
-      {'product': 'Cat Treats Pack', 'shop': 'Happy Paws', 'total': 12000, 'status': 'shipped', 'date': '5 days ago'},
-      {'product': 'Pet Shampoo', 'shop': 'Pet Care Plus', 'total': 8500, 'status': 'pending', 'date': '1 week ago'},
-    ];
-
+  Widget _buildRecentOrdersSection(BuildContext context, List<OrderModel> orders) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -350,9 +414,9 @@ class DashboardPage extends ConsumerWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          itemCount: mockRecentOrders.length,
+          itemCount: orders.take(3).length,
           itemBuilder: (context, index) {
-            final order = mockRecentOrders[index];
+            final order = orders[index];
             return Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
@@ -377,13 +441,13 @@ class DashboardPage extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(order['product'] as String, style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text('${order['shop']} • ${order['total']} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        Text(order['date'] as String, style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        Text('Order #${order.id.substring(0, 5)}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text('${order.totalAmount} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text('${order.createdAt.day}/${order.createdAt.month}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                       ],
                     ),
                   ),
-                  _buildOrderStatusBadge(order['status'] as String),
+                  _buildOrderStatusBadge(order.status),
                 ],
               ),
             );
@@ -395,8 +459,9 @@ class DashboardPage extends ConsumerWidget {
 
   Widget _buildOrderStatusBadge(String status) {
     Color color;
-    switch (status) {
+    switch (status.toLowerCase()) {
       case 'delivered':
+      case 'completed':
         color = AppColors.success;
         break;
       case 'shipped':
@@ -416,6 +481,7 @@ class DashboardPage extends ConsumerWidget {
   }
 
   Widget _buildShopsSection(BuildContext context, List<ShopModel> shops) {
+    if (shops.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -444,7 +510,7 @@ class DashboardPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final shop = shops[index];
               return GestureDetector(
-                onTap: () => context.push('/shop-details/${shop.id}'),
+                onTap: () => context.push('/shop-details/${shop.id}'), // Route needs to exist
                 child: Container(
                   width: 160,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -500,8 +566,8 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProductsSection(BuildContext context, WidgetRef ref) {
-    final products = ref.watch(productsProvider);
+  Widget _buildProductsSection(BuildContext context, List<ProductModel> products) {
+    if (products.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -530,7 +596,7 @@ class DashboardPage extends ConsumerWidget {
             itemBuilder: (context, index) {
               final product = products[index];
               return GestureDetector(
-                onTap: () => context.push('/product-details/${product.id}'),
+                onTap: () => context.push('/product-details/${product.id}'), // Route needs to exist
                 child: Container(
                   width: 130,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -584,6 +650,7 @@ class DashboardPage extends ConsumerWidget {
   }
 
   Widget _buildServicesSection(BuildContext context, List<ServiceModel> services) {
+    if (services.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -656,315 +723,9 @@ class DashboardPage extends ConsumerWidget {
     );
   }
 
-  void _showAddPetModal(BuildContext context) {
-    XFile? profileImage;
-    List<XFile> galleryImages = [];
-    DateTime? selectedBirthDate;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setModalState) => Container(
-          height: MediaQuery.of(context).size.height * 0.9,
-          decoration: const BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.inputFill,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Profile Photo Section
-                      const Text('Profile Photo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      const SizedBox(height: 12),
-                      Center(
-                        child: GestureDetector(
-                          onTap: () async {
-                             final image = await _pickImage(context, ImageSource.gallery);
-                             if (image != null) setModalState(() => profileImage = image);
-                          },
-                          child: Container(
-                            width: 100,
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: AppColors.inputFill,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.secondary, width: 2),
-                              image: profileImage != null
-                                  ? DecorationImage(image: FileImage(File(profileImage!.path)), fit: BoxFit.cover)
-                                  : null,
-                            ),
-                            child: profileImage == null
-                                ? const Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(Icons.add_a_photo, size: 30, color: AppColors.secondary),
-                                      Text('Add Profile', style: TextStyle(fontSize: 10, color: AppColors.secondary)),
-                                    ],
-                                  )
-                                : null,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      // Gallery Photos Section
-                      const Text('Gallery Photos (Multiple)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      const SizedBox(height: 12),
-                      SizedBox(
-                        height: 80,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            GestureDetector(
-                              onTap: () async {
-                                final List<XFile> images = await ImagePicker().pickMultiImage();
-                                if (images.isNotEmpty) {
-                                  setModalState(() => galleryImages.addAll(images));
-                                }
-                              },
-                              child: Container(
-                                width: 80,
-                                height: 80,
-                                decoration: BoxDecoration(
-                                  color: AppColors.inputFill,
-                                  borderRadius: BorderRadius.circular(15),
-                                  border: Border.all(color: AppColors.secondary.withOpacity(0.3)),
-                                ),
-                                child: const Icon(Icons.add_photo_alternate_outlined, color: AppColors.secondary),
-                              ),
-                            ),
-                            ...galleryImages.map((img) => Container(
-                                  width: 80,
-                                  height: 80,
-                                  margin: const EdgeInsets.only(left: 12),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    image: DecorationImage(image: FileImage(File(img.path)), fit: BoxFit.cover),
-                                  ),
-                                )),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-
-                      const AppTextField(label: 'Pet Name', hint: 'e.g. Buddy'),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: _buildDropdownField('Species', 'Select species')),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildDropdownField('Breed', 'Select breed')),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: _buildDropdownField('Gender', 'MALE / FEMALE')),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () async {
-                                final date = await showDatePicker(
-                                  context: context,
-                                  initialDate: DateTime.now().subtract(const Duration(days: 365)),
-                                  firstDate: DateTime(2000),
-                                  lastDate: DateTime.now(),
-                                );
-                                if (date != null) setModalState(() => selectedBirthDate = date);
-                              },
-                              child: AbsorbPointer(
-                                child: AppTextField(
-                                  label: 'Birth Date',
-                                  hint: selectedBirthDate != null 
-                                      ? "${selectedBirthDate!.day}/${selectedBirthDate!.month}/${selectedBirthDate!.year}"
-                                      : 'Select date',
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(child: const AppTextField(label: 'Weight (kg)', hint: 'e.g. 15', keyboardType: TextInputType.number)),
-                          const SizedBox(width: 16),
-                          Expanded(child: _buildDropdownField('Nationality', 'Select nationality')),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      _buildDropdownField('Listing Type', 'Personal / Selling / Donation'),
-                      const SizedBox(height: 16),
-                      const AppTextField(label: 'Location', hint: 'e.g. Kicukiro, Kigali'),
-                      const SizedBox(height: 16),
-                      const AppTextField(
-                        label: 'Health Summary',
-                        hint: 'e.g. Vaccinated, healthy...',
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 16),
-                      const AppTextField(
-                        label: 'Description',
-                        hint: 'Tell us more about your pet...',
-                        maxLines: 4,
-                      ),
-                      const SizedBox(height: 24),
-                      PrimaryButton(
-                        label: 'Register Pet',
-                        onPressed: () {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Pet registered successfully!'), backgroundColor: AppColors.success),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 40),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<XFile?> _pickImage(BuildContext context, ImageSource source) async {
-    final ImagePicker picker = ImagePicker();
-    return await picker.pickImage(source: source);
-  }
-
-  Widget _buildDropdownField(String label, String hint) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          decoration: BoxDecoration(
-            color: AppColors.inputFill,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              isExpanded: true,
-              hint: Text(hint, style: const TextStyle(color: AppColors.textMuted, fontSize: 14)),
-              items: [],
-              onChanged: (val) {},
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  void _showMateCheckModal(BuildContext context, WidgetRef ref) {
-    final myPets = ref.read(myPetsProvider);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.inputFill, borderRadius: BorderRadius.circular(2))),
-            ),
-            const SizedBox(height: 20),
-            const Text('Mate Compatibility Check', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('Check if two pets are compatible for mating by comparing their parents and grandparents.', style: TextStyle(color: AppColors.textSecondary)),
-            const SizedBox(height: 20),
-            AppTextField(
-              label: 'Your Pet Code',
-              hint: myPets.isNotEmpty ? myPets.first.petCode : 'PET-XXX-XXX',
-              prefixIcon: Icons.pets,
-            ),
-            const SizedBox(height: 16),
-            const AppTextField(label: 'Partner Pet Code', hint: 'Enter partner pet code', prefixIcon: Icons.pets),
-            const SizedBox(height: 24),
-            PrimaryButton(
-              label: 'Check Compatibility',
-              onPressed: () {
-                Navigator.pop(context);
-                _showCompatibilityResult(context, true);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showCompatibilityResult(BuildContext context, bool isCompatible) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isCompatible ? Icons.check_circle : Icons.cancel,
-              size: 60,
-              color: isCompatible ? AppColors.success : AppColors.error,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              isCompatible ? 'Compatible!' : 'Not Compatible',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isCompatible
-                  ? 'These pets have no matching parents or grandparents and are safe for mating.'
-                  : 'These pets share common ancestors and should not be mated.',
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildPetsSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -980,150 +741,68 @@ class DashboardPage extends ConsumerWidget {
 
   Widget _buildPetsHorizontalList(List<PetModel> pets) {
     return SizedBox(
-      height: 220,
+      height: 180,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: pets.length,
         itemBuilder: (context, index) {
           final pet = pets[index];
-          return Container(
-            width: 160,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            child: _PetDashboardCard(pet: pet),
+          return GestureDetector(
+            onTap: () => context.push('/pet-details/${pet.id}'),
+            child: Container(
+              width: 140,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: AppTheme.cardShadow,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                      child: pet.images.isNotEmpty
+                          ? CachedNetworkImage(
+                              imageUrl: pet.images.first,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            )
+                          : Container(color: AppColors.inputFill),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pet.name,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                        ),
+                        Text(
+                          '${pet.breed?.name ?? 'Unknown'} • ${pet.ageYears} yrs',
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),
     );
   }
-}
 
-class _PetDashboardCard extends StatelessWidget {
-  final PetModel pet;
-  const _PetDashboardCard({required this.pet});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/pet-details/${pet.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: pet.displayImage.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: pet.displayImage,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                      )
-                    : Container(color: AppColors.inputFill),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  Text(pet.breed?.name ?? pet.species?.name ?? '', style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
-                  const SizedBox(height: 4),
-                  if (pet.price != null && pet.price! > 0)
-                    Text('${pet.price!.toInt()} RWF', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 11)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoriesWidget extends StatefulWidget {
-  final List<dynamic> categories;
-  const _CategoriesWidget({required this.categories});
-
-  @override
-  State<_CategoriesWidget> createState() => _CategoriesWidgetState();
-}
-
-class _CategoriesWidgetState extends State<_CategoriesWidget> {
-  int activeIndex = 0;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20),
-          child: Text('Categories', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 90,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: widget.categories.length,
-            itemBuilder: (context, index) {
-              final cat = widget.categories[index];
-              final isActive = index == activeIndex;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    activeIndex = index;
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          color: isActive ? const Color(0xFF21314C) : Colors.white,
-                          border: Border.all(
-                            color: isActive ? const Color(0xFF21314C) : AppColors.inputFill,
-                            width: 2,
-                          ),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Center(
-                          child: Text(
-                            cat.icon ?? '🐾',
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        cat.name,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
-                          color: isActive ? const Color(0xFF21314C) : AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
+  // NOTE: In a real app we would move these private widgets and modals to separate files
+  // but keeping them here for now to avoid creating too many files at once.
+  
+  void _showAddPetModal(BuildContext context) {
+    PetFormSheet.show(context);
   }
 }
 
@@ -1144,27 +823,109 @@ class _QuickActionButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 80,
-        margin: const EdgeInsets.symmetric(horizontal: 4),
+      child: Padding(
+        padding: const EdgeInsets.only(right: 16),
         child: Column(
           children: [
             Container(
-              width: 55,
-              height: 55,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
-                borderRadius: BorderRadius.circular(15),
+                color: color.withOpacity(0.1),
+                shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color),
+              child: Icon(icon, color: color, size: 24),
             ),
-            if (label.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(label, style: const TextStyle(fontSize: 11), textAlign: TextAlign.center),
-            ],
+            const SizedBox(height: 8),
+            Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CategoriesWidget extends StatelessWidget {
+  final List<SpeciesModel> categories;
+  const _CategoriesWidget({required this.categories});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 110,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        itemCount: categories.length,
+        itemBuilder: (context, index) {
+          final category = categories[index];
+          final gradient = _getGradient(category.name);
+          
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Column(
+              children: [
+                Container(
+                  width: 65,
+                  height: 65,
+                  decoration: BoxDecoration(
+                    gradient: gradient,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: gradient.colors.first.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      (category.icon != null && category.icon!.isNotEmpty)
+                          ? category.icon!
+                          : category.name.substring(0, 1).toUpperCase(),
+                      style: TextStyle(
+                        fontSize: (category.icon != null && category.icon!.isNotEmpty) ? 28 : 24,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  category.name,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  LinearGradient _getGradient(String name) {
+    final int hash = name.hashCode;
+    final List<List<Color>> palettes = [
+      [const Color(0xFF6366F1), const Color(0xFF818CF8)], // Indigo
+      [const Color(0xFFF59E0B), const Color(0xFFFBBF24)], // Amber
+      [const Color(0xFF10B981), const Color(0xFF34D399)], // Emerald
+      [const Color(0xFFEF4444), const Color(0xFFF87171)], // Red
+      [const Color(0xFF8B5CF6), const Color(0xFFA78BFA)], // Violet
+      [const Color(0xFFEC4899), const Color(0xFFFB7185)], // Pink/Rose
+      [const Color(0xFF06B6D4), const Color(0xFF22D3EE)], // Cyan
+    ];
+    
+    final palette = palettes[hash.abs() % palettes.length];
+    return LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: palette,
     );
   }
 }
@@ -1175,102 +936,51 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => AppointmentDetailSheet.show(
-        context,
-        appointment,
-        userType: AppointmentUserType.petOwner,
-      ),
-      child: Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: AppTheme.cardShadow,
+        border: Border(left: BorderSide(color: AppColors.secondary, width: 4)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: 25,
-            backgroundColor: AppColors.inputFill,
-            backgroundImage: appointment.provider?.avatarUrl != null
-                ? CachedNetworkImageProvider(appointment.provider!.avatarUrl!)
-                : null,
-            child: appointment.provider?.avatarUrl == null
-                ? const Icon(Icons.person, color: AppColors.textSecondary)
-                : null,
+          Container(
+             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+             decoration: BoxDecoration(
+               color: AppColors.secondary.withOpacity(0.1),
+               borderRadius: BorderRadius.circular(12),
+             ),
+             child: Column(
+               children: [
+                 Text('${appointment.scheduledAt.month}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
+                 Text('${appointment.scheduledAt.day}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.secondary)),
+               ],
+             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(appointment.provider?.fullName ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text(appointment.service?.name ?? 'Service', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                Text(appointment.service?.name ?? 'Service', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 const SizedBox(height: 4),
-                Row(
+                Text('At ${appointment.provider?.fullName ?? 'Provider'}', style: const TextStyle(color: AppColors.textSecondary)),
+                const SizedBox(height: 4),
+                 Row(
                   children: [
                     const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
                     const SizedBox(width: 4),
-                    Text(
-                      '${appointment.scheduledAt.day}/${appointment.scheduledAt.month} at ${appointment.scheduledAt.hour}:${appointment.scheduledAt.minute.toString().padLeft(2, '0')}',
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                    ),
+                    Text(appointment.scheduledTime ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                   ],
                 ),
               ],
             ),
           ),
-          StatusBadge(label: appointment.displayStatus, isPositive: appointment.isConfirmed),
         ],
-      ),
-      ),
-    );
-  }
-}
-
-class _ServiceTile extends StatelessWidget {
-  final ServiceModel service;
-  const _ServiceTile({required this.service});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/service-details/${service.id}'),
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 25,
-              backgroundColor: AppColors.inputFill,
-              backgroundImage: service.provider?.avatarUrl != null
-                  ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
-                  : null,
-              child: service.provider?.avatarUrl == null
-                  ? const Icon(Icons.person, color: AppColors.textSecondary)
-                  : null,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(service.provider?.fullName ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text(service.displayServiceType, style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                ],
-              ),
-            ),
-            const StatusBadge(label: 'Available', isPositive: true),
-          ],
-        ),
       ),
     );
   }

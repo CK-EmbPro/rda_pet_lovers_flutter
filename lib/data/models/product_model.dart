@@ -46,8 +46,8 @@ class ProductModel {
       productCode: json['productCode'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
-      price: (json['price'] as num).toDouble(),
-      discountPrice: (json['discountPrice'] as num?)?.toDouble(),
+      price: _parseDouble(json['price']) ?? 0,
+      discountPrice: _parseDouble(json['discountPrice']),
       stockQuantity: json['stockQuantity'] as int? ?? 0,
       sku: json['sku'] as String?,
       isActive: json['isActive'] as bool? ?? true,
@@ -63,6 +63,13 @@ class ProductModel {
       shopName: json['shop']?['name'] as String?,
       categoryName: json['category']?['name'] as String?,
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   /// Get the effective price (discounted or regular)

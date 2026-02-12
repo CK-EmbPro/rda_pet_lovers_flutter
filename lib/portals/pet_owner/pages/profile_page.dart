@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../data/providers/auth_providers.dart';
 
-class PetOwnerProfilePage extends StatelessWidget {
+class PetOwnerProfilePage extends ConsumerWidget {
   const PetOwnerProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+
+    if (user == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -24,23 +34,36 @@ class PetOwnerProfilePage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  const CircleAvatar(
+                  CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.white,
-                    child: Icon(Icons.person, size: 50, color: AppColors.secondary),
+                    backgroundImage: user.avatarUrl != null ? NetworkImage(user.avatarUrl!) : null,
+                    child: user.avatarUrl == null
+                        ? const Icon(Icons.person, size: 50, color: AppColors.secondary)
+                        : null,
                   ),
                   const SizedBox(height: 16),
-                  const Text('Pet Owner', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                  Text(
+                    user.fullName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 4),
-                  Text('petowner@example.com', style: TextStyle(color: Colors.white.withOpacity(0.8))),
+                  Text(
+                    user.email,
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                  ),
                   const SizedBox(height: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text('3 Pets Registered', style: TextStyle(color: Colors.white)),
+                    child: const Text('Pet Owner Portal', style: TextStyle(color: Colors.white)),
                   ),
                 ],
               ),
@@ -62,7 +85,12 @@ class PetOwnerProfilePage extends StatelessWidget {
                     icon: Icons.logout,
                     label: 'Logout',
                     isDestructive: true,
-                    onTap: () => context.go('/login'),
+                    onTap: () async {
+                      await ref.read(authStateProvider.notifier).logout();
+                      if (context.mounted) {
+                        context.go('/login');
+                      }
+                    },
                   ),
                 ],
               ),

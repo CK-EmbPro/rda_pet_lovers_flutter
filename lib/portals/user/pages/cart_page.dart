@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/cart_provider.dart';
-import '../../../data/providers/mock_data_provider.dart';
+import '../../../data/providers/pet_providers.dart';
 import '../../../data/models/models.dart';
 
 class CartPage extends ConsumerWidget {
@@ -15,7 +15,7 @@ class CartPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
-    final myPets = ref.watch(userPetsProvider); // Assuming this provider exists or using mock
+    final myPetsAsync = ref.watch(myPetsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -132,20 +132,29 @@ class CartPage extends ConsumerWidget {
 
           SliverPadding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.8,
+            sliver: myPetsAsync.when(
+              data: (myPets) => SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
+                  childAspectRatio: 0.8,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final pet = myPets[index];
+                    return _SimplePetCard(pet: pet);
+                  },
+                  childCount: myPets.length > 4 ? 4 : myPets.length,
+                ),
               ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final pet = myPets[index];
-                  return _SimplePetCard(pet: pet);
-                },
-                childCount: myPets.length > 4 ? 4 : myPets.length,
+              loading: () => const SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 100,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
               ),
+              error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
             ),
           ),
 
@@ -247,6 +256,40 @@ class _HorizontalCartCard extends StatelessWidget {
               ),
             ],
           ),
+          if (item.type == 'PRODUCT') // Only products have editable quantity usually
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                         if (item.quantity > 1) {
+                           notifier.updateQuantity(item.id, item.type, item.quantity - 1);
+                         } else {
+                           notifier.removeItem(item.id, item.type);
+                         }
+                      },
+                      child: const Icon(Icons.remove, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('${item.quantity}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: () => notifier.updateQuantity(item.id, item.type, item.quantity + 1),
+                      child: const Icon(Icons.add, size: 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

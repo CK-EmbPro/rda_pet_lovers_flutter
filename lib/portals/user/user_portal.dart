@@ -8,14 +8,29 @@ import 'pages/profile_page.dart';
 import 'pages/cart_page.dart';
 
 class UserPortal extends StatefulWidget {
-  const UserPortal({super.key});
+  final int initialIndex;
+  const UserPortal({super.key, this.initialIndex = 0});
 
   @override
   State<UserPortal> createState() => UserPortalState();
 }
 
 class UserPortalState extends State<UserPortal> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
+
+  @override
+  void didUpdateWidget(UserPortal oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      setState(() => _currentIndex = widget.initialIndex);
+    }
+  }
 
   final List<Widget> _pages = [
     const HomePage(),

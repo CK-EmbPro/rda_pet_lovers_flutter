@@ -7,7 +7,9 @@ import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/models/models.dart';
-import '../../../data/providers/mock_data_provider.dart';
+// import '../../../data/providers/mock_data_provider.dart'; // Removing
+import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/appointment_providers.dart';
 
 class PetDetailsPage extends ConsumerStatefulWidget {
   final String petId;
@@ -34,30 +36,32 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final allPets = ref.watch(allPetsProvider);
+    // We mock currentUser for now as we haven't built a full auth provider yet but we need user ID
+    // For now, let's assume we can get it from somewhere or just check if pet.ownerId matches a known ID
+    // or just rely on 'isMine' logic being: if I can edit it? 
+    // Actually, let's use a hardcoded user ID 'user-1' if we don't have a provider, 
+    // or better, create a simple provider for current user ID if not exists.
+    // I will use a placeholder for currentUser check.
+    const currentUserId = 'user-1'; // TODO: Replace with real auth
+
+    final petAsync = ref.watch(petDetailProvider(widget.petId));
     
-    PetModel? pet;
-    try {
-      pet = allPets.firstWhere((p) => p.id == widget.petId);
-    } catch (_) {
-      // Handle not found
-    }
+    return petAsync.when(
+      loading: () => const Scaffold(body: Center(child: CircularProgressIndicator())),
+      error: (e, _) => Scaffold(
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(child: Text('Failed to load pet details: $e')),
+      ),
+      data: (pet) {
+        final bool isMine = pet.ownerId == currentUserId;
 
-    if (pet == null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('Pet Not Found')),
-        body: const Center(child: Text('The requested pet could not be found.')),
-      );
-    }
-
-    final bool isMine = pet.ownerId == user?.id;
-
-    if (isMine) {
-      return _buildOwnPetView(context, pet);
-    } else {
-      return _buildMarketplacePetView(context, pet);
-    }
+        if (isMine) {
+          return _buildOwnPetView(context, pet);
+        } else {
+          return _buildMarketplacePetView(context, pet);
+        }
+      },
+    );
   }
 
   // ============== OWN PET VIEW (TABBED) ==============
@@ -149,9 +153,10 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
             width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
-              image: pet.displayImage.isNotEmpty
-                  ? DecorationImage(image: CachedNetworkImageProvider(pet.displayImage), fit: BoxFit.cover)
+              image: (pet.images.isNotEmpty)
+                  ? DecorationImage(image: CachedNetworkImageProvider(pet.images.first), fit: BoxFit.cover)
                   : null,
+              color: AppColors.inputFill,
             ),
             child: Stack(
               children: [
@@ -163,7 +168,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                 Positioned(
                   bottom: 20,
                   left: 20,
-                  child: Text(pet.breed?.name ?? 'Gold retriever', style: const TextStyle(color: Colors.white, fontSize: 18)),
+                  child: Text(pet.breed?.name ?? 'Unknown Breed', style: const TextStyle(color: Colors.white, fontSize: 18)),
                 ),
               ],
             ),
@@ -177,7 +182,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
               const SizedBox(width: 12),
               _OwnStatCard(icon: Icons.person_outline, label: pet.gender),
               const SizedBox(width: 12),
-              _OwnStatCard(icon: Icons.shopping_bag_outlined, label: '${pet.weightKg ?? 45} Kg'),
+              _OwnStatCard(icon: Icons.shopping_bag_outlined, label: '${pet.weightKg ?? 0} Kg'),
             ],
           ),
           const SizedBox(height: 24),
@@ -199,7 +204,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                    crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
                      const Text('Location', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                     Text(pet.location?.name ?? 'Kicukiro', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
+                     Text(pet.location?.name ?? 'Unknown', style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold)),
                    ],
                  ),
                ],
@@ -234,113 +239,123 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
   }
 
   Widget _buildAppointmentsTab(PetModel pet) {
-     final appointments = ref.watch(myAppointmentsProvider).where((a) => a.petId == pet.id).toList();
+     final appointmentsAsync = ref.watch(myAppointmentsProvider(null));
 
-     return ListView(
-       padding: const EdgeInsets.all(24),
-       children: [
-         const Text('New Pet', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-         const Text('your pet appointments', style: TextStyle(color: AppColors.textSecondary, fontSize: 18)),
-         const SizedBox(height: 24),
-         
-         if (appointments.isEmpty)
-           const Center(child: Text('No upcoming appointments.'))
-         else
-           ...appointments.map((apt) => Container(
-             margin: const EdgeInsets.only(bottom: 20),
-             padding: const EdgeInsets.all(20),
-             decoration: BoxDecoration(
-               color: Colors.white,
-               borderRadius: BorderRadius.circular(20),
-               boxShadow: AppTheme.cardShadow,
-             ),
-             child: Column(
-               crossAxisAlignment: CrossAxisAlignment.start,
-               children: [
-                 Row(
-                   children: [
-                     const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 18),
-                     const SizedBox(width: 8),
-                     const Text('your appointment was confirmed', style: TextStyle(color: Color(0xFF4CAF50))),
-                   ],
+     return appointmentsAsync.when(
+       loading: () => const Center(child: CircularProgressIndicator()),
+       error: (e, _) => Center(child: Text('Error: $e')),
+       data: (paginated) {
+         final appointments = paginated.data.where((a) => a.petId == pet.id).toList();
+
+         return ListView(
+           padding: const EdgeInsets.all(24),
+           children: [
+             const Text('New Pet', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+             const Text('your pet appointments', style: TextStyle(color: AppColors.textSecondary, fontSize: 18)),
+             const SizedBox(height: 24),
+             
+             if (appointments.isEmpty)
+               const Center(child: Text('No upcoming appointments.'))
+             else
+               ...appointments.map((apt) => Container(
+                 margin: const EdgeInsets.only(bottom: 20),
+                 padding: const EdgeInsets.all(20),
+                 decoration: BoxDecoration(
+                   color: Colors.white,
+                   borderRadius: BorderRadius.circular(20),
+                   boxShadow: AppTheme.cardShadow,
                  ),
-                 const SizedBox(height: 16),
-                 const Text('Appointment details', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                 const SizedBox(height: 12),
-                 Row(
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
-                     CircleAvatar(
-                       radius: 15,
-                       backgroundImage: apt.provider?.avatarUrl != null ? CachedNetworkImageProvider(apt.provider!.avatarUrl!) : null,
+                     Row(
+                       children: [
+                         const Icon(Icons.check_circle, color: Color(0xFF4CAF50), size: 18),
+                         const SizedBox(width: 8),
+                         const Text('your appointment was confirmed', style: TextStyle(color: Color(0xFF4CAF50))),
+                       ],
                      ),
-                     const SizedBox(width: 10),
-                     Text('with ${apt.provider?.fullName ?? "Provider"}', style: const TextStyle(color: AppColors.textSecondary)),
-                   ],
-                 ),
-                 const SizedBox(height: 12),
-                 Text(apt.provider?.businessName ?? 'Kicukiro Pet Care', style: const TextStyle(fontWeight: FontWeight.bold)),
-                 const SizedBox(height: 4),
-                 Row(
-                   children: [
-                     const Icon(Icons.location_on, size: 14, color: AppColors.secondary),
-                     const SizedBox(width: 4),
-                     const Text('Kicukiro, Sonatube', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
-                   ],
-                 ),
-                 const SizedBox(height: 20),
-                 Container(
-                   padding: const EdgeInsets.all(16),
-                   decoration: BoxDecoration(
-                     color: AppColors.inputFill,
-                     borderRadius: BorderRadius.circular(10),
-                   ),
-                   child: Row(
-                     children: [
-                       const Icon(Icons.calendar_month, color: AppColors.secondary),
-                       const SizedBox(width: 12),
-                       Expanded(
-                         child: Column(
-                           crossAxisAlignment: CrossAxisAlignment.start,
-                           children: [
-                             const Text('Date and Time', style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
-                             Text('Friday, Aug 28, 2025 . 6 - 6:50 pm', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                           ],
+                     const SizedBox(height: 16),
+                     const Text('Appointment details', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                     const SizedBox(height: 12),
+                     Row(
+                       children: [
+                         if (apt.provider != null) ...[
+                           CircleAvatar(
+                           radius: 15,
+                           backgroundImage: apt.provider!.avatarUrl != null ? CachedNetworkImageProvider(apt.provider!.avatarUrl!) : null,
                          ),
+                         const SizedBox(width: 10),
+                         Text('with ${apt.provider!.fullName}', style: const TextStyle(color: AppColors.textSecondary)),
+                         ]
+                       ],
+                     ),
+                     const SizedBox(height: 12),
+                     Text(apt.provider?.businessName ?? 'Provider', style: const TextStyle(fontWeight: FontWeight.bold)),
+                     const SizedBox(height: 4),
+                     Row(
+                       children: [
+                         const Icon(Icons.location_on, size: 14, color: AppColors.secondary),
+                         const SizedBox(width: 4),
+                         const Text('Kicukiro, Sonatube', style: TextStyle(color: AppColors.secondary, fontSize: 12)),
+                       ],
+                     ),
+                     const SizedBox(height: 20),
+                     Container(
+                       padding: const EdgeInsets.all(16),
+                       decoration: BoxDecoration(
+                         color: AppColors.inputFill,
+                         borderRadius: BorderRadius.circular(10),
                        ),
-                     ],
-                   ),
-                 ),
-                 const SizedBox(height: 24),
-                 Row(
-                   children: [
-                     Expanded(
-                       child: OutlinedButton(
-                         onPressed: () {},
-                         style: OutlinedButton.styleFrom(
-                           padding: const EdgeInsets.symmetric(vertical: 16),
-                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                         ),
-                         child: const Text('Reschedule'),
+                       child: Row(
+                         children: [
+                           const Icon(Icons.calendar_month, color: AppColors.secondary),
+                           const SizedBox(width: 12),
+                           Expanded(
+                             child: Column(
+                               crossAxisAlignment: CrossAxisAlignment.start,
+                               children: [
+                                 const Text('Date and Time', style: TextStyle(color: AppColors.textSecondary, fontSize: 10)),
+                                 Text('${apt.scheduledAt.day}/${apt.scheduledAt.month}/${apt.scheduledAt.year} . ${apt.scheduledTime ?? ""}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                               ],
+                             ),
+                           ),
+                         ],
                        ),
                      ),
-                     const SizedBox(width: 16),
-                     Expanded(
-                       child: ElevatedButton(
-                         onPressed: () {},
-                         style: ElevatedButton.styleFrom(
-                           backgroundColor: const Color(0xFFFF4444),
-                           padding: const EdgeInsets.symmetric(vertical: 16),
-                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                     const SizedBox(height: 24),
+                     Row(
+                       children: [
+                         Expanded(
+                           child: OutlinedButton(
+                             onPressed: () {},
+                             style: OutlinedButton.styleFrom(
+                               padding: const EdgeInsets.symmetric(vertical: 16),
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             ),
+                             child: const Text('Reschedule'),
+                           ),
                          ),
-                         child: const Text('cancel', style: TextStyle(color: Colors.white)),
-                       ),
+                         const SizedBox(width: 16),
+                         Expanded(
+                           child: ElevatedButton(
+                             onPressed: () {},
+                             style: ElevatedButton.styleFrom(
+                               backgroundColor: const Color(0xFFFF4444),
+                               padding: const EdgeInsets.symmetric(vertical: 16),
+                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                             ),
+                             child: const Text('cancel', style: TextStyle(color: Colors.white)),
+                           ),
+                         ),
+                       ],
                      ),
                    ],
                  ),
-               ],
-             ),
-           )),
-       ],
+               )),
+           ],
+         );
+       }
      );
   }
 
@@ -363,8 +378,8 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  pet.displayImage.isNotEmpty
-                      ? CachedNetworkImage(imageUrl: pet.displayImage, fit: BoxFit.cover)
+                  pet.images.isNotEmpty
+                      ? CachedNetworkImage(imageUrl: pet.images.first, fit: BoxFit.cover)
                       : Container(color: AppColors.inputFill),
                   // Pagination dots indicator simulation
                   Positioned(
@@ -424,7 +439,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(pet.name, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold)),
-                              Text(pet.breed?.name ?? 'Gold Retriever', style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+                              Text(pet.breed?.name ?? 'Unknown Breed', style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
                               const SizedBox(height: 8),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -445,7 +460,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                               children: [
                                 const Icon(Icons.location_on, size: 20, color: AppColors.textSecondary),
                                 const SizedBox(width: 4),
-                                Text(pet.location?.name ?? 'Kicukiro', style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
+                                Text(pet.location?.name ?? 'Unknown', style: const TextStyle(fontSize: 18, color: AppColors.textSecondary)),
                               ],
                             ),
                             TextButton(
@@ -463,45 +478,47 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         _MarketStatCard(label: 'sex', value: pet.gender, color: const Color(0xFFD3EAF2)),
-                        _MarketStatCard(label: 'Age', value: '${pet.ageYears ?? 1} year', color: const Color(0xFFD7C7F2)),
-                        _MarketStatCard(label: 'weight', value: '${pet.weightKg ?? 50} kg', color: const Color(0xFFF2D3DC)),
+                        _MarketStatCard(label: 'Age', value: '${pet.ageYears ?? 0} year', color: const Color(0xFFD7C7F2)),
+                        _MarketStatCard(label: 'weight', value: '${pet.weightKg ?? 0} kg', color: const Color(0xFFF2D3DC)),
                       ],
                     ),
                     const SizedBox(height: 32),
 
                     // Owner Section
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 30,
-                          backgroundImage: pet.owner?.avatarUrl != null ? CachedNetworkImageProvider(pet.owner!.avatarUrl!) : null,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(pet.owner?.fullName ?? 'Keza Stessie', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                              const Text('Owner', style: TextStyle(color: AppColors.textSecondary)),
-                            ],
+                    if (pet.owner != null) ...[
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 30,
+                            backgroundImage: pet.owner!.avatarUrl != null ? CachedNetworkImageProvider(pet.owner!.avatarUrl!) : null,
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(12),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(pet.owner!.fullName, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                                const Text('Owner', style: TextStyle(color: AppColors.textSecondary)),
+                              ],
+                            ),
                           ),
-                          child: const Icon(Icons.person_outline, color: AppColors.secondary),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.inputFill,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.person_outline, color: AppColors.secondary),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 32),
+                    ],
 
                     Text('Summary', style: AppTypography.h2),
                     const SizedBox(height: 12),
                     Text(
-                      pet.description ?? "He's the ultimate companion for a quiet home, always ready for a short stroll followed by a long, loud nap at your feet.",
+                      pet.description ?? "No description provided.",
                       style: AppTypography.body.copyWith(color: AppColors.textSecondary, height: 1.5),
                     ),
                     const SizedBox(height: 24),
@@ -527,7 +544,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                       Row(
                         children: [
                           const Text('Price: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 18)),
-                          Text('${pet.price?.toInt() ?? 45000} Frw', 
+                          Text('${pet.price?.toInt() ?? 0} Frw', 
                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
                         ],
                       ),
@@ -547,7 +564,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        ref.read(cartProvider.notifier).addPet(pet!);
+                        ref.read(cartProvider.notifier).addPet(pet);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(content: Text('Added to cart!'), backgroundColor: AppColors.success),
                         );
@@ -564,7 +581,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        ref.read(cartProvider.notifier).addPet(pet!);
+                        ref.read(cartProvider.notifier).addPet(pet);
                         context.push('/cart');
                       },
                       style: ElevatedButton.styleFrom(

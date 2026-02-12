@@ -22,6 +22,9 @@ class AppColors {
   static const Color error = Color(0xFFF63B3B);
   static const Color warning = Color(0xFFF59E0B);
 
+  // Rating Color
+  static const Color rating = Color(0xFFFBBF24);
+
   // Button Colors
   static const Color neutralButton = Color(0xFF475569);
   static const Color dangerButton = Color(0xFFF63B3B);

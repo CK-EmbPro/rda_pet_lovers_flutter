@@ -5,8 +5,14 @@ class ServiceModel {
   final String serviceType; // WALKING, GROOMING, TRAINING, VETERINARY
   final String name;
   final String? description;
-  final double fee;
+  final double fee; // Maps to backend 'basePrice'
+  final double? priceYoungPet;
+  final double? priceOldPet;
+  final int? durationMinutes;
+  final String? categoryId;
   final String paymentMethod; // PAY_BEFORE, PAY_AFTER
+  final String? paymentType; // Backend enum
+  final bool? requiresSubscription;
   final bool isActive;
   final DateTime createdAt;
 
@@ -20,27 +26,58 @@ class ServiceModel {
     required this.name,
     this.description,
     required this.fee,
+    this.priceYoungPet,
+    this.priceOldPet,
+    this.durationMinutes,
+    this.categoryId,
     required this.paymentMethod,
+    this.paymentType,
+    this.requiresSubscription,
     this.isActive = true,
     required this.createdAt,
     this.provider,
   });
 
+  factory ServiceModel.empty() {
+    return ServiceModel(
+      id: '',
+      providerId: '',
+      serviceType: '',
+      name: '',
+      fee: 0,
+      paymentMethod: 'PAY_BEFORE',
+      createdAt: DateTime.now(),
+    );
+  }
+
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     return ServiceModel(
       id: json['id'] as String,
       providerId: json['providerId'] as String,
-      serviceType: json['serviceType'] as String,
+      serviceType: json['serviceType'] as String? ?? json['category']?['name'] as String? ?? 'OTHER',
       name: json['name'] as String,
       description: json['description'] as String?,
-      fee: (json['fee'] as num).toDouble(),
-      paymentMethod: json['paymentMethod'] as String? ?? 'PAY_BEFORE',
+      fee: _parseDouble(json['basePrice']) ?? _parseDouble(json['fee']) ?? 0,
+      priceYoungPet: _parseDouble(json['priceYoungPet']),
+      priceOldPet: _parseDouble(json['priceOldPet']),
+      durationMinutes: json['durationMinutes'] as int?,
+      categoryId: json['categoryId'] as String?,
+      paymentMethod: json['paymentMethod'] as String? ?? json['paymentType'] as String? ?? 'PAY_BEFORE',
+      paymentType: json['paymentType'] as String?,
+      requiresSubscription: json['requiresSubscription'] as bool?,
       isActive: json['isActive'] as bool? ?? true,
       createdAt: DateTime.parse(json['createdAt'] as String),
       provider: json['provider'] != null
           ? ProviderInfo.fromJson(json['provider'] as Map<String, dynamic>)
           : null,
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -50,10 +87,30 @@ class ServiceModel {
       'serviceType': serviceType,
       'name': name,
       'description': description,
-      'fee': fee,
-      'paymentMethod': paymentMethod,
+      'basePrice': fee,
+      'priceYoungPet': priceYoungPet,
+      'priceOldPet': priceOldPet,
+      'durationMinutes': durationMinutes,
+      'categoryId': categoryId,
+      'paymentType': paymentType ?? paymentMethod,
+      'requiresSubscription': requiresSubscription,
       'isActive': isActive,
       'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  /// Create DTO for submission to backend
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'name': name,
+      'basePrice': fee,
+      if (description != null) 'description': description,
+      if (priceYoungPet != null) 'priceYoungPet': priceYoungPet,
+      if (priceOldPet != null) 'priceOldPet': priceOldPet,
+      if (durationMinutes != null) 'durationMinutes': durationMinutes,
+      if (categoryId != null) 'categoryId': categoryId,
+      if (paymentType != null) 'paymentType': paymentType,
+      if (requiresSubscription != null) 'requiresSubscription': requiresSubscription,
     };
   }
 
@@ -87,6 +144,7 @@ class ServiceModel {
     }
   }
 }
+
 
 /// Provider Info (for service cards)
 class ProviderInfo {

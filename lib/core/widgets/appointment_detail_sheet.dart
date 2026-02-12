@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../data/models/models.dart';
+import '../../../data/providers/appointment_providers.dart';
 
 /// Enum to distinguish user types for different action buttons
 enum AppointmentUserType { provider, petOwner }
 
 /// A modal sheet that shows appointment details when an appointment card is clicked
-class AppointmentDetailSheet extends StatelessWidget {
+class AppointmentDetailSheet extends ConsumerWidget {
   final AppointmentModel appointment;
   final AppointmentUserType userType;
 
@@ -34,7 +36,7 @@ class AppointmentDetailSheet extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final statusColor = _getStatusColor(appointment.status);
     final formattedDate = _formatDate(appointment.scheduledAt);
     final formattedTime = _formatTime(appointment.scheduledAt);
@@ -152,7 +154,7 @@ class AppointmentDetailSheet extends StatelessWidget {
             const SizedBox(height: 24),
             
             // Actions based on user type and status
-            _buildActionButtons(context),
+            _buildActionButtons(context, ref),
             
             const SizedBox(height: 30),
           ],
@@ -161,7 +163,7 @@ class AppointmentDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context) {
+  Widget _buildActionButtons(BuildContext context, WidgetRef ref) {
     if (userType == AppointmentUserType.provider) {
       // Provider actions
       if (appointment.status == 'PENDING') {
@@ -171,7 +173,7 @@ class AppointmentDetailSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => _showRejectReasonDialog(context),
+                  onPressed: () => _showRejectReasonDialog(context, ref),
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: AppColors.error),
@@ -185,7 +187,16 @@ class AppointmentDetailSheet extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    final success = await ref.read(appointmentActionProvider.notifier).accept(appointment.id);
+                    if (success && context.mounted) {
+                      Navigator.pop(context);
+                      ref.invalidate(providerAppointmentsProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Appointment accepted'), backgroundColor: AppColors.success),
+                      );
+                    }
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.success,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -205,7 +216,16 @@ class AppointmentDetailSheet extends StatelessWidget {
           child: SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () async {
+                final success = await ref.read(appointmentActionProvider.notifier).complete(appointment.id);
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                  ref.invalidate(providerAppointmentsProvider);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Marked as complete'), backgroundColor: AppColors.success),
+                  );
+                }
+              },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.secondary,
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -227,7 +247,16 @@ class AppointmentDetailSheet extends StatelessWidget {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () async {
+                    final success = await ref.read(appointmentActionProvider.notifier).cancel(appointment.id);
+                    if (success && context.mounted) {
+                      Navigator.pop(context);
+                      ref.invalidate(myAppointmentsProvider);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Appointment cancelled'), backgroundColor: AppColors.success),
+                      );
+                    }
+                  },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: AppColors.error),
@@ -241,7 +270,7 @@ class AppointmentDetailSheet extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed: () => Navigator.pop(context), // TODO: Reschedule
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.secondary,
                     padding: const EdgeInsets.symmetric(vertical: 14),
@@ -249,7 +278,7 @@ class AppointmentDetailSheet extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  child: const Text('Re-schedule', style: TextStyle(color: Colors.white)),
+                  child: const Text('Re-schedule', style: TextStyle(color: Colors.white)), // Placeholder
                 ),
               ),
             ],
@@ -258,36 +287,28 @@ class AppointmentDetailSheet extends StatelessWidget {
       } else if (appointment.status == 'CONFIRMED') {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    side: const BorderSide(color: AppColors.error),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Cancel', style: TextStyle(color: AppColors.error)),
+          child: SizedBox(
+            width: double.infinity,
+            child: OutlinedButton(
+               onPressed: () async {
+                final success = await ref.read(appointmentActionProvider.notifier).cancel(appointment.id);
+                if (success && context.mounted) {
+                  Navigator.pop(context);
+                  ref.invalidate(myAppointmentsProvider);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Appointment cancelled'), backgroundColor: AppColors.success),
+                  );
+                }
+              },
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                side: const BorderSide(color: AppColors.error),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.secondary,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text('Re-schedule', style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
+              child: const Text('Cancel Appointment', style: TextStyle(color: AppColors.error)),
+            ),
           ),
         );
       }
@@ -295,7 +316,7 @@ class AppointmentDetailSheet extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  void _showRejectReasonDialog(BuildContext context) {
+  void _showRejectReasonDialog(BuildContext context, WidgetRef ref) {
     final reasonController = TextEditingController();
     showDialog(
       context: context,
@@ -332,11 +353,21 @@ class AppointmentDetailSheet extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               if (reasonController.text.trim().isNotEmpty) {
-                Navigator.pop(dialogContext); // Close dialog
-                Navigator.pop(context); // Close detail sheet
-                // TODO: Call API to reject appointment with reason
+                final success = await ref.read(appointmentActionProvider.notifier).reject(
+                  appointment.id, 
+                  reason: reasonController.text.trim()
+                );
+                
+                if (success && context.mounted) {
+                  Navigator.pop(dialogContext); // Close dialog
+                  Navigator.pop(context); // Close detail sheet
+                  ref.invalidate(providerAppointmentsProvider);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Appointment rejected'), backgroundColor: AppColors.error),
+                  );
+                }
               }
             },
             style: ElevatedButton.styleFrom(

@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/toast_service.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/payment_status_modal.dart';
 import '../../../data/providers/cart_provider.dart';
+import '../../../data/providers/order_providers.dart';
 
 class PaymentMethodPage extends ConsumerStatefulWidget {
   const PaymentMethodPage({super.key});
@@ -17,6 +19,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
   String _selectedMethod = 'MTN Momo';
   final TextEditingController _phoneController = TextEditingController(text: '0780000000');
   final TextEditingController _cardNumberController = TextEditingController();
+  bool _isProcessing = false;
 
   final List<Map<String, dynamic>> _methods = [
     {'name': 'MTN Momo', 'icon': Icons.account_balance_wallet, 'color': Colors.yellow.shade700},
@@ -55,7 +58,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
               style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
             ),
             const SizedBox(height: 24),
-            
+
             // Payment Methods Grid
             GridView.builder(
               shrinkWrap: true,
@@ -100,23 +103,20 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                 );
               },
             ),
-            
+
             const SizedBox(height: 40),
-            
+
             // Contextual Inputs
             if (_selectedMethod.contains('Momo') || _selectedMethod.contains('Money'))
               _buildPhoneInput()
             else if (_selectedMethod == 'Credit Card')
               _buildCardInput(),
-              
+
             const SizedBox(height: 60),
-            
+
             PrimaryButton(
-              label: 'Pay Now',
-              onPressed: () {
-                // Simulate processing
-                PaymentStatusModal.show(context, isSuccess: true);
-              },
+              label: _isProcessing ? 'Processing...' : 'Pay Now',
+              onPressed: _isProcessing ? null : _processPaymentAndOrder,
             ),
           ],
         ),
@@ -190,5 +190,78 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
         ),
       ],
     );
+  }
+
+  Future<void> _processPaymentAndOrder() async {
+    setState(() => _isProcessing = true);
+
+    // 1. Simulate Payment (Mock)
+    await Future.delayed(const Duration(seconds: 2));
+
+    // In a real app, we would verify payment here.
+    // For now, assume payment success.
+
+    // 2. Create Orders
+    final cartItems = ref.read(cartProvider);
+    if (cartItems.isEmpty) {
+      if (mounted) {
+        ToastService.error(context, "Cart is empty");
+        setState(() => _isProcessing = false);
+      }
+      return;
+    }
+
+    // Group items by shopId
+    final Map<String, List<CartItem>> itemsByShop = {};
+    for (final item in cartItems) {
+      if (!itemsByShop.containsKey(item.shopId)) {
+        itemsByShop[item.shopId] = [];
+      }
+      itemsByShop[item.shopId]!.add(item);
+    }
+
+    final notifier = ref.read(orderActionProvider.notifier);
+    bool allSuccess = true;
+    final List<String> errors = [];
+
+    // Create an order for each shop
+    for (final shopId in itemsByShop.keys) {
+      final items = itemsByShop[shopId]!;
+      // Prepare DTO items
+      final orderItems = items.map((item) => ({
+        'productId': item.id,
+        'quantity': item.quantity,
+        'price': item.price,
+        'type': item.type,
+      })).toList();
+
+      // We assume shipping address is fixed for now or passed from previous screen
+      // Ideally CheckoutPage should pass address to this page.
+      const shippingAddress = "Kicukiro, Kigali, Rwanda"; // Mock
+
+      final order = await notifier.createOrder(
+        shopId: shopId,
+        items: orderItems,
+        shippingAddress: shippingAddress,
+        notes: "Paid via $_selectedMethod",
+      );
+
+      if (order == null) {
+        allSuccess = false;
+        errors.add("Failed to create order for shop $shopId");
+      }
+    }
+
+    if (mounted) {
+      setState(() => _isProcessing = false);
+
+      if (allSuccess) {
+        // Clear cart
+        ref.read(cartProvider.notifier).clear();
+        PaymentStatusModal.show(context, isSuccess: true);
+      } else {
+        ToastService.error(context, "Some orders failed: ${errors.join(', ')}");
+      }
+    }
   }
 }

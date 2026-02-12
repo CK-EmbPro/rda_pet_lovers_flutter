@@ -5,16 +5,12 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_detail_sheet.dart';
-import '../../../data/providers/mock_data_provider.dart';
+// import '../../../data/providers/mock_data_provider.dart'; // Removing
 import '../../../data/models/models.dart';
+import '../../../data/providers/auth_providers.dart';
+import '../../../data/providers/appointment_providers.dart';
 import '../provider_portal.dart';
-import 'my_services_page.dart';
-
-// Provider appointments for the current provider
-final providerAppointmentsProvider = Provider<List<AppointmentModel>>((ref) {
-  // Mock appointments for the provider
-  return mockAppointments;
-});
+// import 'my_services_page.dart'; // Not used directly in build
 
 class ProviderDashboardPage extends ConsumerStatefulWidget {
   const ProviderDashboardPage({super.key});
@@ -30,24 +26,12 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = ref.watch(currentUserProvider);
-    final appointments = ref.watch(providerAppointmentsProvider);
-    
-    // Filter appointments
-    final today = DateTime.now();
-    final todaysAppointments = appointments.where((a) {
-      return a.scheduledAt.year == today.year &&
-             a.scheduledAt.month == today.month &&
-             a.scheduledAt.day == today.day &&
-             (a.status == 'CONFIRMED' || a.status == 'PENDING');
-    }).toList();
-    
-    final pendingRequests = appointments.where((a) => a.status == 'PENDING').toList();
-    final thisMonthAccepted = appointments.where((a) {
-      return a.scheduledAt.month == today.month &&
-             a.scheduledAt.year == today.year &&
-             a.status == 'CONFIRMED';
-    }).toList();
+    // Current User from Real Auth Provider
+    final userAsync = ref.watch(authStateProvider);
+    final user = userAsync.value;
+
+    // Provider Appointments from Real API
+    final appointmentsAsync = ref.watch(providerAppointmentsProvider(null));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -60,8 +44,44 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               _buildHeader(context, user),
               const SizedBox(height: 16),
               
-              // Stats Row
-              _buildStatsRow(todaysAppointments.length, appointments.length, thisMonthAccepted.length),
+              // Stats Row (Data or Loading)
+              appointmentsAsync.when(
+                loading: () => _buildStatsRow(0, 0, 0), // Show 0s or skeleton while loading if preferred, but user asked for "shown"
+                error: (e, st) => _buildStatsRow(0, 0, 0), // Show 0s on error as requested
+                data: (paginated) {
+                  final appointments = paginated.data;
+                  final today = DateTime.now();
+                  
+                  final todaysAppointments = appointments.where((a) {
+                    return a.scheduledAt.year == today.year &&
+                           a.scheduledAt.month == today.month &&
+                           a.scheduledAt.day == today.day &&
+                           (a.status == 'CONFIRMED' || a.status == 'PENDING');
+                  }).toList();
+                  
+                  final thisMonthAccepted = appointments.where((a) {
+                    return a.scheduledAt.month == today.month &&
+                           a.scheduledAt.year == today.year &&
+                           (a.status == 'CONFIRMED' || a.status == 'COMPLETED');
+                  }).toList();
+
+                  final thisWeekCount = appointments.where((a) {
+                    final now = DateTime.now();
+                    // Calculate start of week (Monday)
+                    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+                    final endOfWeek = startOfWeek.add(const Duration(days: 6));
+                    
+                    final date = a.scheduledAt;
+                    // Check if date is within current week (ignoring time components for simpler check)
+                    final isSameWeek = date.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) && 
+                                       date.isBefore(endOfWeek.add(const Duration(days: 1)));
+                                       
+                    return isSameWeek && (a.status == 'CONFIRMED' || a.status == 'COMPLETED');
+                  }).length;
+
+                  return _buildStatsRow(todaysAppointments.length, thisWeekCount, thisMonthAccepted.length);
+                }
+              ),
               const SizedBox(height: 24),
               
               // Quick Actions
@@ -72,12 +92,32 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               _buildCalendarSection(),
               const SizedBox(height: 24),
               
-              // Today's Schedule
-              _buildTodaysSchedule(todaysAppointments),
-              const SizedBox(height: 24),
-              
-              // Appointment Requests
-              _buildAppointmentRequests(pendingRequests),
+              // Today's Schedule & Requests
+              appointmentsAsync.when(
+                loading: () => const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
+                error: (_,__) => const SizedBox(),
+                data: (paginated) {
+                  final appointments = paginated.data;
+                  final today = DateTime.now();
+
+                  final todaysAppointments = appointments.where((a) {
+                    return a.scheduledAt.year == today.year &&
+                           a.scheduledAt.month == today.month &&
+                           a.scheduledAt.day == today.day &&
+                           (a.status == 'CONFIRMED' || a.status == 'PENDING');
+                  }).toList();
+
+                  final pendingRequests = appointments.where((a) => a.status == 'PENDING').toList();
+
+                  return Column(
+                    children: [
+                       _buildTodaysSchedule(todaysAppointments),
+                       const SizedBox(height: 24),
+                       _buildAppointmentRequests(pendingRequests),
+                    ],
+                  );
+                }
+              ),
               const SizedBox(height: 100),
             ],
           ),
@@ -87,8 +127,12 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
   }
 
   Widget _buildHeader(BuildContext context, UserModel? user) {
-    final isDoctor = user?.roles.any((r) => r == 'VET_DOCTOR' || r == 'VETERINARY') ?? false;
-    final displayName = user?.fullName ?? 'Provider';
+    if (user == null) {
+      return const Padding(padding: EdgeInsets.all(20), child: Text("Loading profile..."));
+    }
+
+    final isDoctor = user.roles.any((r) => r == 'VET_DOCTOR' || r == 'VETERINARY');
+    final displayName = user.fullName;
     final greeting = isDoctor ? 'Welcome back Dr.' : 'Welcome back,';
     
     // Get initials for avatar
@@ -112,7 +156,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                 if (isDoctor) ...[
                   const SizedBox(height: 2),
                   Text(
-                    'Kigali Veterinary Hospital',
+                    'Kigali Veterinary Hospital', // This should technically come from profile/business name
                     style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                 ],
@@ -172,7 +216,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           const SizedBox(width: 8),
           _StatCard(icon: Icons.date_range, value: '$weekCount', label: 'This Week', color: Colors.orange),
           const SizedBox(width: 8),
-          _StatCard(icon: Icons.check_circle_outline, value: '$monthCount', label: 'This Month', color: AppColors.success),
+          _StatCard(icon: Icons.check_circle_outline, value: '$monthCount', label: 'Month Completed', color: AppColors.success),
         ],
       ),
     );

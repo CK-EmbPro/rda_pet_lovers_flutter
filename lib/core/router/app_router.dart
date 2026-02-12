@@ -18,6 +18,7 @@ import '../../portals/common/pages/product_details_page.dart';
 import '../../portals/user/pages/cart_page.dart';
 import '../../portals/user/pages/checkout_page.dart';
 import '../../portals/user/pages/payment_method_page.dart';
+import '../../portals/user/pages/orders_page.dart';
 
 /// App Router Configuration
 class AppRouter {
@@ -44,11 +45,19 @@ class AppRouter {
       // Portal Routes
       GoRoute(
         path: '/user',
-        builder: (context, state) => const UserPortal(),
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'];
+          final index = tab == 'cart' ? 4 : 0;
+          return UserPortal(initialIndex: index);
+        },
       ),
       GoRoute(
         path: '/pet-owner',
-        builder: (context, state) => const PetOwnerPortal(),
+        builder: (context, state) {
+          final tab = state.uri.queryParameters['tab'];
+          final index = tab == 'cart' ? 4 : 0;
+          return PetOwnerPortal(initialIndex: index);
+        },
       ),
       GoRoute(
         path: '/shop-owner',
@@ -97,6 +106,10 @@ class AppRouter {
       GoRoute(
         path: '/payment-method',
         builder: (context, state) => const PaymentMethodPage(),
+      ),
+      GoRoute(
+        path: '/user/orders',
+        builder: (context, state) => const OrdersPage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

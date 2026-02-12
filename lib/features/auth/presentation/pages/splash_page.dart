@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
+import '../../../../data/providers/auth_providers.dart';
+import '../../../../data/models/user_model.dart';
 
-class SplashPage extends StatefulWidget {
+class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
 
   @override
-  State<SplashPage> createState() => _SplashPageState();
+  ConsumerState<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
   late Animation<double> _scaleAnimation;
+  bool _isInit = false;
 
   @override
   void initState() {
@@ -39,8 +43,48 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     super.dispose();
   }
 
+  void _navigateToPortal(UserModel user) {
+    if (!mounted) return;
+    
+    String route = '/user';
+    switch (user.primaryRole) {
+      case 'admin':
+        // route = '/admin';
+        break;
+      case 'provider':
+        route = '/provider';
+        break;
+      case 'shop_owner':
+        route = '/shop-owner';
+        break;
+      case 'pet_owner':
+        route = '/pet-owner';
+        break;
+      default:
+        route = '/user';
+    }
+    
+    // Slight delay to improve UX if animation is still playing
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) context.go(route);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Listen to auth state to trigger navigation
+    ref.listen(authStateProvider, (previous, next) {
+      next.whenData((user) {
+        if (user != null && !_isInit) {
+          _isInit = true;
+          _navigateToPortal(user);
+        }
+      });
+    });
+
+    final authState = ref.watch(authStateProvider);
+    final isLoading = authState.isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -118,6 +162,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
               ),
               const Spacer(flex: 2),
               // Get Started Button
+              if (!isLoading) // Only show button when not loading
               SizedBox(
                 width: double.infinity,
                 height: 56,
@@ -145,7 +190,9 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     ],
                   ),
                 ),
-              ),
+              )
+              else 
+                const CircularProgressIndicator(),
               const SizedBox(height: 40),
             ],
           ),

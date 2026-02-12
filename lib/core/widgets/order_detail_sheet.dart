@@ -1,13 +1,25 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme.dart';
+import '../../data/models/shop_model.dart'; // Import OrderModel
+import '../../core/utils/formatters.dart'; // Import formatters if needed, or implement locally
 
 /// A modal sheet that shows order details when an order card is clicked
 class OrderDetailSheet extends StatelessWidget {
-  final Map<String, dynamic> order;
+  final OrderModel order;
 
   const OrderDetailSheet({super.key, required this.order});
 
-  static void show(BuildContext context, Map<String, dynamic> order) {
+  static void show(BuildContext context, dynamic orderData) {
+    // Support both Model and Map for backward compatibility during migration if needed,
+    // but preferably enforce Model.
+    // If orderData is Map, we might need to parse it or throw.
+    // Given we control the calls, let's enforce Model.
+    // However, if we must support legacy Maps from other parts... 
+    // For now, let's assume strict Model usage as we are refactoring.
+    final OrderModel orderModel = orderData is OrderModel 
+        ? orderData 
+        : OrderModel.fromJson(orderData); // Fallback if Map passed (assuming JSON structure matches)
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -16,14 +28,14 @@ class OrderDetailSheet extends StatelessWidget {
         initialChildSize: 0.65,
         maxChildSize: 0.9,
         minChildSize: 0.4,
-        builder: (context, scrollController) => OrderDetailSheet(order: order),
+        builder: (context, scrollController) => OrderDetailSheet(order: orderModel),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final status = order['status'] as String;
+    final status = order.status;
     final statusColor = _getStatusColor(status);
 
     return Container(
@@ -86,9 +98,9 @@ class OrderDetailSheet extends StatelessWidget {
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Order ID', order['id'] as String? ?? 'N/A'),
-                  _buildInfoRow('Date', order['date'] as String? ?? 'N/A'),
-                  _buildInfoRow('Items', '${order['items']} items'),
+                  _buildInfoRow('Order ID', order.id),
+                  _buildInfoRow('Date', _formatDate(order.createdAt)),
+                  _buildInfoRow('Items', '${order.items.length} items'),
                 ],
               ),
             ),
@@ -101,7 +113,11 @@ class OrderDetailSheet extends StatelessWidget {
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Name', order['customer'] as String? ?? 'Unknown'),
+                  // TODO: Fetch user name if not in OrderModel. OrderModel has userId.
+                  // For now showing ID or "Customer".
+                  _buildInfoRow('Customer ID', order.userId),
+                  if (order.shippingAddress != null)
+                     _buildInfoRow('Address', order.shippingAddress!),
                 ],
               ),
             ),
@@ -114,8 +130,9 @@ class OrderDetailSheet extends StatelessWidget {
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Total Amount', '${order['total']} RWF'),
-                  _buildInfoRow('Payment Status', 'Paid'),
+                  _buildInfoRow('Total Amount', '${order.totalAmount.toInt()} RWF'),
+                  // Assuming paid if order exists or checking status
+                  _buildInfoRow('Payment Status', order.paymentStatus ?? 'Pending'),
                 ],
               ),
             ),
@@ -132,6 +149,7 @@ class OrderDetailSheet extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context, String status) {
+    status = status.toLowerCase();
     if (status == 'pending') {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -139,7 +157,7 @@ class OrderDetailSheet extends StatelessWidget {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context), // TODO: Implement Cancel via provider
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   side: const BorderSide(color: AppColors.error),
@@ -153,7 +171,7 @@ class OrderDetailSheet extends StatelessWidget {
             const SizedBox(width: 12),
             Expanded(
               child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context), // TODO: Implement Process via provider
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.success,
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -261,5 +279,9 @@ class OrderDetailSheet extends StatelessWidget {
       default:
         return AppColors.textSecondary;
     }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day}/${date.month}/${date.year}';
   }
 }

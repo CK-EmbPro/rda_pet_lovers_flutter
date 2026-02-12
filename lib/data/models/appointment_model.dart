@@ -8,10 +8,15 @@ class AppointmentModel {
   final String serviceId;
   final String? petId;
   final DateTime scheduledAt;
+  final String? scheduledTime; // Backend sends separate time string
   final int durationMinutes;
   final String status; // PENDING, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
   final String? notes;
+  final String? customerNotes;
+  final String? providerNotes;
+  final String? cancellationReason;
   final double? totalAmount;
+  final double? servicePrice;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -28,10 +33,15 @@ class AppointmentModel {
     required this.serviceId,
     this.petId,
     required this.scheduledAt,
+    this.scheduledTime,
     this.durationMinutes = 60,
     required this.status,
     this.notes,
+    this.customerNotes,
+    this.providerNotes,
+    this.cancellationReason,
     this.totalAmount,
+    this.servicePrice,
     required this.createdAt,
     this.updatedAt,
     this.service,
@@ -47,11 +57,20 @@ class AppointmentModel {
       providerId: json['providerId'] as String,
       serviceId: json['serviceId'] as String,
       petId: json['petId'] as String?,
-      scheduledAt: DateTime.parse(json['scheduledAt'] as String),
+      scheduledAt: json['scheduledAt'] != null
+          ? DateTime.parse(json['scheduledAt'] as String)
+          : (json['scheduledDate'] != null
+              ? _parseDateTime(json['scheduledDate'] as String, json['scheduledTime'] as String?)
+              : DateTime.now()),
+      scheduledTime: json['scheduledTime'] as String?,
       durationMinutes: json['durationMinutes'] as int? ?? 60,
       status: json['status'] as String,
       notes: json['notes'] as String?,
-      totalAmount: (json['totalAmount'] as num?)?.toDouble(),
+      customerNotes: json['customerNotes'] as String?,
+      providerNotes: json['providerNotes'] as String?,
+      cancellationReason: json['cancellationReason'] as String?,
+      totalAmount: _parseDouble(json['totalAmount']),
+      servicePrice: _parseDouble(json['servicePrice']),
       createdAt: DateTime.parse(json['createdAt'] as String),
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
@@ -69,6 +88,13 @@ class AppointmentModel {
           ? UserBasicInfo.fromJson(json['user'] as Map<String, dynamic>)
           : null,
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   bool get isPending => status == 'PENDING';
@@ -90,6 +116,28 @@ class AppointmentModel {
         return 'No Show';
       default:
         return status;
+    }
+  }
+
+  static DateTime _parseDateTime(String dateStr, String? timeStr) {
+    if (timeStr == null) return DateTime.parse(dateStr);
+    try {
+      // dateStr is likely "2023-10-27T00:00:00.000Z" or "2023-10-27"
+      // timeStr is "14:30"
+      final date = DateTime.parse(dateStr);
+      final parts = timeStr.split(':');
+      if (parts.length >= 2) {
+        return DateTime(
+          date.year,
+          date.month,
+          date.day,
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+        );
+      }
+      return date;
+    } catch (_) {
+      return DateTime.parse(dateStr);
     }
   }
 }

@@ -49,8 +49,15 @@ class ShopModel {
       isVerified: json['isVerified'] as bool? ?? false,
       createdAt: DateTime.parse(json['createdAt'] as String),
       productCount: json['_count']?['products'] as int? ?? 0,
-      rating: (json['rating'] as num?)?.toDouble(),
+      rating: _parseDouble(json['rating']),
     );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -115,6 +122,20 @@ class CartItemModel {
     this.shopName,
   });
 
+  factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    // Handle nested product object if present
+    final product = json['product'] as Map<String, dynamic>?;
+    return CartItemModel(
+      productId: json['productId'] as String? ?? product?['id'] as String? ?? '',
+      productName: json['productName'] as String? ?? product?['name'] as String? ?? '',
+      imageUrl: json['imageUrl'] as String? ?? (product?['images'] is List && (product!['images'] as List).isNotEmpty ? (product['images'] as List).first as String : null),
+      price: ShopModel._parseDouble(json['price']) ?? ShopModel._parseDouble(product?['price']) ?? 0,
+      quantity: json['quantity'] as int? ?? 1,
+      shopId: json['shopId'] as String? ?? product?['shopId'] as String? ?? '',
+      shopName: json['shopName'] as String?,
+    );
+  }
+
   double get totalPrice => price * quantity;
 
   CartItemModel copyWith({int? quantity}) {
@@ -170,9 +191,9 @@ class OrderModel {
               ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
-      subtotal: (json['subtotal'] as num).toDouble(),
-      discount: (json['discount'] as num?)?.toDouble(),
-      totalAmount: (json['totalAmount'] as num).toDouble(),
+      subtotal: ShopModel._parseDouble(json['subtotal']) ?? 0,
+      discount: ShopModel._parseDouble(json['discount']),
+      totalAmount: ShopModel._parseDouble(json['totalAmount']) ?? 0,
       status: json['status'] as String,
       paymentStatus: json['paymentStatus'] as String?,
       shippingAddress: json['shippingAddress'] as String?,
@@ -207,6 +228,7 @@ class OrderItemModel {
   final int quantity;
   final double unitPrice;
   final double totalPrice;
+  final String? imageUrl;
 
   OrderItemModel({
     required this.productId,
@@ -214,6 +236,7 @@ class OrderItemModel {
     required this.quantity,
     required this.unitPrice,
     required this.totalPrice,
+    this.imageUrl,
   });
 
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
@@ -221,8 +244,11 @@ class OrderItemModel {
       productId: json['productId'] as String,
       productName: json['product']?['name'] as String? ?? 'Unknown Product',
       quantity: json['quantity'] as int,
-      unitPrice: (json['unitPrice'] as num).toDouble(),
-      totalPrice: (json['totalPrice'] as num).toDouble(),
+      unitPrice: ShopModel._parseDouble(json['unitPrice']) ?? 0,
+      totalPrice: ShopModel._parseDouble(json['totalPrice']) ?? 0,
+      imageUrl: (json['product']?['images'] is List && (json['product']['images'] as List).isNotEmpty) 
+          ? (json['product']['images'] as List).first as String 
+          : null,
     );
   }
 }

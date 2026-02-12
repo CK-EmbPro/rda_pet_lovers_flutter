@@ -1,0 +1,223 @@
+﻿Analyzing mobile_app...                                         
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\theme\app_theme.dart:102:37 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\theme\app_theme.dart:173:31 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\core\widgets\all_appointments_sheet.dart:87:34 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\appointment_detail_sheet.dart:80:42 - deprecated_member_use
+warning - Dead code - lib\core\widgets\appointment_form_sheet.dart:287:30 - dead_code
+warning - The left operand can't be null, so the right operand is never executed - lib\core\widgets\appointment_form_sheet.dart:287:33 - dead_null_aware_expression
+warning - The value of the local variable 'itemHorizontalPadding' isn't used - lib\core\widgets\common_widgets.dart:26:11 - unused_local_variable
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\common_widgets.dart:40:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\common_widgets.dart:196:41 - deprecated_member_use
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\core\widgets\common_widgets.dart:203:11 - use_null_aware_elements
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\common_widgets.dart:269:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\common_widgets.dart:270:31 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\common_widgets.dart:468:33 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\notifications_sheet.dart:201:87 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\notifications_sheet.dart:203:113 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\notifications_sheet.dart:211:69 - deprecated_member_use
+warning - Unused import: '../../core/utils/formatters.dart' - lib\core\widgets\order_detail_sheet.dart:4:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\core\widgets\order_detail_sheet.dart:77:42 - deprecated_member_use
+   info - Dangling library doc comment - lib\data\models\models.dart:1:1 - dangling_library_doc_comments
+warning - The stack trace variable 'st' isn't used and can be removed - lib\data\providers\auth_providers.dart:28:17 - unused_catch_stack
+warning - Unused import: '../models/shop_model.dart' - lib\data\providers\cart_provider.dart:4:8 - unused_import
+warning - Unused import: '../services/pet_service.dart' - lib\data\providers\pet_listing_providers.dart:4:8 - unused_import
+   info - Dangling library doc comment - lib\data\providers\providers.dart:1:1 - dangling_library_doc_comments
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\repositories\auth_repository.dart:53:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:23:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:52:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:81:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:123:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:124:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:136:16 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:147:16 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\appointment_service.dart:168:16 - use_null_aware_elements
+   info - Parameter 'client' could be a super parameter - lib\data\services\auth_service.dart:10:3 - use_super_parameters
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\auth_service.dart:55:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\location_service.dart:14:27 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\order_service.dart:24:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\order_service.dart:25:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\order_service.dart:44:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\order_service.dart:73:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\order_service.dart:102:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_listing_service.dart:94:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:57:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:58:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:59:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:60:9 - use_null_aware_elements
+   info - Don't invoke 'print' in production code - lib\data\services\pet_service.dart:110:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\data\services\pet_service.dart:111:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\data\services\pet_service.dart:112:15 - avoid_print
+   info - Don't invoke 'print' in production code - lib\data\services\pet_service.dart:122:9 - avoid_print
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:149:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:150:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:151:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:152:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:153:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:154:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:155:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:156:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:157:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:158:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:195:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:211:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\pet_service.dart:257:27 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\product_service.dart:25:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\product_service.dart:27:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\product_service.dart:28:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\product_service.dart:98:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\product_service.dart:99:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\product_service.dart:100:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:24:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:25:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:84:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:85:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:86:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:87:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:88:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:89:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\service_api_service.dart:90:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\shop_service.dart:27:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\shop_service.dart:28:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\shop_service.dart:29:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\vaccination_service.dart:109:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\vaccination_service.dart:110:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\vaccination_service.dart:111:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\vaccination_service.dart:131:11 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\vaccination_service.dart:132:11 - use_null_aware_elements
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\features\auth\presentation\pages\splash_page.dart:153:52 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\common\pages\pet_details_page.dart:105:55 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\common\pages\product_details_page.dart:108:41 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\common\pages\product_details_page.dart:147:37 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\common\pages\product_details_page.dart:172:87 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\common\pages\product_details_page.dart:289:59 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\common\pages\service_details_page.dart:103:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\common\pages\service_details_page.dart:190:46 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\common\pages\shop_details_page.dart:90:49 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\common\pages\shop_details_page.dart:186:33 - unnecessary_underscores
+warning - Unused import: 'dart:io' - lib\portals\pet_owner\pages\dashboard_page.dart:1:8 - unused_import
+warning - Unused import: 'package:image_picker/image_picker.dart' - lib\portals\pet_owner\pages\dashboard_page.dart:3:8 - unused_import
+warning - Unused import: '../../../core/widgets/common_widgets.dart' - lib\portals\pet_owner\pages\dashboard_page.dart:8:8 - unused_import
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\dashboard_page.dart:177:27 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\dashboard_page.dart:195:27 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\dashboard_page.dart:209:27 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\dashboard_page.dart:217:28 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\dashboard_page.dart:225:27 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\dashboard_page.dart:260:27 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\dashboard_page.dart:467:22 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\dashboard_page.dart:689:54 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\dashboard_page.dart:825:30 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\dashboard_page.dart:945:43 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\marketplace_page.dart:76:34 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\marketplace_page.dart:117:32 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\my_pets_page.dart:79:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\my_pets_page.dart:180:57 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\my_pets_page.dart:215:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\my_pets_page.dart:216:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\my_pets_page.dart:216:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\my_pets_page.dart:302:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\my_pets_page.dart:303:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\pages\my_pets_page.dart:303:44 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\pet_owner\pages\profile_page.dart:120:51 - deprecated_member_use
+  error - The named parameter 'data' is required, but there's no corresponding argument - lib\portals\pet_owner\widgets\pet_form_sheet.dart:214:41 - missing_required_argument
+  error - The named parameter 'error' is required, but there's no corresponding argument - lib\portals\pet_owner\widgets\pet_form_sheet.dart:214:41 - missing_required_argument
+  error - The named parameter 'loading' is required, but there's no corresponding argument - lib\portals\pet_owner\widgets\pet_form_sheet.dart:214:41 - missing_required_argument
+  error - Too many positional arguments: 0 expected, but 1 found - lib\portals\pet_owner\widgets\pet_form_sheet.dart:214:45 - extra_positional_arguments_could_be_named
+  error - The method 'map' isn't defined for the type 'Object' - lib\portals\pet_owner\widgets\pet_form_sheet.dart:226:39 - undefined_method
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\appointments_page.dart:56:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\appointments_page.dart:63:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\appointments_page.dart:265:36 - deprecated_member_use
+   info - Unnecessary use of string interpolation - lib\portals\provider\pages\appointments_page.dart:398:25 - unnecessary_string_interpolations
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\appointments_page.dart:407:40 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\my_services_page.dart:217:63 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\my_services_page.dart:217:98 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\my_services_page.dart:244:44 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\my_services_page.dart:354:61 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\provider\pages\provider_dashboard_page.dart:98:27 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\provider_dashboard_page.dart:545:30 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\provider_dashboard_page.dart:618:42 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\provider_dashboard_page.dart:683:36 - deprecated_member_use
+warning - Unused import: '../../../core/widgets/common_widgets.dart' - lib\portals\provider\pages\provider_profile_page.dart:6:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\provider_profile_page.dart:53:74 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\provider\pages\provider_profile_page.dart:90:40 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\provider_profile_page.dart:152:60 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\provider\pages\provider_profile_page.dart:174:51 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\portals\provider\widgets\service_form_sheet.dart:205:29 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\portals\provider\widgets\service_form_sheet.dart:206:29 - deprecated_member_use
+   info - 'groupValue' is deprecated and shouldn't be used. Use a RadioGroup ancestor to manage group value instead. This feature was deprecated after v3.32.0-0.0.pre - lib\portals\provider\widgets\service_form_sheet.dart:214:29 - deprecated_member_use
+   info - 'onChanged' is deprecated and shouldn't be used. Use RadioGroup to handle value change instead. This feature was deprecated after v3.32.0-0.0.pre - lib\portals\provider\widgets\service_form_sheet.dart:215:29 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\shop_owner\pages\orders_page.dart:50:56 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\shop_owner\pages\orders_page.dart:57:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\shop_owner\pages\orders_page.dart:77:55 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\products_page.dart:375:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\products_page.dart:376:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\products_page.dart:376:48 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\products_page.dart:532:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\products_page.dart:533:44 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\products_page.dart:533:48 - unnecessary_underscores
+warning - Unused import: '../../../core/widgets/common_widgets.dart' - lib\portals\shop_owner\pages\shop_dashboard_page.dart:4:8 - unused_import
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\shop_dashboard_page.dart:172:38 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\shop_dashboard_page.dart:178:38 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\shop_dashboard_page.dart:196:38 - unnecessary_underscores
+   info - Use a 'SizedBox' to add whitespace to a layout - lib\portals\shop_owner\pages\shop_dashboard_page.dart:349:17 - sized_box_for_whitespace
+warning - Unused import: '../../../core/widgets/common_widgets.dart' - lib\portals\shop_owner\pages\shop_reports_page.dart:5:8 - unused_import
+warning - Unused import: '../../../data/providers/product_providers.dart' - lib\portals\shop_owner\pages\shop_reports_page.dart:8:8 - unused_import
+warning - The operand can't be 'null', so the condition is always 'false' - lib\portals\shop_owner\pages\shop_reports_page.dart:51:23 - unnecessary_null_comparison
+warning - Dead code - lib\portals\shop_owner\pages\shop_reports_page.dart:51:32 - dead_code
+warning - The '!' will have no effect because the receiver can't be null - lib\portals\shop_owner\pages\shop_reports_page.dart:52:25 - unnecessary_non_null_assertion
+warning - The '!' will have no effect because the receiver can't be null - lib\portals\shop_owner\pages\shop_reports_page.dart:52:56 - unnecessary_non_null_assertion
+warning - The operand can't be 'null', so the condition is always 'false' - lib\portals\shop_owner\pages\shop_reports_page.dart:245:33 - unnecessary_null_comparison
+warning - Dead code - lib\portals\shop_owner\pages\shop_reports_page.dart:245:42 - dead_code
+warning - The '!' will have no effect because the receiver can't be null - lib\portals\shop_owner\pages\shop_reports_page.dart:246:70 - unnecessary_non_null_assertion
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\shop_reports_page.dart:526:84 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\shop_owner\pages\shop_reports_page.dart:526:88 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\cart_page.dart:46:58 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\cart_page.dart:157:26 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\cart_page.dart:183:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\cart_page.dart:216:73 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\checkout_page.dart:91:50 - deprecated_member_use
+warning - Unnecessary type check; the result is always 'true' - lib\portals\user\pages\home_page.dart:161:36 - unnecessary_type_check
+warning - Dead code - lib\portals\user\pages\home_page.dart:161:77 - dead_code
+warning - Unused import: 'package:go_router/go_router.dart' - lib\portals\user\pages\orders_page.dart:8:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\orders_page.dart:61:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\orders_page.dart:69:41 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\orders_page.dart:89:55 - deprecated_member_use
+warning - Unused import: '../../../data/services/pet_service.dart' - lib\portals\user\pages\pets_page.dart:9:8 - unused_import
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\pets_page.dart:79:51 - deprecated_member_use
+warning - The receiver can't be 'null' because of short-circuiting, so the null-aware operator '?.' can't be used - lib\portals\user\pages\pets_page.dart:168:98 - invalid_null_aware_operator
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\pets_page.dart:231:57 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\pets_page.dart:256:33 - deprecated_member_use
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\pets_page.dart:299:42 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\pets_page.dart:300:42 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\pets_page.dart:300:46 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\pets_page.dart:389:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\pets_page.dart:390:40 - unnecessary_underscores
+   info - Unnecessary use of multiple underscores - lib\portals\user\pages\pets_page.dart:390:44 - unnecessary_underscores
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\pets_page.dart:418:53 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\pets_page.dart:419:45 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\profile_page.dart:56:58 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\profile_page.dart:63:43 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\portals\user\pages\profile_page.dart:144:33 - deprecated_member_use
+
+flutter : 198 
+issues found. (ran 
+in 5.5s)
+At line:1 char:1
++ flutter analyze > 
+analyze_output.txt 
+2>&1; cat 
+analyze_output.txt
++ ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+~~~
+    + CategoryInfo  
+            : NotS  
+  pecified: (198    
+ issues found. (    
+ran in 5.5s):St    
+ring) [], Remot    
+eException
+    + FullyQualifie 
+   dErrorId : Nati  
+  veCommandError
+ 

@@ -5,8 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
-import '../../../data/providers/mock_data_provider.dart';
 import '../../../data/models/models.dart';
+// import '../../../data/providers/mock_data_provider.dart'; // Removing
+import '../../../data/providers/service_providers.dart';
 
 class ServiceDetailsPage extends ConsumerWidget {
   final String serviceId;
@@ -15,36 +16,45 @@ class ServiceDetailsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final services = ref.watch(servicesProvider);
-    final service = services.firstWhere(
-      (s) => s.id == serviceId,
-      orElse: () => throw Exception('Service not found'),
-    );
+    final serviceAsync = ref.watch(serviceDetailProvider(serviceId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          _buildHeader(context, service),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildServiceInfo(service),
-                  const SizedBox(height: 32),
-                  _buildProviderInfo(service.provider),
-                  const SizedBox(height: 32),
-                  _buildDescription(service.description),
-                  const SizedBox(height: 40),
-                  _buildActionButtons(context, service),
-                ],
-              ),
-            ),
-          ),
-        ],
+    return serviceAsync.when(
+      loading: () => const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator()),
       ),
+      error: (e, _) => Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Error')),
+        body: Center(child: Text('Failed to load service details: $e')),
+      ),
+      data: (service) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: Column(
+            children: [
+              _buildHeader(context, service),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildServiceInfo(service),
+                      const SizedBox(height: 32),
+                      _buildProviderInfo(service.provider),
+                      const SizedBox(height: 32),
+                      _buildDescription(service.description),
+                      const SizedBox(height: 40),
+                      _buildActionButtons(context, service),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -126,7 +136,9 @@ class ServiceDetailsPage extends ConsumerWidget {
   }
 
   Widget _buildProviderInfo(ProviderInfo? provider) {
-    if (provider == null) return const SizedBox.shrink();
+    if (provider == null) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.all(20),
