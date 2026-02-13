@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../data/providers/auth_providers.dart';
 import '../../../../data/models/user_model.dart';
+import '../../../../core/router/app_router.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
   const SplashPage({super.key});
@@ -46,23 +47,7 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
   void _navigateToPortal(UserModel user) {
     if (!mounted) return;
     
-    String route = '/user';
-    switch (user.primaryRole) {
-      case 'admin':
-        // route = '/admin';
-        break;
-      case 'provider':
-        route = '/provider';
-        break;
-      case 'shop_owner':
-        route = '/shop-owner';
-        break;
-      case 'pet_owner':
-        route = '/pet-owner';
-        break;
-      default:
-        route = '/user';
-    }
+    final route = AppRouter.getPortalRoute(user.primaryRole);
     
     // Slight delay to improve UX if animation is still playing
     Future.delayed(const Duration(milliseconds: 500), () {
@@ -150,7 +135,7 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
                   width: 250,
                   height: 250,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE9D5FF).withOpacity(0.5),
+                    color: const Color(0xFFE9D5FF).withValues(alpha: 0.5),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(

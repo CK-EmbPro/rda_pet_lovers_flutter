@@ -128,7 +128,7 @@ class MyServicesPage extends ConsumerWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.85,
+                childAspectRatio: 0.75,
             ),
             itemCount: services.length,
             itemBuilder: (context, index) {
@@ -214,7 +214,7 @@ class _ServiceCardView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: service.isActive ? AppColors.success.withOpacity(0.1) : AppColors.error.withOpacity(0.1),
+                  color: service.isActive ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -241,7 +241,7 @@ class _ServiceCardView extends StatelessWidget {
                 icon: Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
-                    color: AppColors.error.withOpacity(0.1),
+                    color: AppColors.error.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(Icons.delete_outline, size: 16, color: AppColors.error),
@@ -351,7 +351,7 @@ class _ServiceListView extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: service.isActive ? AppColors.secondary.withOpacity(0.15) : AppColors.inputFill,
+              color: service.isActive ? AppColors.secondary.withValues(alpha: 0.15) : AppColors.inputFill,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -368,6 +368,8 @@ class _ServiceListView extends StatelessWidget {
                 Text(
                   service.name,
                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Row(
@@ -380,6 +382,7 @@ class _ServiceListView extends StatelessWidget {
                     Text(
                       '• ${service.paymentMethod == 'PAY_BEFORE' ? 'Pay Before' : 'Pay After'}',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),

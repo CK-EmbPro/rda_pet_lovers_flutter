@@ -29,7 +29,7 @@ class _FilterSheetState extends ConsumerState<FilterSheet> {
   Set<String> selectedLocations = {};
   double priceMax = 100000;
 
-  final List<String> ageRanges = ['1-2 yr', '1-3 month', '3-9 month', '1-5 yr'];
+  final List<String> ageRanges = ['< 1 year', '1 - 3 years', '3 - 7 years', '7+ years'];
 
   @override
   Widget build(BuildContext context) {

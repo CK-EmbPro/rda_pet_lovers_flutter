@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/order_providers.dart';
-import '../../../data/providers/product_providers.dart'; // For real product count if needed
 
 class ShopReportsPage extends ConsumerStatefulWidget {
   const ShopReportsPage({super.key});
@@ -48,8 +46,7 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
     }
 
     return orders.where((o) {
-      if (o.createdAt == null) return false;
-      return o.createdAt!.isAfter(start) && o.createdAt!.isBefore(end.add(const Duration(days: 1)));
+      return o.createdAt.isAfter(start) && o.createdAt.isBefore(end.add(const Duration(days: 1)));
     }).toList();
   }
 
@@ -242,8 +239,7 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
               // Initialize last 6 months 
               // (Or just aggregate existing orders logic)
               for (var o in orders) {
-                if (o.createdAt == null) continue;
-                final monthKey = DateFormat('MMM').format(o.createdAt!);
+                final monthKey = DateFormat('MMM').format(o.createdAt);
                 if (!monthlyStats.containsKey(monthKey)) {
                   monthlyStats[monthKey] = {'month': monthKey, 'sales': 0.0, 'orders': 0};
                 }

@@ -172,18 +172,22 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.2),
+                                  color: Colors.white,
                                   borderRadius: BorderRadius.circular(15),
+                                  boxShadow: AppTheme.cardShadow,
                                 ),
                                 child: TextField(
                                   controller: _searchController,
                                   onChanged: (value) => setState(() => _searchQuery = value),
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: AppColors.textPrimary),
                                   decoration: const InputDecoration(
                                     hintText: 'Search products...',
-                                    hintStyle: TextStyle(color: Colors.white70),
+                                    hintStyle: TextStyle(color: AppColors.textSecondary),
                                     border: InputBorder.none,
-                                    icon: Icon(Icons.search, color: Colors.white70),
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
+                                    contentPadding: EdgeInsets.symmetric(vertical: 14),
                                   ),
                                 ),
                               ),
@@ -382,8 +386,11 @@ class _ProductCard extends StatelessWidget {
               Positioned(
                 top: 12,
                 left: 12,
+                right: 50,
                 child: Text(
                   product.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
@@ -436,6 +443,7 @@ class _ProductCard extends StatelessWidget {
                       child: Text(
                         stock > 0 ? 'In Stock: $stock' : 'Out of Stock',
                         style: TextStyle(color: stock > 0 ? AppColors.success : AppColors.error, fontWeight: FontWeight.w600, fontSize: 12),
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
@@ -517,7 +525,7 @@ class _ProductGridCard extends StatelessWidget {
           Stack(
             children: [
               Container(
-                height: 100,
+                height: 90,
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   color: Color(0xFFE86A2C),
@@ -576,7 +584,7 @@ class _ProductGridCard extends StatelessWidget {
                   Text(
                     product.name,
                     style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    maxLines: 1,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),

@@ -47,7 +47,7 @@ class AppRouter {
         path: '/user',
         builder: (context, state) {
           final tab = state.uri.queryParameters['tab'];
-          final index = tab == 'cart' ? 4 : 0;
+          final index = tab == 'cart' ? 3 : 0;
           return UserPortal(initialIndex: index);
         },
       ),
@@ -120,19 +120,13 @@ class AppRouter {
   );
 
   /// Navigate to portal based on user role
+  /// Navigate to portal based on user role (handles raw roles or normalized primaryRole)
   static String getPortalRoute(String role) {
-    switch (role) {
-      case 'PET_OWNER':
-        return '/pet-owner';
-      case 'SHOP_OWNER':
-        return '/shop-owner';
-      case 'VETERINARY':
-      case 'GROOMER':
-      case 'PET_WALKER':
-      case 'PET_TRAINER':
-        return '/provider';
-      default:
-        return '/user';
-    }
+    final r = role.toUpperCase();
+    if (r == 'PET_OWNER' || role == 'pet_owner') return '/pet-owner';
+    if (r == 'SHOP_OWNER' || role == 'shop_owner') return '/shop-owner';
+    if (r == 'VETERINARY' || r == 'GROOMER' || r == 'PET_WALKER' || r == 'PET_TRAINER' || role == 'provider') return '/provider';
+    if (r == 'ADMIN' || role == 'admin') return '/admin'; // If admin exists
+    return '/user';
   }
 }

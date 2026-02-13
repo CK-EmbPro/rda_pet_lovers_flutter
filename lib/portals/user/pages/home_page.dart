@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/filter_sheet.dart';
+
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../core/widgets/all_appointments_sheet.dart';
@@ -20,25 +20,66 @@ import '../../../data/providers/order_providers.dart';
 import '../../../data/models/models.dart';
 import '../../../data/services/pet_service.dart';
 import '../user_portal.dart'; // For navigation
+import '../../../core/utils/toast_utils.dart';
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _soldSectionKey = GlobalKey();
+  final GlobalKey _donatedSectionKey = GlobalKey();
+  
+  // State variable for filtering
+  String? _selectedCategoryId;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToSection(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+        alignment: 0.1, // Slight offset from top
+      ).then((_) {
+        // Optional: Flash or highlight effect could go here
+      });
+    } else {
+      // If the section is not visible (e.g. no pets in that category), show a toast
+      ToastUtils.showInfo(this.context, 'No pets available in this category at the moment.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
-
-    // Async Providers
+    
+    // Filter State (Local to this build if we want to rebuild on change, but usually better in State class)
+    // Since we're in build, we use the state variable _selectedCategoryId defined in _HomePageState
+    
+    // Async Providers with Filtering
     final categoriesAsync = ref.watch(productCategoriesProvider);
     final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 5)));
+    
+    // Filter Products and Services by selected Category
     final petsAsync = ref.watch(allPetsProvider(const PetQueryParams(limit: 10)));
-    final servicesAsync = ref.watch(allServicesProvider(const ServiceQueryParams(limit: 5)));
-    final productsAsync = ref.watch(allProductsProvider(const ProductQueryParams(limit: 10)));
+    final servicesAsync = ref.watch(allServicesProvider(ServiceQueryParams(limit: 5, categoryId: _selectedCategoryId)));
+    final productsAsync = ref.watch(allProductsProvider(ProductQueryParams(limit: 10, categoryId: _selectedCategoryId)));
     
     // User-specific data (skip for guests)
     final appointmentsAsync = isGuest 
-        ? const AsyncValue<PaginatedResponse<AppointmentModel>>.data(const PaginatedResponse(data: [], page: 1, limit: 5, total: 0, totalPages: 0))
+        ? const AsyncValue<PaginatedResponse<AppointmentModel>>.data(PaginatedResponse(data: [], page: 1, limit: 5, total: 0, totalPages: 0))
         : ref.watch(myAppointmentsProvider(null));
     final ordersAsync = isGuest 
         ? const AsyncValue<List<OrderModel>>.data([]) 
@@ -48,6 +89,7 @@ class HomePage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -101,7 +143,7 @@ class HomePage extends ConsumerWidget {
                           onTap: () {
                             // Navigate to profile tab
                             final portal = context.findAncestorStateOfType<UserPortalState>();
-                            portal?.navigateToTab(5); // Profile is usually last index (5)
+                            portal?.navigateToTab(4); // Profile is index 4
                           },
                           child: CircleAvatar(
                             radius: 22,
@@ -120,15 +162,27 @@ class HomePage extends ConsumerWidget {
                 ),
               ),
 
-              // Search Bar with Filter Icon
+              // Search Bar with Filter Icon (Updated Style)
               _buildSearchBar(context),
               const SizedBox(height: 24),
 
-              // Categories Section
+              // Categories Section (Interactive)
               categoriesAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => const SizedBox.shrink(),
-                data: (categories) => _CategoriesWidget(categories: categories),
+                data: (categories) => _CategoriesWidget(
+                  categories: categories,
+                  selectedId: _selectedCategoryId,
+                  onCategorySelected: (id) {
+                    setState(() {
+                      if (_selectedCategoryId == id) {
+                        _selectedCategoryId = null; // Toggle off
+                      } else {
+                        _selectedCategoryId = id;
+                      }
+                    });
+                  },
+                ),
               ),
               const SizedBox(height: 24),
 
@@ -136,7 +190,7 @@ class HomePage extends ConsumerWidget {
               _buildQuickActions(context),
               const SizedBox(height: 24),
 
-              // Upcoming Appointments (Authenticated Only)
+              // Upcoming Appointments
               if (!isGuest)
                 appointmentsAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -155,7 +209,7 @@ class HomePage extends ConsumerWidget {
                   }
                 ),
 
-              // Recent Orders (Authenticated Only)
+              // Recent Orders
               if (!isGuest)
                  ordersAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
@@ -167,24 +221,22 @@ class HomePage extends ConsumerWidget {
                 ),
               if (!isGuest) const SizedBox(height: 24),
 
-              // Shops Section
+              // Shops Section (Increased width)
               shopsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => const SizedBox.shrink(),
                 data: (PaginatedResponse<ShopModel> response) {
-                  final Widget result = _buildShopsSection(context, response.data);
-                  return result;
+                  return _buildShopsSection(context, response.data);
                 },
               ),
               const SizedBox(height: 24),
 
-              // Products Section
+              // Products Section (Increased width)
               productsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => const SizedBox.shrink(),
                 data: (PaginatedResponse<ProductModel> response) {
-                  final Widget result = _buildProductsSection(context, response.data);
-                  return result;
+                  return _buildProductsSection(context, response.data);
                 },
               ),
               const SizedBox(height: 24),
@@ -198,30 +250,43 @@ class HomePage extends ConsumerWidget {
                   final petsForSale = pets.where((p) => p.listingType == 'FOR_SALE').toList();
                   final petsForDonation = pets.where((p) => p.listingType == 'FOR_DONATION').toList();
                   
-                  final Widget result = Column(
+                  return Column(
                     children: [
                        // Being Sold Section
                       if (petsForSale.isNotEmpty) ...[
-                        _buildPetsSectionHeader(context, 'Being Sold', () {
-                          final portal = context.findAncestorStateOfType<UserPortalState>();
-                          portal?.navigateToTab(3); // Pets tab
-                        }),
-                        _buildPetsHorizontalList(context, petsForSale.take(5).toList()),
+                        Container(
+                          key: _soldSectionKey,
+                          child: Column(
+                            children: [
+                              _buildPetsSectionHeader(context, 'Being Sold', () {
+                                final portal = context.findAncestorStateOfType<UserPortalState>();
+                                portal?.navigateToTab(2); 
+                              }),
+                              _buildPetsHorizontalList(context, petsForSale.take(5).toList()),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 24),
                       ],
 
                       // Being Donated Section
                       if (petsForDonation.isNotEmpty) ...[
-                        _buildPetsSectionHeader(context, 'Being Donated', () {
-                          final portal = context.findAncestorStateOfType<UserPortalState>();
-                          portal?.navigateToTab(3); // Pets tab
-                        }),
-                        _buildPetsHorizontalList(context, petsForDonation.take(5).toList()),
+                        Container(
+                          key: _donatedSectionKey,
+                          child: Column(
+                            children: [
+                              _buildPetsSectionHeader(context, 'Being Donated', () {
+                                final portal = context.findAncestorStateOfType<UserPortalState>();
+                                portal?.navigateToTab(2); 
+                              }),
+                              _buildPetsHorizontalList(context, petsForDonation.take(5).toList()),
+                            ],
+                          ),
+                        ),
                         const SizedBox(height: 24),
                       ],
                     ],
                   );
-                  return result;
                 }
               ),
 
@@ -230,8 +295,7 @@ class HomePage extends ConsumerWidget {
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => const SizedBox.shrink(),
                 data: (PaginatedResponse<ServiceModel> response) {
-                  final Widget result = _buildServicesSection(context, response.data);
-                  return result;
+                  return _buildServicesSection(context, response.data);
                 },
               ),
 
@@ -249,32 +313,39 @@ class HomePage extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.inputFill,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             const Icon(Icons.search, color: AppColors.textSecondary),
             const SizedBox(width: 12),
-            const Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search pets, services, shops...',
-                  border: InputBorder.none,
-                  filled: false,
-                  contentPadding: EdgeInsets.symmetric(vertical: 12),
+            Expanded(
+              child: Theme(
+                data: Theme.of(context).copyWith(
+                  inputDecorationTheme: const InputDecorationTheme(
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                  ),
                 ),
-              ),
-            ),
-            GestureDetector(
-              onTap: () => FilterSheet.show(context),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
+                child: const TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Search pets, services, shops...',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    contentPadding: EdgeInsets.symmetric(vertical: 12),
+                  ),
                 ),
-                child: const Icon(Icons.tune, size: 20, color: AppColors.textSecondary),
               ),
             ),
           ],
@@ -297,30 +368,66 @@ class HomePage extends ConsumerWidget {
           child: ListView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
+            clipBehavior: Clip.none, // Allow shadows
             children: [
               _QuickActionButton(
                 icon: Icons.add_circle_outline,
                 label: 'Add pet',
                 color: AppColors.secondary,
-                onTap: () => PetFormSheet.show(context),
+                onTap: () {
+                  final user = ProviderScope.containerOf(context).read(currentUserProvider);
+                  if (user == null) {
+                    _showGuestRestriction(context, 'add a pet');
+                  } else {
+                    PetFormSheet.show(context);
+                  }
+                },
+              ),
+              _QuickActionButton(
+                icon: Icons.shopping_basket_outlined,
+                label: 'Buy',
+                color: Colors.blue,
+                onTap: () => _scrollToSection(_soldSectionKey),
+              ),
+              _QuickActionButton(
+                icon: Icons.pets_outlined,
+                label: 'Adopt',
+                color: Colors.purple,
+                onTap: () => _scrollToSection(_donatedSectionKey),
               ),
               _QuickActionButton(
                 icon: Icons.favorite_outline,
                 label: 'Donate',
                 color: Colors.pink,
-                onTap: () {},
+                onTap: () {
+                  final user = ProviderScope.containerOf(context).read(currentUserProvider);
+                  if (user == null || user.primaryRole == 'user') {
+                    _showGuestRestriction(context, 'donate a pet');
+                  } else {
+                     // Navigate to donation
+                  }
+                },
               ),
               _QuickActionButton(
                 icon: Icons.sell_outlined,
                 label: 'Sell',
                 color: Colors.green,
-                onTap: () {},
+                onTap: () {
+                  _showGuestRestriction(context, 'sell a pet');
+                },
               ),
               _QuickActionButton(
                 icon: Icons.calendar_today,
                 label: 'Book Service',
                 color: Colors.orange,
-                onTap: () => AppointmentFormSheet.show(context),
+                onTap: () {
+                   final user = ProviderScope.containerOf(context).read(currentUserProvider);
+                   if (user == null || user.primaryRole == 'user') {
+                     _showGuestRestriction(context, 'book a service');
+                   } else {
+                     AppointmentFormSheet.show(context);
+                   }
+                },
               ),
             ],
           ),
@@ -458,14 +565,15 @@ class HomePage extends ConsumerWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
+            clipBehavior: Clip.none, // Allow shadows
             itemCount: shops.length,
             itemBuilder: (context, index) {
               final shop = shops[index];
               return GestureDetector(
                 onTap: () => context.push('/shop-details/${shop.id}'),
                 child: Container(
-                  width: 160,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 220, // Increased Width
+                  margin: const EdgeInsets.symmetric(horizontal: 8), // Increased spacing
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -540,18 +648,19 @@ class HomePage extends ConsumerWidget {
           ),
         ),
         SizedBox(
-          height: 184,
+          height: 200, // Increased Height
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
+            clipBehavior: Clip.none, // Allow shadows
             itemCount: products.length,
             itemBuilder: (context, index) {
               final product = products[index];
               return GestureDetector(
                 onTap: () => context.push('/product-details/${product.id}'),
                 child: Container(
-                  width: 130,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 200, // Increased Width
+                  margin: const EdgeInsets.symmetric(horizontal: 8), // Increased spacing
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -572,19 +681,20 @@ class HomePage extends ConsumerWidget {
                         ),
                       ),
                       Padding(
-                        padding: const EdgeInsets.all(8),
+                        padding: const EdgeInsets.all(12),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               product.name,
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
+                            const SizedBox(height: 4),
                             Text(
                               '${product.effectivePrice.toInt()} RWF',
-                              style: const TextStyle(color: AppColors.secondary, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -626,14 +736,15 @@ class HomePage extends ConsumerWidget {
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
+            clipBehavior: Clip.none,
             itemCount: services.take(5).length,
             itemBuilder: (context, index) {
               final service = services[index];
               return GestureDetector(
                 onTap: () => context.push('/service-details/${service.id}'),
                 child: Container(
-                  width: 140,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: 160,
+                  margin: const EdgeInsets.symmetric(horizontal: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
@@ -692,18 +803,19 @@ class HomePage extends ConsumerWidget {
 
   Widget _buildPetsHorizontalList(BuildContext context, List<PetModel> pets) {
     return SizedBox(
-      height: 180,
+      height: 200, // Increased Height
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
+        clipBehavior: Clip.none,
         itemCount: pets.length,
         itemBuilder: (context, index) {
           final pet = pets[index];
           return GestureDetector(
             onTap: () => context.push('/pet-details/${pet.id}'),
             child: Container(
-              width: 140,
-              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 200, // Increased Width
+              margin: const EdgeInsets.symmetric(horizontal: 8),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
@@ -725,7 +837,7 @@ class HomePage extends ConsumerWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -745,6 +857,20 @@ class HomePage extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _showGuestRestriction(BuildContext context, String action) {
+    showDialog(
+      context: context,
+      builder: (context) => const AlertDialog(
+        title: Text('Pet Ownership Required', textAlign: TextAlign.center),
+        content: Text(
+          'To perform this action, you must own a pet by either creating it, buying it, or adopting it.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [], // No buttons as requested
       ),
     );
   }
@@ -789,16 +915,17 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _CategoriesWidget extends StatefulWidget {
+class _CategoriesWidget extends StatelessWidget {
   final List<CategoryModel> categories;
-  const _CategoriesWidget({required this.categories});
+  final String? selectedId;
+  final Function(String) onCategorySelected;
 
-  @override
-  State<_CategoriesWidget> createState() => _CategoriesWidgetState();
-}
+  const _CategoriesWidget({
+    required this.categories,
+    required this.selectedId,
+    required this.onCategorySelected,
+  });
 
-class _CategoriesWidgetState extends State<_CategoriesWidget> {
-  Set<String> _selected = {};
   static const Color _catColor = Color(0xFF475569);
 
   @override
@@ -808,10 +935,11 @@ class _CategoriesWidgetState extends State<_CategoriesWidget> {
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: widget.categories.length,
+        clipBehavior: Clip.none,
+        itemCount: categories.length,
         itemBuilder: (context, index) {
-          final category = widget.categories[index];
-          final isActive = _selected.contains(category.id);
+          final category = categories[index];
+          final isActive = selectedId == category.id;
           final letter = category.name.isNotEmpty
               ? category.name.substring(0, 1).toUpperCase()
               : '?';
@@ -820,15 +948,7 @@ class _CategoriesWidgetState extends State<_CategoriesWidget> {
             padding: const EdgeInsets.symmetric(horizontal: 8),
             child: GestureDetector(
               key: ValueKey('cat_${category.id}'),
-              onTap: () => setState(() {
-                final newSet = Set<String>.from(_selected);
-                if (newSet.contains(category.id)) {
-                  newSet.remove(category.id);
-                } else {
-                  newSet.add(category.id);
-                }
-                _selected = newSet;
-              }),
+              onTap: () => onCategorySelected(category.id),
               child: Column(
                 children: [
                   AnimatedContainer(
@@ -839,6 +959,9 @@ class _CategoriesWidgetState extends State<_CategoriesWidget> {
                       color: isActive ? _catColor : Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(color: _catColor, width: 1.5),
+                      boxShadow: isActive 
+                        ? [BoxShadow(color: _catColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))] 
+                        : null,
                     ),
                     child: Center(
                       child: Text(
@@ -926,3 +1049,4 @@ class _AppointmentCard extends StatelessWidget {
     );
   }
 }
+// Triggering hot reload fix

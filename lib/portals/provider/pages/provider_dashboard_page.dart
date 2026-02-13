@@ -23,6 +23,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime _selectedDay = DateTime.now();
   CalendarFormat _calendarFormat = CalendarFormat.month;
+  DateTimeRange? _requestsDateRange;
 
   @override
   Widget build(BuildContext context) {
@@ -107,7 +108,14 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                            (a.status == 'CONFIRMED' || a.status == 'PENDING');
                   }).toList();
 
-                  final pendingRequests = appointments.where((a) => a.status == 'PENDING').toList();
+                  var pendingRequests = appointments.where((a) => a.status == 'PENDING').toList();
+                  
+                  if (_requestsDateRange != null) {
+                    pendingRequests = pendingRequests.where((a) {
+                      return a.scheduledAt.isAfter(_requestsDateRange!.start.subtract(const Duration(seconds: 1))) &&
+                             a.scheduledAt.isBefore(_requestsDateRange!.end.add(const Duration(days: 1)));
+                    }).toList();
+                  }
 
                   return Column(
                     children: [
@@ -432,17 +440,68 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Column(
             children: [
-              const Text('Appointment Requests', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              TextButton(
-                onPressed: () {
-                  final portal = context.findAncestorStateOfType<ProviderPortalState>();
-                  portal?.navigateToTab(2);
-                },
-                child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text('Appointment Requests', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.calendar_month_outlined, 
+                          color: _requestsDateRange != null ? AppColors.secondary : AppColors.textSecondary,
+                          size: 20
+                        ),
+                        onPressed: () async {
+                          final picked = await showDateRangePicker(
+                            context: context,
+                            firstDate: DateTime.now().subtract(const Duration(days: 365)),
+                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                            initialDateRange: _requestsDateRange,
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: ColorScheme.light(primary: AppColors.secondary),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (picked != null) {
+                            setState(() => _requestsDateRange = picked);
+                          }
+                        },
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          final portal = context.findAncestorStateOfType<ProviderPortalState>();
+                          portal?.navigateToTab(2);
+                        },
+                        child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
+              if (_requestsDateRange != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      InputChip(
+                        label: Text(
+                          '${_requestsDateRange!.start.toString().split(' ')[0]} - ${_requestsDateRange!.end.toString().split(' ')[0]}',
+                          style: const TextStyle(fontSize: 12, color: Colors.white),
+                        ),
+                        backgroundColor: AppColors.secondary,
+                        deleteIcon: const Icon(Icons.close, size: 16, color: Colors.white),
+                        onDeleted: () => setState(() => _requestsDateRange = null),
+                      ),
+                    ],
+                  ),
+                ),
             ],
           ),
         ),
@@ -542,7 +601,7 @@ class _QuickActionButton extends StatelessWidget {
               width: 55,
               height: 55,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Icon(icon, color: color),
@@ -615,7 +674,7 @@ class _ScheduleCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.secondary.withOpacity(0.1),
+              color: AppColors.secondary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.arrow_forward, color: AppColors.secondary, size: 20),
@@ -680,7 +739,7 @@ class _RequestCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.1),
+              color: Colors.orange.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(Icons.arrow_forward, color: Colors.orange, size: 20),

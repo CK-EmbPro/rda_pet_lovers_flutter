@@ -6,6 +6,7 @@ import '../../../../core/widgets/common_widgets.dart';
 import '../../../../data/providers/auth_providers.dart';
 import '../../../../data/models/user_model.dart';
 import '../../../../core/utils/toast_service.dart';
+import '../../../../core/router/app_router.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -56,30 +57,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   void _navigateToPortal(UserModel user) {
-    String route = '/user';
+    final route = AppRouter.getPortalRoute(user.primaryRole);
+    // Simple mapping for toast message
     String portalName = 'User';
-
-    switch (user.primaryRole) {
-      case 'admin':
-        // route = '/admin'; // If admin exists
-        portalName = 'Admin';
-        break;
-      case 'provider':
-        route = '/provider';
-        portalName = 'Service Provider';
-        break;
-      case 'shop_owner':
-        route = '/shop-owner';
-        portalName = 'Shop Owner';
-        break;
-      case 'pet_owner':
-        route = '/pet-owner';
-        portalName = 'Pet Owner';
-        break;
-      default:
-        route = '/user';
-        portalName = 'User';
-    }
+    if (route.contains('pet-owner')) portalName = 'Pet Owner';
+    else if (route.contains('shop-owner')) portalName = 'Shop Owner';
+    else if (route.contains('provider')) portalName = 'Service Provider';
+    else if (route.contains('admin')) portalName = 'Admin';
 
     ToastService.success(context, 'Welcome back, ${user.fullName}! ($portalName)');
     context.go(route);

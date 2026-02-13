@@ -20,10 +20,32 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
   bool _isGridView = true;
 
   @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _searchTerm = _searchController.text;
+    });
+  }
+
+  String _searchTerm = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
   Widget build(BuildContext context) {
-    // Real async providers
-    final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 10)));
-    final productsAsync = ref.watch(allProductsProvider(const ProductQueryParams(limit: 20)));
+    // Real async providers - filtered by search
+    final shopsAsync = ref.watch(allShopsProvider(ShopQueryParams(limit: 10, search: _searchTerm.isEmpty ? null : _searchTerm)));
+    final productsAsync = ref.watch(allProductsProvider(ProductQueryParams(limit: 20, search: _searchTerm.isEmpty ? null : _searchTerm)));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -49,12 +71,15 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                       borderRadius: BorderRadius.circular(15),
                       boxShadow: AppTheme.cardShadow,
                     ),
-                    child: const TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Search products...',
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: const InputDecoration(
+                        hintText: 'Search products & shops...',
                         border: InputBorder.none,
+                        enabledBorder: InputBorder.none,
+                        focusedBorder: InputBorder.none,
                         prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
-                        suffixIcon: Icon(Icons.tune, color: AppColors.textSecondary),
+                        // Removed suffixIcon as requested
                       ),
                     ),
                   ),
@@ -173,7 +198,7 @@ class _ShopCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => context.push('/shop-details/${shop.id}'),
       child: Container(
-        width: 200,
+        width: 220,
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.all(12), // Reduced padding
         decoration: BoxDecoration(
@@ -236,7 +261,7 @@ class _ProductCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
@@ -244,7 +269,7 @@ class _ProductCard extends StatelessWidget {
           Expanded(
             flex: 3,
             child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               child: product.mainImage != null
                   ? CachedNetworkImage(
                       imageUrl: product.mainImage!,
@@ -302,7 +327,7 @@ class _ProductListItem extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: AppTheme.cardShadow,
       ),
       child: Row(

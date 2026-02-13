@@ -99,7 +99,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
+                  gradient: AppTheme.primaryGradient,
                   borderRadius: const BorderRadius.only(
                     bottomLeft: Radius.circular(40),
                     bottomRight: Radius.circular(40),

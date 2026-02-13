@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/providers/service_providers.dart';
 import '../../../data/models/models.dart';
+import '../../../data/providers/auth_providers.dart';
 
 class ServicesPage extends ConsumerStatefulWidget {
   const ServicesPage({super.key});
@@ -28,9 +28,32 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged() {
+    // Debounce can be added here if needed, for now just setState
+    setState(() {
+      _searchTerm = _searchController.text;
+    });
+  }
+
+  String _searchTerm = '';
+
+  @override
   Widget build(BuildContext context) {
     final servicesAsync = ref.watch(allServicesProvider(ServiceQueryParams(
       serviceType: _selectedCategory == 'All' ? null : _selectedCategory,
+      search: _searchTerm.isEmpty ? null : _searchTerm,
     )));
 
     return Scaffold(
@@ -61,7 +84,7 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                 ),
                 const SizedBox(height: 4),
                 const Text(
-                  'Lorem ipsum dolor sit amet',
+                  'Find the best care for your pet',
                   style: TextStyle(color: Colors.white70, fontSize: 14),
                 ),
                 const SizedBox(height: 20),
@@ -82,21 +105,12 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
                           decoration: const InputDecoration(
                             hintText: 'Search services...',
                             border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
                             filled: false,
                             isDense: true,
                             contentPadding: EdgeInsets.symmetric(vertical: 12),
                           ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => FilterSheet.show(context),
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: AppColors.inputFill,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(Icons.tune, size: 20, color: Color(0xFF21314C)),
                         ),
                       ),
                     ],
@@ -108,11 +122,12 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
 
           // Category Filter Chips
           Container(
-            height: 55,
-            padding: const EdgeInsets.only(top: 12),
+            height: 60, // Sligthly increased height
+            padding: const EdgeInsets.only(top: 12, bottom: 4),
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 16),
+              clipBehavior: Clip.none, // Allow shadows
               itemCount: _categories.length,
               itemBuilder: (context, index) {
                 final cat = _categories[index];
@@ -203,12 +218,12 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
   }
 }
 
-class _ProviderCard extends StatelessWidget {
+class _ProviderCard extends ConsumerWidget {
   final ServiceModel service;
   const _ProviderCard({required this.service});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return GestureDetector(
       onTap: () => context.push('/service-details/${service.id}'),
       child: Container(
@@ -316,7 +331,14 @@ class _ProviderCard extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () => AppointmentFormSheet.show(context, serviceId: service.id, providerId: service.providerId),
+                onPressed: () {
+                  final user = ref.read(currentUserProvider);
+                  if (user == null || user.primaryRole == 'user') {
+                    _showGuestRestriction(context, 'schedule an appointment');
+                  } else {
+                    AppointmentFormSheet.show(context, serviceId: service.id, providerId: service.providerId);
+                  }
+                },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF21314C),
                   padding: const EdgeInsets.symmetric(vertical: 14),
@@ -330,6 +352,20 @@ class _ProviderCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showGuestRestriction(BuildContext context, String action) {
+    showDialog(
+      context: context,
+      builder: (context) => const AlertDialog(
+        title: Text('Pet Ownership Required', textAlign: TextAlign.center),
+        content: Text(
+          'To perform this action, you must own a pet by either creating it, buying it, or adopting it.',
+          textAlign: TextAlign.center,
+        ),
+        actions: [], // No buttons as requested
       ),
     );
   }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
 import '../../../data/models/models.dart';
@@ -9,6 +9,7 @@ import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/shop_providers.dart';
 import '../../../data/providers/product_providers.dart';
 import '../../../data/providers/order_providers.dart';
+import '../../../data/services/pet_service.dart';
 import '../shop_owner_portal.dart';
 import '../widgets/product_form_sheet.dart';
 
@@ -93,6 +94,7 @@ class ShopDashboardPage extends ConsumerWidget {
              // Fetch products and orders for stats
              final productsAsync = ref.watch(shopProductsProvider(shop.id));
              final ordersAsync = ref.watch(sellerOrdersProvider(null));
+             final reportOrdersAsync = ref.watch(sellerReportOrdersProvider(50));
 
              return SingleChildScrollView(
               child: Column(
@@ -238,7 +240,7 @@ class ShopDashboardPage extends ConsumerWidget {
                   const SizedBox(height: 24),
                   
                   // Quick Report Section
-                  _buildQuickReportSection(context),
+                  _buildQuickReportSection(context, reportOrdersAsync),
                   const SizedBox(height: 24),
                   
                   // Recent Orders
@@ -285,7 +287,7 @@ class ShopDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickReportSection(BuildContext context) {
+  Widget _buildQuickReportSection(BuildContext context, AsyncValue<PaginatedResponse<OrderModel>> ordersAsync) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
@@ -314,72 +316,108 @@ class ShopDashboardPage extends ConsumerWidget {
             ),
             const SizedBox(height: 20),
             // Stats row
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            '14,254', // TODO: Calculate real monthly sales
-                            style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+            ordersAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (_, __) => const Text('Unable to load sales data', style: TextStyle(color: AppColors.textSecondary)),
+              data: (paginated) {
+                final orders = paginated.data;
+                // Filter for this month
+                final now = DateTime.now();
+                final thisMonthOrders = orders.where((o) => 
+                  o.createdAt.year == now.year && o.createdAt.month == now.month
+                ).toList();
+                
+                final monthlySales = thisMonthOrders.fold<double>(0, (sum, o) => sum + o.totalAmount);
+                final fmt = NumberFormat.currency(symbol: '', decimalDigits: 0).format(monthlySales);
+
+                // Calculate Top Selling Product (Simple aggregation)
+                String topProductName = 'N/A';
+                if (thisMonthOrders.isNotEmpty) {
+                   final productCounts = <String, int>{};
+                   for (var o in thisMonthOrders) {
+                     for (var item in o.items) {
+                       productCounts[item.productName] = (productCounts[item.productName] ?? 0) + item.quantity;
+                     }
+                   }
+                   if (productCounts.isNotEmpty) {
+                     final sortedEntries = productCounts.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+                     topProductName = sortedEntries.first.key;
+                   }
+                }
+
+                return Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Text(
+                                    fmt,
+                                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // Mock growth indicator for now as we don't have last month data easily without another query
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.success.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Text(
+                                      '↑',
+                                      style: TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w500),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              const Text('Total Sales (RWF)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                            ],
                           ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text(
-                              '1.5% ↑',
-                              style: TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w500),
-                            ),
+                        ),
+                        // Mini chart placeholder
+                        SizedBox(
+                          width: 80,
+                          height: 40,
+                          child: CustomPaint(
+                            painter: _MiniChartPainter(),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text('Total Sales (RWF)', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                // Mini chart placeholder
-                Container(
-                  width: 80,
-                  height: 40,
-                  child: CustomPaint(
-                    painter: _MiniChartPainter(),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const Divider(),
-            const SizedBox(height: 12),
-            // Top selling product (Placeholder for now)
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.secondary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.trending_up, color: AppColors.secondary, size: 20),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text('Top selling:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                      Text('Premium Dog Food', style: TextStyle(fontWeight: FontWeight.w600)),
-                    ],
-                  ),
-                ),
-              ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 12),
+                    // Top selling product
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.trending_up, color: AppColors.secondary, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Top selling:', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                              Text(topProductName, style: const TextStyle(fontWeight: FontWeight.w600), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 16),
             // View full report button

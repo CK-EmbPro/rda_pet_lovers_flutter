@@ -66,7 +66,9 @@ class ServiceModel {
       paymentType: json['paymentType'] as String?,
       requiresSubscription: json['requiresSubscription'] as bool?,
       isActive: json['isActive'] as bool? ?? true,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString())
+          : DateTime.now(),
       provider: json['provider'] != null
           ? ProviderInfo.fromJson(json['provider'] as Map<String, dynamic>)
           : null,

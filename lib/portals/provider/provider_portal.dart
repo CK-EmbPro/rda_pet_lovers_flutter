@@ -3,6 +3,7 @@ import '../../core/widgets/common_widgets.dart';
 import 'pages/provider_dashboard_page.dart';
 import 'pages/my_services_page.dart';
 import 'pages/appointments_page.dart';
+import 'pages/provider_reports_page.dart';
 import 'pages/provider_profile_page.dart';
 
 class ProviderPortal extends StatefulWidget {
@@ -19,6 +20,7 @@ class ProviderPortalState extends State<ProviderPortal> {
     const ProviderDashboardPage(),
     const MyServicesPage(),
     const AppointmentsPage(),
+    const ProviderReportsPage(),
     const ProviderProfilePage(),
   ];
 
@@ -27,6 +29,7 @@ class ProviderPortalState extends State<ProviderPortal> {
     FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
     FloatingNavItem(icon: Icons.design_services_outlined, label: 'Services'),
     FloatingNavItem(icon: Icons.calendar_today_outlined, label: 'Bookings'),
+    FloatingNavItem(icon: Icons.bar_chart_outlined, label: 'Reports'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];
 

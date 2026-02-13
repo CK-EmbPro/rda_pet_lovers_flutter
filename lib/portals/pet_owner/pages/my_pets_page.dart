@@ -17,6 +17,32 @@ class MyPetsPage extends ConsumerStatefulWidget {
 
 class _MyPetsPageState extends ConsumerState<MyPetsPage> {
   bool _isGridView = false;
+  String _searchTerm = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _searchTerm = _searchController.text);
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<PetModel> _filterPets(List<PetModel> pets) {
+    if (_searchTerm.isEmpty) return pets;
+    final query = _searchTerm.toLowerCase();
+    return pets.where((pet) {
+      return pet.name.toLowerCase().contains(query) ||
+          (pet.breed?.name?.toLowerCase().contains(query) ?? false) ||
+          (pet.species?.name?.toLowerCase().contains(query) ?? false);
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,26 +94,22 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
                 ),
                 const SizedBox(height: 16),
                 // Search
-                // Search
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    boxShadow: AppTheme.cardShadow,
                   ),
-                  child: const TextField(
-                    style: TextStyle(color: AppColors.textPrimary),
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _searchController,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    decoration: const InputDecoration(
                       hintText: 'Search pets...',
                       hintStyle: TextStyle(color: AppColors.textMuted),
                       border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                       icon: Icon(Icons.search, color: AppColors.textSecondary),
                       contentPadding: EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -119,15 +141,21 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
                   ],
                 ),
               ),
-              data: (myPets) => myPets.isEmpty
-                  ? const EmptyState(
-                      icon: Icons.pets,
-                      title: 'No Pets Found',
-                      subtitle: 'Register your first pet to see it here!',
-                    )
-                  : _isGridView
-                      ? _buildGridView(myPets)
-                      : _buildSliderView(myPets),
+              data: (myPets) {
+                final filteredPets = _filterPets(myPets);
+                if (filteredPets.isEmpty) {
+                  return EmptyState(
+                    icon: Icons.pets,
+                    title: _searchTerm.isEmpty ? 'No Pets Found' : 'No Results',
+                    subtitle: _searchTerm.isEmpty
+                        ? 'Register your first pet to see it here!'
+                        : 'No pets match "$_searchTerm"',
+                  );
+                }
+                return _isGridView
+                    ? _buildGridView(filteredPets)
+                    : _buildSliderView(filteredPets);
+              },
             ),
           ),
         ],
@@ -150,7 +178,7 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
         crossAxisCount: 2,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        childAspectRatio: 0.72,
+        childAspectRatio: 0.70,
       ),
       itemCount: pets.length,
       itemBuilder: (context, index) => _PetGridCard(pet: pets[index]),
@@ -177,7 +205,7 @@ class _ViewToggle extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.white.withOpacity(0.2),
+          color: isActive ? Colors.white : Colors.white.withValues(alpha: 0.2),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, size: 20, color: isActive ? AppColors.secondary : Colors.white),

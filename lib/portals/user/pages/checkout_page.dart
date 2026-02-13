@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/cart_provider.dart';
+import '../../../data/providers/auth_providers.dart';
 
 class CheckoutPage extends ConsumerStatefulWidget {
   const CheckoutPage({super.key});
@@ -141,7 +142,38 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
             PrimaryButton(
               label: 'Proceed to Payment',
-              onPressed: () => context.push('/payment-method'),
+              onPressed: () {
+                final user = ref.read(currentUserProvider);
+                // Guest Restriction Logic
+                if (user == null || user.primaryRole == 'user') {
+                  final hasPet = cartItems.any((item) => item.type == 'PET');
+                  if (!hasPet) {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('Account Required'),
+                        content: const Text('Guests cannot purchase products without a pet. Please sign in or add a pet to your cart to proceed.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('OK'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              if (user == null) context.go('/login');
+                            },
+                            child: const Text('Sign In'),
+                          ),
+                        ],
+                      ),
+                    );
+                    return;
+                  }
+                  // If has pet, allow proceed (triggers role upgrade flow later)
+                }
+                context.push('/payment-method');
+              },
             ),
             const SizedBox(height: 40),
           ],

@@ -64,6 +64,16 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     }
   }
 
+  /// Refresh user data from backend (after profile update)
+  Future<void> refreshUser() async {
+    try {
+      final user = await _authService.me();
+      state = AsyncValue.data(user);
+    } catch (e, st) {
+      // Keep current state if refresh fails
+    }
+  }
+
   Future<void> logout() async {
     state = const AsyncValue.loading();
     await _authService.logout();

@@ -88,6 +88,25 @@ class AuthService extends BaseApiService {
       return UserModel.fromJson(response.data);
     });
   }
+
+  /// Update current user profile
+  Future<UserModel> updateProfile(Map<String, dynamic> data) async {
+    return safeApiCall(() async {
+      final response = await dio.put(ApiEndpoints.usersMe, data: data);
+      return UserModel.fromJson(response.data);
+    });
+  }
+
+  /// Change password
+  Future<void> changePassword(String currentPassword, String newPassword, String confirmNewPassword) async {
+    return safeApiCall(() async {
+      await dio.put('${ApiEndpoints.usersMe}/password', data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmNewPassword': confirmNewPassword,
+      });
+    });
+  }
   
   /// Check if user is logged in (has token)
   Future<bool> isLoggedIn() async {

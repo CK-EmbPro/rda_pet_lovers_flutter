@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../../core/widgets/appointment_form_sheet.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
@@ -14,7 +15,7 @@ import '../../../core/widgets/all_appointments_sheet.dart';
 import '../../../core/widgets/all_orders_sheet.dart';
 // import '../../../core/widgets/appointment_detail_sheet.dart'; // Unused here?
 import '../widgets/pet_form_sheet.dart'; 
-import '../../../data/providers/species_provider.dart';
+import '../../../data/providers/category_providers.dart';
 import '../../../data/providers/service_providers.dart';
 import '../../../data/providers/appointment_providers.dart';
 import '../../../data/providers/shop_providers.dart';
@@ -319,8 +320,8 @@ class DashboardPage extends ConsumerWidget {
   }
 
   Widget _buildCategoriesSection(WidgetRef ref) {
-    final speciesAsync = ref.watch(speciesProvider);
-    return speciesAsync.when(
+    final categoriesAsync = ref.watch(productCategoriesProvider);
+    return categoriesAsync.when(
       data: (categories) => _CategoriesWidget(categories: categories),
       loading: () => const SizedBox(height: 90, child: Center(child: CircularProgressIndicator())),
       error: (e, r) => const SizedBox.shrink(),
@@ -355,21 +356,28 @@ class DashboardPage extends ConsumerWidget {
                 onTap: () {},
               ),
               _QuickActionButton(
-                icon: Icons.sell_outlined,
-                label: 'Sell',
-                color: Colors.green,
-                onTap: () {},
-              ),
-              // _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)), // Commented out until modal logic is ported
-              _QuickActionButton(
-                icon: Icons.calendar_today,
-                label: 'Book Service',
-                color: Colors.orange,
-                onTap: () {
-                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                  portal?.navigateToTab(2);
-                },
-              ),
+              icon: Icons.sell_outlined,
+              label: 'Sell',
+              color: Colors.green,
+              onTap: () {
+                final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                portal?.navigateToTab(3); // Navigate to My Pets page
+              },
+            ),
+            // _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)), // Commented out until modal logic is ported
+            _QuickActionButton(
+              icon: Icons.calendar_today,
+              label: 'Book Service',
+              color: Colors.orange,
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (context) => const AppointmentFormSheet(),
+                );
+              },
+            ),
             ],
           ),
         ),
@@ -512,14 +520,14 @@ class DashboardPage extends ConsumerWidget {
               return GestureDetector(
                 onTap: () => context.push('/shop-details/${shop.id}'), // Route needs to exist
                 child: Container(
-                  width: 160,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
+                  width: 220,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: AppTheme.cardShadow,
+                ),  
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -598,19 +606,19 @@ class DashboardPage extends ConsumerWidget {
               return GestureDetector(
                 onTap: () => context.push('/product-details/${product.id}'), // Route needs to exist
                 child: Container(
-                  width: 130,
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppTheme.cardShadow,
-                  ),
+                  width: 200,
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: AppTheme.cardShadow,
+                ),  
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(
                         child: ClipRRect(
-                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                           child: product.mainImage != null
                               ? CachedNetworkImage(
                                   imageUrl: product.mainImage!,
@@ -846,7 +854,7 @@ class _QuickActionButton extends StatelessWidget {
 }
 
 class _CategoriesWidget extends StatefulWidget {
-  final List<SpeciesModel> categories;
+  final List<CategoryModel> categories;
   const _CategoriesWidget({required this.categories});
 
   @override

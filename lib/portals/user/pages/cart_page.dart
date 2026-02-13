@@ -43,7 +43,7 @@ class CartPage extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     'Trustful Owners',
-                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 16),
                   ),
                 ],
               ),
@@ -105,7 +105,7 @@ class CartPage extends ConsumerWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('total fines :', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+                        const Text('Total:', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
                         Text(
                           '${cartNotifier.total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} frw',
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -121,42 +121,6 @@ class CartPage extends ConsumerWidget {
                 ),
               ),
             ),
-
-          // Your Pets Section
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-            sliver: SliverToBoxAdapter(
-              child: const Text('Your Pets', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            ),
-          ),
-
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: myPetsAsync.when(
-              data: (myPets) => SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  childAspectRatio: 0.8,
-                ),
-                delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final pet = myPets[index];
-                    return _SimplePetCard(pet: pet);
-                  },
-                  childCount: myPets.length > 4 ? 4 : myPets.length,
-                ),
-              ),
-              loading: () => const SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 100,
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-              ),
-              error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
-            ),
-          ),
 
           const SliverToBoxAdapter(child: SizedBox(height: 120)),
         ],
@@ -180,7 +144,7 @@ class _HorizontalCartCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: Stack(
@@ -213,7 +177,7 @@ class _HorizontalCartCard extends StatelessWidget {
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: AppColors.error.withOpacity(0.3)),
+                              border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
                             ),
                             child: const Text(
                               'Remove',
@@ -240,16 +204,13 @@ class _HorizontalCartCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      item.type == 'PET' ? 'German shepherd' : 'Product', // Mock species for now
+                      item.type == 'PET' ? 'Pet' : 'Product',
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
                     ),
                     const SizedBox(height: 4),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('3 months', style: TextStyle(color: AppColors.textMuted, fontSize: 10)),
-                        const Icon(Icons.pets, size: 14, color: AppColors.secondary),
-                      ],
+                    Text(
+                      '${item.price.toInt()} RWF',
+                      style: const TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ],
                 ),
