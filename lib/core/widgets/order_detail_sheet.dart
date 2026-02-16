@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../data/models/shop_model.dart'; // Import OrderModel
-import '../../core/utils/formatters.dart'; // Import formatters if needed, or implement locally
+ // Import formatters if needed, or implement locally
 
 /// A modal sheet that shows order details when an order card is clicked
 class OrderDetailSheet extends StatelessWidget {
@@ -74,7 +74,7 @@ class OrderDetailSheet extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      color: statusColor.withOpacity(0.1),
+                      color: statusColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(

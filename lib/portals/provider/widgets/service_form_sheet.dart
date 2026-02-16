@@ -202,7 +202,9 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
                           child: RadioListTile<String>(
                             title: const Text('Pay Before', style: TextStyle(fontSize: 12)),
                             value: 'PAY_BEFORE',
+                            // ignore: deprecated_member_use
                             groupValue: _paymentMethod,
+                            // ignore: deprecated_member_use
                             onChanged: (v) => setState(() => _paymentMethod = v!),
                             contentPadding: EdgeInsets.zero,
                           ),
@@ -211,7 +213,9 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
                           child: RadioListTile<String>(
                             title: const Text('Pay After', style: TextStyle(fontSize: 12)),
                             value: 'PAY_AFTER',
+                            // ignore: deprecated_member_use
                             groupValue: _paymentMethod,
+                            // ignore: deprecated_member_use
                             onChanged: (v) => setState(() => _paymentMethod = v!),
                             contentPadding: EdgeInsets.zero,
                           ),

@@ -47,14 +47,14 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                 const SizedBox(height: 8),
                 Text(
                   'Manage customer orders',
-                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                 ),
                 const SizedBox(height: 24),
                 // Filter Section - Sliding Segmented Control style
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: SingleChildScrollView(
@@ -74,7 +74,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                               borderRadius: BorderRadius.circular(25),
                               boxShadow: isSelected ? [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 )

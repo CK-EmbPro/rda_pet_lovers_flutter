@@ -1,5 +1,6 @@
 import '../../core/api/dio_client.dart';
 import 'base_api_service.dart';
+// ignore_for_file: use_null_aware_elements
 
 /// Vaccination Model
 class VaccinationModel {

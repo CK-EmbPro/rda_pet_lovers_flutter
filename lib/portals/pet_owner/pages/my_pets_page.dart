@@ -39,8 +39,8 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
     final query = _searchTerm.toLowerCase();
     return pets.where((pet) {
       return pet.name.toLowerCase().contains(query) ||
-          (pet.breed?.name?.toLowerCase().contains(query) ?? false) ||
-          (pet.species?.name?.toLowerCase().contains(query) ?? false);
+          (pet.breed?.name.toLowerCase().contains(query) ?? false) ||
+          (pet.species?.name.toLowerCase().contains(query) ?? false);
     }).toList();
   }
 
@@ -99,20 +99,30 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(15),
-                    boxShadow: AppTheme.cardShadow,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  child: TextField(
-                    controller: _searchController,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    decoration: const InputDecoration(
-                      hintText: 'Search pets...',
-                      hintStyle: TextStyle(color: AppColors.textMuted),
-                      border: InputBorder.none,
-                      enabledBorder: InputBorder.none,
-                      focusedBorder: InputBorder.none,
-                      icon: Icon(Icons.search, color: AppColors.textSecondary),
-                      contentPadding: EdgeInsets.symmetric(vertical: 14),
-                    ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.search, color: AppColors.textSecondary),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search pets...',
+                            border: InputBorder.none,
+                            filled: false,
+                            contentPadding: EdgeInsets.symmetric(vertical: 12),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -128,12 +138,7 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
                   children: [
                     const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                     const SizedBox(height: 16),
-                    Text(
-                      'Failed to load pets: ${error.toString()}',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.body.copyWith(color: AppColors.error),
-                    ),
-                    const SizedBox(height: 8),
+                    Text('Failed to load pets: $error', textAlign: TextAlign.center),
                     TextButton(
                       onPressed: () => ref.invalidate(myPetsProvider),
                       child: const Text('Retry'),
@@ -141,20 +146,20 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
                   ],
                 ),
               ),
-              data: (myPets) {
-                final filteredPets = _filterPets(myPets);
+              data: (pets) {
+                final filteredPets = _filterPets(pets);
                 if (filteredPets.isEmpty) {
-                  return EmptyState(
-                    icon: Icons.pets,
-                    title: _searchTerm.isEmpty ? 'No Pets Found' : 'No Results',
-                    subtitle: _searchTerm.isEmpty
-                        ? 'Register your first pet to see it here!'
-                        : 'No pets match "$_searchTerm"',
+                  return const EmptyState(
+                     icon: Icons.pets,
+                     title: 'No Pets Found',
+                     subtitle: 'Add your first pet to get started',
                   );
                 }
-                return _isGridView
-                    ? _buildGridView(filteredPets)
-                    : _buildSliderView(filteredPets);
+                
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isGridView ? _buildGridView(filteredPets) : _buildCarouselView(filteredPets),
+                );
               },
             ),
           ),
@@ -163,25 +168,27 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
     );
   }
 
-  Widget _buildSliderView(List<PetModel> pets) {
-    return PageView.builder(
-      controller: PageController(viewportFraction: 0.85),
-      itemCount: pets.length,
-      itemBuilder: (context, index) => _PetDetailCard(pet: pets[index]),
-    );
-  }
-
   Widget _buildGridView(List<PetModel> pets) {
     return GridView.builder(
+      key: const ValueKey('grid'),
       padding: const EdgeInsets.all(20),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         mainAxisSpacing: 16,
         crossAxisSpacing: 16,
-        childAspectRatio: 0.70,
+        childAspectRatio: 0.72,
       ),
       itemCount: pets.length,
       itemBuilder: (context, index) => _PetGridCard(pet: pets[index]),
+    );
+  }
+
+  Widget _buildCarouselView(List<PetModel> pets) {
+    return PageView.builder(
+      key: const ValueKey('carousel'),
+      controller: PageController(viewportFraction: 0.85),
+      itemCount: pets.length,
+      itemBuilder: (context, index) => _PetCarouselCard(pet: pets[index]),
     );
   }
 
@@ -214,16 +221,16 @@ class _ViewToggle extends StatelessWidget {
   }
 }
 
-class _PetDetailCard extends StatelessWidget {
+class _PetCarouselCard extends StatelessWidget {
   final PetModel pet;
-  const _PetDetailCard({required this.pet});
+  const _PetCarouselCard({required this.pet});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => context.push('/pet-details/${pet.id}'),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 30),
+        margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(30),
@@ -231,17 +238,17 @@ class _PetDetailCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-          Expanded(
-            flex: 3,
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-              child: pet.displayImage.isNotEmpty
-                  ? CachedNetworkImage(
-                      imageUrl: pet.displayImage,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.inputFill),
-                      errorWidget: (_, __, ___) => _placeholderImage(),
+            Expanded(
+              flex: 3,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                child: pet.displayImage.isNotEmpty
+                    ? CachedNetworkImage(
+                        imageUrl: pet.displayImage,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        placeholder: (_, _) => Container(color: AppColors.inputFill),
+                        errorWidget: (_, _, _) => _placeholderImage(),
                     )
                   : _placeholderImage(),
             ),
@@ -327,8 +334,8 @@ class _PetGridCard extends StatelessWidget {
                       imageUrl: pet.displayImage,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.inputFill),
-                      errorWidget: (_, __, ___) => _placeholderImage(),
+                      placeholder: (_, _) => Container(color: AppColors.inputFill),
+                      errorWidget: (_, _, _) => _placeholderImage(),
                     )
                   : _placeholderImage(),
             ),

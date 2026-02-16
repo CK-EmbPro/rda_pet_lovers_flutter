@@ -96,7 +96,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               // Today's Schedule & Requests
               appointmentsAsync.when(
                 loading: () => const Padding(padding: EdgeInsets.all(20), child: Center(child: CircularProgressIndicator())),
-                error: (_,__) => const SizedBox(),
+                error: (_, _) => const SizedBox(),
                 data: (paginated) {
                   final appointments = paginated.data;
                   final today = DateTime.now();

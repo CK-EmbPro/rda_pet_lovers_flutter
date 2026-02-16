@@ -60,10 +60,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final route = AppRouter.getPortalRoute(user.primaryRole);
     // Simple mapping for toast message
     String portalName = 'User';
-    if (route.contains('pet-owner')) portalName = 'Pet Owner';
-    else if (route.contains('shop-owner')) portalName = 'Shop Owner';
-    else if (route.contains('provider')) portalName = 'Service Provider';
-    else if (route.contains('admin')) portalName = 'Admin';
+    if (route.contains('pet-owner')) {
+      portalName = 'Pet Owner';
+    } else if (route.contains('shop-owner')) {
+      portalName = 'Shop Owner';
+    } else if (route.contains('provider')) {
+      portalName = 'Service Provider';
+    } else if (route.contains('admin')) {
+      portalName = 'Admin';
+    }
 
     ToastService.success(context, 'Welcome back, ${user.fullName}! ($portalName)');
     context.go(route);
@@ -82,46 +87,49 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           child: Column(
             children: [
               // Header with gradient
+              // Header with dark blue design
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 40),
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
+                padding: const EdgeInsets.fromLTRB(24, 80, 24, 40),
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(30),
+                    bottomRight: Radius.circular(30),
                   ),
                 ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Logo
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: Colors.white, width: 2),
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      child: const Icon(Icons.pets, color: Colors.white, size: 28),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            // border: Border.all(color: Colors.white, width: 2), // Removed border
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(Icons.pets, size: 36, color: Colors.white),
+                        ),
+                        const SizedBox(width: 16),
+                        const Text(
+                          'Login !',
+                          style: TextStyle(
+                            fontSize: 32,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            fontFamily: AppTypography.fontFamily,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'Sign In !',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 16),
                     Text(
-                      'Welcome back! Please enter your credentials',
-                      textAlign: TextAlign.center,
+                      'Welcome back to Rwanda Pet Lovers,\nplease sign in to continue',
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.8),
                         fontSize: 14,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        height: 1.5,
                       ),
                     ),
                   ],

@@ -376,8 +376,8 @@ class _ProductCard extends StatelessWidget {
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
-                          errorWidget: (_, __, ___) => _placeholderImage(),
+                          placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
+                          errorWidget: (_, _, _) => _placeholderImage(),
                         )
                       : _placeholderImage(),
                 ),
@@ -537,8 +537,8 @@ class _ProductGridCard extends StatelessWidget {
                       ? CachedNetworkImage(
                           imageUrl: imageUrl,
                           fit: BoxFit.cover,
-                          placeholder: (_, __) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                          errorWidget: (_, __, ___) => _placeholderImage(),
+                          placeholder: (_, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                          errorWidget: (_, _, _) => _placeholderImage(),
                         )
                       : _placeholderImage(),
                 ),

@@ -6,9 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/providers/pet_providers.dart';
-import '../../../data/services/pet_service.dart';
 import '../../../data/models/models.dart';
-import '../../pet_owner/widgets/pet_form_sheet.dart';
 
 class PetsPage extends ConsumerStatefulWidget {
   const PetsPage({super.key});
@@ -24,118 +22,92 @@ class _PetsPageState extends ConsumerState<PetsPage> {
   @override
   Widget build(BuildContext context) {
     final allPetsAsync = ref.watch(allPetsProvider(const PetQueryParams()));
-    
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Header
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 20),
-            decoration: BoxDecoration(
-              gradient: AppTheme.primaryGradient,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(30),
-                bottomRight: Radius.circular(30),
+          GradientHeader(
+            title: 'Find a Companion',
+            subtitle: 'Adopt a new friend today',
+            icon: Icons.pets,
+            actions: [
+              // View Toggle
+              IconButton(
+                icon: Icon(_isGridView ? Icons.view_carousel : Icons.grid_view, color: Colors.white),
+                onPressed: () => setState(() => _isGridView = !_isGridView),
               ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'My Pets',
-                      style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                    ),
-                    Row(
-                      children: [
-                        _ViewToggle(
-                          icon: Icons.grid_view,
-                          isActive: _isGridView,
-                          onTap: () => setState(() => _isGridView = true),
-                        ),
-                        const SizedBox(width: 8),
-                        _ViewToggle(
-                          icon: Icons.view_carousel,
-                          isActive: !_isGridView,
-                          onTap: () => setState(() => _isGridView = false),
-                        ),
-                        const SizedBox(width: 8),
-                        _ViewToggle(
-                          icon: Icons.add,
-                          isActive: false,
-                          onTap: () => _showAddPetModal(context),
-                        ),
-                        const SizedBox(width: 8),
-                        // Cart Icon
-                        GestureDetector(
-                          onTap: () => context.push('/cart'),
+              // Cart Icon
+              GestureDetector(
+                onTap: () => context.push('/cart'),
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 20),
+                      if (ref.watch(cartProvider).isNotEmpty)
+                        Positioned(
+                          right: -2,
+                          top: -2,
                           child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: AppColors.secondary,
+                              shape: BoxShape.circle,
                             ),
-                            child: Stack(
-                              children: [
-                                const Icon(Icons.shopping_cart_outlined, color: Colors.white, size: 20),
-                                if (ref.watch(cartProvider).isNotEmpty)
-                                  Positioned(
-                                    right: -2,
-                                    top: -2,
-                                    child: Container(
-                                      padding: const EdgeInsets.all(2),
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.secondary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
-                                      child: Text(
-                                        '${ref.watch(cartProvider).length}',
-                                        style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
-                                        textAlign: TextAlign.center,
-                                      ),
-                                    ),
-                                  ),
-                              ],
+                            constraints: const BoxConstraints(minWidth: 12, minHeight: 12),
+                            child: Text(
+                              '${ref.watch(cartProvider).length}',
+                              style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-
-          // Species Filter - static species list (TODO: fetch from API when species endpoint available)
-          Container(
-            height: 60,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: GestureDetector(
+              ),
+            ],
+            bottom: Container(
+              height: 50,
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                children: [
+                  _FilterChip(
+                    label: 'All', 
+                    isActive: _selectedSpecies == null,
                     onTap: () => setState(() => _selectedSpecies = null),
-                    child: _FilterChip(label: 'All', isSelected: _selectedSpecies == null),
                   ),
-                ),
-                for (final entry in {'DOG': '🐕 Dogs', 'CAT': '🐈 Cats', 'BIRD': '🐦 Birds', 'RABBIT': '🐇 Rabbits'}.entries)
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: GestureDetector(
-                      onTap: () => setState(() => _selectedSpecies = entry.key),
-                      child: _FilterChip(label: entry.value, isSelected: _selectedSpecies == entry.key),
-                    ),
+                  _FilterChip(
+                    label: 'Dogs', 
+                    isActive: _selectedSpecies == 'DOG',
+                    onTap: () => setState(() => _selectedSpecies = 'DOG'),
                   ),
-              ],
+                  _FilterChip(
+                    label: 'Cats', 
+                    isActive: _selectedSpecies == 'CAT',
+                    onTap: () => setState(() => _selectedSpecies = 'CAT'),
+                  ),
+                  _FilterChip(
+                    label: 'Birds', 
+                    isActive: _selectedSpecies == 'BIRD',
+                    onTap: () => setState(() => _selectedSpecies = 'BIRD'),
+                  ),
+                   _FilterChip(
+                    label: 'Others', 
+                    isActive: _selectedSpecies == 'OTHER',
+                    onTap: () => setState(() => _selectedSpecies = 'OTHER'),
+                  ),
+                ],
+              ),
             ),
           ),
 
@@ -150,7 +122,7 @@ class _PetsPageState extends ConsumerState<PetsPage> {
                     const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                     const SizedBox(height: 16),
                     Text(
-                      'Failed to load pets: ${error.toString()}',
+                      'Failed to load pets: $error',
                       textAlign: TextAlign.center,
                       style: AppTypography.body.copyWith(color: AppColors.error),
                     ),
@@ -165,17 +137,20 @@ class _PetsPageState extends ConsumerState<PetsPage> {
               data: (result) {
                 final pets = _selectedSpecies == null
                     ? result.data
-                    : result.data.where((p) => p.speciesId == _selectedSpecies || p.species?.name?.toUpperCase() == _selectedSpecies).toList();
-                return pets.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.pets,
-                        title: 'No Pets Found',
-                        subtitle: 'No pets available in this category',
-                      )
-                    : AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 300),
-                        child: _isGridView ? _buildGridView(pets) : _buildCarouselView(pets),
-                      );
+                    : result.data.where((p) => p.speciesId == _selectedSpecies || p.species?.name.toUpperCase() == _selectedSpecies).toList();
+                
+                if (pets.isEmpty) {
+                  return const EmptyState(
+                     icon: Icons.pets,
+                     title: 'No Pets Found',
+                     subtitle: 'No pets available in this category',
+                  );
+                }
+
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  child: _isGridView ? _buildGridView(pets) : _buildCarouselView(pets),
+                );
               },
             ),
           ),
@@ -208,17 +183,21 @@ class _PetsPageState extends ConsumerState<PetsPage> {
     );
   }
 
-  void _showAddPetModal(BuildContext context) {
-    PetFormSheet.show(context);
-  }
+
 }
 
-class _ViewToggle extends StatelessWidget {
-  final IconData icon;
+
+
+class _FilterChip extends StatelessWidget {
+  final String label;
   final bool isActive;
   final VoidCallback onTap;
 
-  const _ViewToggle({required this.icon, required this.isActive, required this.onTap});
+  const _FilterChip({
+    required this.label, 
+    required this.isActive,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -226,44 +205,27 @@ class _ViewToggle extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(8),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        margin: const EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
-          color: isActive ? Colors.white : Colors.white.withOpacity(0.2),
-          borderRadius: BorderRadius.circular(8),
+          color: isActive ? const Color(0xFF21314C) : AppColors.inputFill,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: isActive ? [] : [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Icon(icon, size: 20, color: isActive ? AppColors.secondary : Colors.white),
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-
-  const _FilterChip({required this.label, required this.isSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isSelected ? const Color(0xFF21314C) : AppColors.inputFill,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: isSelected ? [] : [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              color: isActive ? Colors.white : AppColors.textPrimary,
+              fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+            ),
           ),
-        ],
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: isSelected ? Colors.white : AppColors.textPrimary,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
         ),
       ),
     );
@@ -296,8 +258,8 @@ class _PetGridCard extends StatelessWidget {
                         imageUrl: pet.displayImage,
                         width: double.infinity,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(color: AppColors.inputFill),
-                        errorWidget: (_, __, ___) => _petPlaceholder(),
+                        placeholder: (_, _) => Container(color: AppColors.inputFill),
+                        errorWidget: (_, _, _) => _petPlaceholder(),
                       )
                     : _petPlaceholder(),
               ),
@@ -313,7 +275,7 @@ class _PetGridCard extends StatelessWidget {
                     Row(
                       children: [
                         Expanded(
-                          child: Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          child: Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
                         Icon(
                           pet.gender == 'MALE' ? Icons.male : Icons.female,
@@ -325,6 +287,7 @@ class _PetGridCard extends StatelessWidget {
                     Text(
                       pet.breed?.name ?? pet.species?.name ?? '',
                       style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                      maxLines: 1, overflow: TextOverflow.ellipsis
                     ),
                     const Spacer(),
                     Row(
@@ -386,8 +349,8 @@ class _PetCarouselCard extends StatelessWidget {
                       imageUrl: pet.displayImage,
                       width: double.infinity,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(color: AppColors.inputFill),
-                      errorWidget: (_, __, ___) => _petPlaceholder(),
+                      placeholder: (_, _) => Container(color: AppColors.inputFill),
+                      errorWidget: (_, _, _) => _petPlaceholder(),
                     )
                   : _petPlaceholder(),
             ),
@@ -415,8 +378,8 @@ class _PetCarouselCard extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
                           color: pet.gender == 'MALE'
-                              ? AppColors.secondary.withOpacity(0.1)
-                              : Colors.pink.withOpacity(0.1),
+                              ? AppColors.secondary.withValues(alpha: 0.1)
+                              : Colors.pink.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -500,6 +463,3 @@ class _PetCarouselCard extends StatelessWidget {
     );
   }
 }
-
-
-

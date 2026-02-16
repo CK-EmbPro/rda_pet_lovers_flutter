@@ -198,9 +198,9 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: notification.isRead ? Colors.white : AppColors.secondary.withOpacity(0.05),
+                      color: notification.isRead ? Colors.white : AppColors.secondary.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: notification.isRead ? AppColors.inputFill : AppColors.secondary.withOpacity(0.1)),
+                      border: Border.all(color: notification.isRead ? AppColors.inputFill : AppColors.secondary.withValues(alpha: 0.1)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,7 +208,7 @@ class _NotificationsSheetState extends State<NotificationsSheet> {
                         Container(
                           padding: const EdgeInsets.all(10),
                           decoration: BoxDecoration(
-                            color: _getIconColor(notification.type).withOpacity(0.1),
+                            color: _getIconColor(notification.type).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Icon(_getIcon(notification.type), color: _getIconColor(notification.type), size: 20),

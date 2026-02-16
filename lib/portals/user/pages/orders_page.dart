@@ -5,7 +5,7 @@ import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
 import '../../../data/providers/order_providers.dart';
 import '../../../data/models/shop_model.dart';
-import 'package:go_router/go_router.dart';
+
 
 class OrdersPage extends ConsumerStatefulWidget {
   const OrdersPage({super.key});
@@ -58,7 +58,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                   padding: const EdgeInsets.only(left: 48),
                   child: Text(
                     'Track your purchases',
-                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 14),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -66,7 +66,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                 Container(
                   padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: SingleChildScrollView(
@@ -86,7 +86,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
                               borderRadius: BorderRadius.circular(25),
                               boxShadow: isSelected ? [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.1),
+                                  color: Colors.black.withValues(alpha: 0.1),
                                   blurRadius: 4,
                                   offset: const Offset(0, 2),
                                 )

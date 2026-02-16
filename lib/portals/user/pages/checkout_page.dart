@@ -89,7 +89,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withOpacity(0.1),
+                      color: AppColors.secondary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.location_on, color: AppColors.secondary),

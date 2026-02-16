@@ -8,6 +8,7 @@ import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../core/widgets/all_appointments_sheet.dart';
 import '../../../core/widgets/all_orders_sheet.dart';
+import '../../../core/widgets/filter_sheet.dart';
 import '../../pet_owner/widgets/pet_form_sheet.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/category_providers.dart';
@@ -348,6 +349,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               ),
             ),
+            GestureDetector(
+              onTap: () => FilterSheet.show(context),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.inputFill,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.tune, size: 20, color: AppColors.textSecondary),
+              ),
+            ),
           ],
         ),
       ),
@@ -400,12 +412,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 label: 'Donate',
                 color: Colors.pink,
                 onTap: () {
-                  final user = ProviderScope.containerOf(context).read(currentUserProvider);
-                  if (user == null || user.primaryRole == 'user') {
-                    _showGuestRestriction(context, 'donate a pet');
-                  } else {
-                     // Navigate to donation
-                  }
+                  _scrollToSection(_donatedSectionKey);
                 },
               ),
               _QuickActionButton(
@@ -743,7 +750,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               return GestureDetector(
                 onTap: () => context.push('/service-details/${service.id}'),
                 child: Container(
-                  width: 160,
+                  width: 200,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(

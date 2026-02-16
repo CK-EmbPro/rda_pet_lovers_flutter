@@ -5,8 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/cart_provider.dart';
-import '../../../data/providers/pet_providers.dart';
-import '../../../data/models/models.dart';
 
 class CartPage extends ConsumerWidget {
   const CartPage({super.key});
@@ -15,7 +13,6 @@ class CartPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
-    final myPetsAsync = ref.watch(myPetsProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -257,20 +254,4 @@ class _HorizontalCartCard extends StatelessWidget {
   }
 }
 
-class _SimplePetCard extends StatelessWidget {
-  final PetModel pet;
-  const _SimplePetCard({required this.pet});
 
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: pet.displayImage.isNotEmpty
-          ? CachedNetworkImage(
-              imageUrl: pet.displayImage,
-              fit: BoxFit.cover,
-            )
-          : Container(color: AppColors.inputFill),
-    );
-  }
-}

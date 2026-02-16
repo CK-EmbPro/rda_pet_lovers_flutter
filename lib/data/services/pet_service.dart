@@ -1,4 +1,5 @@
 import '../../core/api/dio_client.dart';
+// ignore_for_file: use_null_aware_elements
 import '../models/models.dart';
 import 'base_api_service.dart';
 
@@ -106,20 +107,19 @@ class PetService extends BaseApiService {
           data: rawData.map((json) {
             try {
               return PetModel.fromJson(json);
-            } catch (e, stack) {
-              print('Error parsing pet: $e');
-              print('JSON: $json');
-              print(stack);
-              rethrow;
+            } catch (e) {
+              // Error parsing pet, skipping
+              return null;
+
             }
-          }).toList(),
+          }).whereType<PetModel>().toList(),
           page: meta['page'] ?? page,
           limit: meta['limit'] ?? limit,
           total: meta['total'] ?? 0,
           totalPages: meta['totalPages'] ?? 0,
         );
       } catch (e) {
-        print('Error fetching my pets: $e');
+
         rethrow;
       }
     });

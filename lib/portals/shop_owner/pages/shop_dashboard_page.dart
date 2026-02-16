@@ -171,13 +171,13 @@ class ShopDashboardPage extends ConsumerWidget {
                         productsAsync.when(
                            data: (p) => _StatCard(icon: Icons.inventory_2, value: '${p.data.length}', label: 'Products', color: AppColors.secondary),
                            loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
-                           error: (_,__) => _StatCard(icon: Icons.inventory_2, value: '-', label: 'Products', color: AppColors.secondary),
+                           error: (_, _) => _StatCard(icon: Icons.inventory_2, value: '-', label: 'Products', color: AppColors.secondary),
                         ),
                         const SizedBox(width: 12),
                         ordersAsync.when(
                            data: (o) => _StatCard(icon: Icons.receipt_long, value: '${o.data.length}', label: 'Orders', color: Colors.orange),
                            loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
-                           error: (_,__) => _StatCard(icon: Icons.receipt_long, value: '-', label: 'Orders', color: Colors.orange),
+                           error: (_, _) => _StatCard(icon: Icons.receipt_long, value: '-', label: 'Orders', color: Colors.orange),
                         ),
                         const SizedBox(width: 12),
                         // Revenue placeholder or calculation
@@ -195,7 +195,7 @@ class ShopDashboardPage extends ConsumerWidget {
                              return _StatCard(icon: Icons.monetization_on, value: valueArg, label: 'Revenue', color: AppColors.success);
                            },
                            loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
-                           error: (_,__) => _StatCard(icon: Icons.monetization_on, value: '-', label: 'Revenue', color: AppColors.success),
+                           error: (_, _) => _StatCard(icon: Icons.monetization_on, value: '-', label: 'Revenue', color: AppColors.success),
                         ),
                       ],
                     ),
@@ -318,7 +318,7 @@ class ShopDashboardPage extends ConsumerWidget {
             // Stats row
             ordersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const Text('Unable to load sales data', style: TextStyle(color: AppColors.textSecondary)),
+              error: (_, _) => const Text('Unable to load sales data', style: TextStyle(color: AppColors.textSecondary)),
               data: (paginated) {
                 final orders = paginated.data;
                 // Filter for this month

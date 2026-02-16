@@ -102,7 +102,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> with SingleTick
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 2)),
+                        BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 2)),
                       ],
                     ),
                     labelColor: const Color(0xFF21314C),

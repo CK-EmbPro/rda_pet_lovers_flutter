@@ -284,7 +284,7 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
     
     final result = await ref.read(appointmentActionProvider.notifier).bookAppointment(
       serviceId: selectedServiceId!,
-      providerId: providerId ?? '', // Fallback might fail validation
+      providerId: providerId, // Fallback might fail validation
       scheduledDate: DateTime(selectedMonth.year, selectedMonth.month, selectedDay!),
       scheduledTime: timeString,
       petId: selectedPetId,

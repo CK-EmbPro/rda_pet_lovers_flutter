@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// ignore_for_file: use_null_aware_elements
 import '../theme/app_theme.dart';
 
 /// Floating Bottom Navigation Bar with pill-style active state
@@ -23,7 +24,6 @@ class FloatingBottomNav extends StatelessWidget {
     final outerMargin = isSmallScreen ? 12.0 : 20.0;
     final horizontalPadding = isSmallScreen ? 8.0 : 12.0;
     final verticalPadding = isSmallScreen ? 6.0 : 8.0;
-    final itemHorizontalPadding = isSmallScreen ? (isActive) => 10.0 : (isActive) => isActive ? 16.0 : 12.0;
     final itemVerticalPadding = isSmallScreen ? 8.0 : 10.0;
     final iconSize = isSmallScreen ? 20.0 : 22.0;
     final fontSize = isSmallScreen ? 12.0 : 14.0;
@@ -37,7 +37,7 @@ class FloatingBottomNav extends StatelessWidget {
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 20,
             offset: const Offset(0, 5),
           ),
@@ -150,14 +150,20 @@ class GradientHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final Widget? trailing;
-  final double height;
+  final IconData? icon;
+  final List<Widget>? actions;
+  final Widget? bottom;
+  final double? height;
 
   const GradientHeader({
     super.key,
     required this.title,
     this.subtitle,
     this.trailing,
-    this.height = 180,
+    this.icon,
+    this.actions,
+    this.bottom,
+    this.height,
   });
 
   @override
@@ -173,34 +179,66 @@ class GradientHeader extends StatelessWidget {
           bottomRight: Radius.circular(30),
         ),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Column(
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Row(
+                  children: [
+                    if (icon != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(icon, color: Colors.white, size: 24),
+                      ),
+                      const SizedBox(width: 16),
+                    ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (subtitle != null) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              subtitle!,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.8),
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  subtitle!,
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
+              if (actions != null)
+                Row(mainAxisSize: MainAxisSize.min, children: actions!)
+              else if (trailing != null)
+                trailing!,
             ],
           ),
-          if (trailing != null) trailing!,
+          if (bottom != null) ...[
+            const SizedBox(height: 20),
+            bottom!,
+          ],
         ],
       ),
     );
@@ -266,8 +304,8 @@ class StatusBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: isPositive
-            ? AppColors.success.withOpacity(0.15)
-            : AppColors.error.withOpacity(0.15),
+            ? AppColors.success.withValues(alpha: 0.15)
+            : AppColors.error.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -465,7 +503,7 @@ class LoadingOverlay extends StatelessWidget {
         child,
         if (isLoading)
           Container(
-            color: Colors.black.withOpacity(0.3),
+            color: Colors.black.withValues(alpha: 0.3),
             child: const Center(
               child: CircularProgressIndicator(
                 color: AppColors.secondary,

@@ -100,7 +100,7 @@ class ServiceDetailsPage extends ConsumerWidget {
                 Text(
                   service.displayServiceType,
                   style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
+                    color: Colors.white.withValues(alpha: 0.8),
                     fontSize: 16,
                   ),
                 ),
@@ -187,7 +187,7 @@ class ServiceDetailsPage extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppColors.secondary.withOpacity(0.1),
+                  color: AppColors.secondary.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.chat_bubble_outline, color: AppColors.secondary, size: 20),

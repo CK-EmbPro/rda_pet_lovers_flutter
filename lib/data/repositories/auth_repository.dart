@@ -1,8 +1,8 @@
-import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-
+// ignore_for_file: use_null_aware_elements
 import '../../core/api/dio_client.dart';
 import '../models/user_model.dart';
+
 
 /// Authentication Repository
 /// Handles all auth-related API calls

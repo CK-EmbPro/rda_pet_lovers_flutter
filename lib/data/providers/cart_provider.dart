@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
 import '../models/models.dart';
-import '../models/shop_model.dart';
+
 import '../services/cart_service.dart';
 
 /// Singleton CartApiService provider

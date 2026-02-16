@@ -69,18 +69,30 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(15),
-                      boxShadow: AppTheme.cardShadow,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
                     ),
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: const InputDecoration(
-                        hintText: 'Search products & shops...',
-                        border: InputBorder.none,
-                        enabledBorder: InputBorder.none,
-                        focusedBorder: InputBorder.none,
-                        prefixIcon: Icon(Icons.search, color: AppColors.textSecondary),
-                        // Removed suffixIcon as requested
-                      ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.search, color: AppColors.textSecondary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextField(
+                            controller: _searchController,
+                            decoration: const InputDecoration(
+                              hintText: 'Search products & shops...',
+                              border: InputBorder.none,
+                              filled: false,
+                              contentPadding: EdgeInsets.symmetric(vertical: 12),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -98,7 +110,7 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                     height: 160,
                     child: shopsAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (_, __) => const Center(child: Text('Failed to load shops')),
+                      error: (_, _) => const Center(child: Text('Failed to load shops')),
                       data: (paginated) {
                         final shops = paginated.data;
                         if (shops.isEmpty) return const Center(child: Text('No shops found'));
@@ -139,7 +151,7 @@ class _MarketplacePageState extends ConsumerState<MarketplacePage> {
                   
                   productsAsync.when(
                     loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (_, __) => const Center(child: Text('Failed to load products')),
+                    error: (_, _) => const Center(child: Text('Failed to load products')),
                     data: (paginated) {
                       final products = paginated.data;
                       if (products.isEmpty) return const Center(child: Text('No products found'));

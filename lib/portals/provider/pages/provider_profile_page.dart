@@ -90,7 +90,7 @@ class ProviderProfilePage extends ConsumerWidget {
                                 _StatItem(label: 'Experience', value: '0'),
                               ],
                             ),
-                            error: (_, __) => const Row(
+                            error: (_, _) => const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 _StatItem(label: 'Rating', value: 'New'),

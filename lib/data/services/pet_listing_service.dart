@@ -1,4 +1,5 @@
 import '../../core/api/dio_client.dart';
+// ignore_for_file: use_null_aware_elements
 import '../services/pet_service.dart';
 import 'base_api_service.dart';
 

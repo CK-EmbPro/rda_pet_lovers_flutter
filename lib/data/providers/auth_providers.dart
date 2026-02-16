@@ -25,7 +25,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
       } else {
         state = const AsyncValue.data(null);
       }
-    } catch (e, st) {
+    } catch (e) {
       // If error fetching profile (e.g. token expired and refresh failed), log out
       await _authService.logout();
       state = const AsyncValue.data(null);
@@ -69,7 +69,7 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     try {
       final user = await _authService.me();
       state = AsyncValue.data(user);
-    } catch (e, st) {
+    } catch (e) {
       // Keep current state if refresh fails
     }
   }

@@ -1,4 +1,6 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
+// ignore_for_file: use_null_aware_elements
 import '../../core/api/dio_client.dart';
 import '../models/models.dart';
 import '../models/user_model.dart';
@@ -7,9 +9,7 @@ import 'base_api_service.dart';
 class AuthService extends BaseApiService {
   final FlutterSecureStorage _storage;
 
-  AuthService(DioClient client) 
-      : _storage = const FlutterSecureStorage(),
-        super(client);
+  AuthService(super.client) : _storage = const FlutterSecureStorage();
 
   /// Login with email and password
   Future<UserModel> login(String email, String password) async {

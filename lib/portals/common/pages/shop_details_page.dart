@@ -87,7 +87,7 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                     Container(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.black.withOpacity(0.4), Colors.transparent],
+                          colors: [Colors.black.withValues(alpha: 0.4), Colors.transparent],
                           begin: Alignment.bottomCenter,
                           end: Alignment.topCenter,
                         ),
@@ -183,7 +183,7 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                     
                     productsAsync.when(
                       loading: () => const Center(child: CircularProgressIndicator()),
-                      error: (_,__) => const Text('Failed to load products'),
+                      error: (_, _) => const Text('Failed to load products'),
                       data: (paginated) => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [

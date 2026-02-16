@@ -105,7 +105,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                             ),
                             shopAsync.when(
                               loading: () => const SizedBox(width: 20, height: 20, child: CircularProgressIndicator()),
-                              error: (_,__) => const SizedBox.shrink(),
+                              error: (_, _) => const SizedBox.shrink(),
                               data: (shop) => Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
@@ -144,7 +144,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                         // Shop Section
                         shopAsync.when(
                           loading: () => const SizedBox.shrink(),
-                          error: (_,__) => const SizedBox.shrink(),
+                          error: (_, _) => const SizedBox.shrink(),
                           data: (shop) => Row(
                             children: [
                               CircleAvatar(
@@ -169,7 +169,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                                   decoration: BoxDecoration(
                                     color: AppColors.inputFill,
                                     borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(color: AppColors.textSecondary.withOpacity(0.2)),
+                                    border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.2)),
                                   ),
                                   child: const Icon(Icons.store, color: AppColors.secondary),
                                 ),
@@ -286,7 +286,7 @@ class _StatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.inputFill,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.textSecondary.withOpacity(0.1)),
+        border: Border.all(color: AppColors.textSecondary.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [

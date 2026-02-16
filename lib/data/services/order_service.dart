@@ -1,5 +1,6 @@
 import '../../core/api/dio_client.dart';
-import '../models/shop_model.dart';
+// ignore_for_file: use_null_aware_elements
+import '../models/models.dart';
 import '../services/pet_service.dart';
 import 'base_api_service.dart';
 

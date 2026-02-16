@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
 import '../services/pet_listing_service.dart';
-import '../services/pet_service.dart';
+
 
 /// Singleton PetListingService provider
 final petListingServiceProvider = Provider<PetListingService>((ref) {

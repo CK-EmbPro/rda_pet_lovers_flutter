@@ -38,8 +38,8 @@ class UserModel {
   /// GET /users/me returns: userRoles: [{role: {roleType: 'PET_OWNER'}}]
   static List<String> _parseRoles(dynamic rolesJson, dynamic userRolesJson) {
     // Try 'roles' first (from login / auth profile)
-    if (rolesJson != null && rolesJson is List && (rolesJson as List).isNotEmpty) {
-      return (rolesJson as List).map((e) {
+    if (rolesJson != null && rolesJson is List && rolesJson.isNotEmpty) {
+      return rolesJson.map((e) {
         if (e is String) return e;
         if (e is Map) return (e['roleType'] ?? e['name'] ?? '').toString();
         return e.toString();
@@ -47,7 +47,7 @@ class UserModel {
     }
     // Fallback to 'userRoles' (from raw Prisma entity via GET /users/me)
     if (userRolesJson != null && userRolesJson is List) {
-      return (userRolesJson as List).map((e) {
+      return userRolesJson.map((e) {
         if (e is Map) {
           final role = e['role'];
           if (role is Map) return (role['roleType'] ?? role['name'] ?? '').toString();

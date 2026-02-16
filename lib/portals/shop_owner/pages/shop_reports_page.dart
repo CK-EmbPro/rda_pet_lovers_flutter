@@ -519,7 +519,7 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: imageUrl != null
-                    ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _productPlaceholder())
+                    ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, _, _) => _productPlaceholder())
                     : _productPlaceholder(),
               ),
             ),

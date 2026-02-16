@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../core/widgets/filter_sheet.dart';
 import '../../../core/widgets/notifications_sheet.dart';
@@ -28,18 +25,47 @@ import '../../../data/services/pet_service.dart';
 import '../../../data/models/models.dart';
 import '../pet_owner_portal.dart';
 
-class DashboardPage extends ConsumerWidget {
+class DashboardPage extends ConsumerStatefulWidget {
   const DashboardPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends ConsumerState<DashboardPage> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _soldSectionKey = GlobalKey();
+  final GlobalKey _donatedSectionKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToSection(GlobalKey key) {
+    final context = key.currentContext;
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeInOut,
+        alignment: 0.1, // Slight offset from top
+      );
+    } else {
+       // Fallback or Toast if section not present
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(currentUserProvider);
     final isGuest = user == null;
     
     // Async Providers
     final servicesAsync = ref.watch(allServicesProvider(const ServiceQueryParams(limit: 5)));
     final appointmentsAsync = isGuest 
-        ? const AsyncValue<PaginatedResponse<AppointmentModel>>.data(const PaginatedResponse(data: [], page: 1, limit: 5, total: 0, totalPages: 0))
+        ? const AsyncValue<PaginatedResponse<AppointmentModel>>.data(PaginatedResponse(data: [], page: 1, limit: 5, total: 0, totalPages: 0))
         : ref.watch(myAppointmentsProvider(null));
     final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 5)));
     final petsAsync = ref.watch(allPetsProvider(const PetQueryParams(limit: 10)));
@@ -52,9 +78,11 @@ class DashboardPage extends ConsumerWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: SingleChildScrollView(
+          controller: _scrollController,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ... existing header ...
               // Header with notification and profile
               Padding(
                 padding: const EdgeInsets.all(20),
@@ -239,24 +267,36 @@ class DashboardPage extends ConsumerWidget {
                    return Column(
                      children: [
                        // Being Sold Section
-                        if (petsForSale.isNotEmpty) ...[
-                          _buildPetsSectionHeader(context, 'Being Sold', () {
-                            final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                            portal?.navigateToTab(2);
-                          }),
-                          _buildPetsHorizontalList(petsForSale.take(5).toList()),
-                          const SizedBox(height: 24),
-                        ],
+                        if (petsForSale.isNotEmpty)
+                          Container(
+                            key: _soldSectionKey,
+                            child: Column(
+                              children: [
+                                _buildPetsSectionHeader(context, 'Being Sold', () {
+                                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                                  portal?.navigateToTab(2);
+                                }),
+                                _buildPetsHorizontalList(petsForSale.take(5).toList()),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
+                          ),
         
                         // Being Donated Section
-                        if (petsForDonation.isNotEmpty) ...[
-                          _buildPetsSectionHeader(context, 'Being Donated', () {
-                            final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                            portal?.navigateToTab(2);
-                          }),
-                          _buildPetsHorizontalList(petsForDonation.take(5).toList()),
-                          const SizedBox(height: 24),
-                        ],
+                        if (petsForDonation.isNotEmpty)
+                          Container(
+                            key: _donatedSectionKey,
+                            child: Column(
+                              children: [
+                                _buildPetsSectionHeader(context, 'Being Donated', () {
+                                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                                  portal?.navigateToTab(2);
+                                }),
+                                _buildPetsHorizontalList(petsForDonation.take(5).toList()),
+                                const SizedBox(height: 24),
+                              ],
+                            ),
+                          ),
                      ],
                    );
                 }
@@ -285,8 +325,15 @@ class DashboardPage extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         decoration: BoxDecoration(
-          color: AppColors.inputFill,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -350,34 +397,45 @@ class DashboardPage extends ConsumerWidget {
                 onTap: () => _showAddPetModal(context),
               ),
               _QuickActionButton(
+                icon: Icons.shopping_basket_outlined,
+                label: 'Buy',
+                color: Colors.blue,
+                onTap: () => _scrollToSection(_soldSectionKey),
+              ),
+              _QuickActionButton(
+                icon: Icons.pets_outlined,
+                label: 'Adopt',
+                color: Colors.purple,
+                onTap: () => _scrollToSection(_donatedSectionKey),
+              ),
+              _QuickActionButton(
                 icon: Icons.favorite_outline,
                 label: 'Donate',
                 color: Colors.pink,
-                onTap: () {},
+                onTap: () => _scrollToSection(_donatedSectionKey),
               ),
               _QuickActionButton(
-              icon: Icons.sell_outlined,
-              label: 'Sell',
-              color: Colors.green,
-              onTap: () {
-                final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                portal?.navigateToTab(3); // Navigate to My Pets page
-              },
-            ),
-            // _QuickActionButton(icon: Icons.compare_arrows, label: 'Mate Check', color: AppColors.success, onTap: () => _showMateCheckModal(context, ref)), // Commented out until modal logic is ported
-            _QuickActionButton(
-              icon: Icons.calendar_today,
-              label: 'Book Service',
-              color: Colors.orange,
-              onTap: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder: (context) => const AppointmentFormSheet(),
-                );
-              },
-            ),
+                icon: Icons.sell_outlined,
+                label: 'Sell',
+                color: Colors.green,
+                onTap: () {
+                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                  portal?.navigateToTab(3); // Navigate to My Pets page
+                },
+              ),
+              _QuickActionButton(
+                icon: Icons.calendar_today,
+                label: 'Book Service',
+                color: Colors.orange,
+                onTap: () {
+                  showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (context) => const AppointmentFormSheet(),
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -481,7 +539,7 @@ class DashboardPage extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
+        color: color.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600)),
@@ -689,7 +747,7 @@ class DashboardPage extends ConsumerWidget {
               return GestureDetector(
                 onTap: () => context.push('/service-details/${service.id}'),
                 child: Container(
-                  width: 140,
+                  width: 200,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
@@ -703,7 +761,7 @@ class DashboardPage extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: AppColors.secondary.withOpacity(0.1),
+                          color: AppColors.secondary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Icon(Icons.medical_services, color: AppColors.secondary, size: 20),
@@ -749,7 +807,7 @@ class DashboardPage extends ConsumerWidget {
 
   Widget _buildPetsHorizontalList(List<PetModel> pets) {
     return SizedBox(
-      height: 180,
+      height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -759,7 +817,7 @@ class DashboardPage extends ConsumerWidget {
           return GestureDetector(
             onTap: () => context.push('/pet-details/${pet.id}'),
             child: Container(
-              width: 140,
+              width: 200,
               margin: const EdgeInsets.symmetric(horizontal: 4),
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -839,7 +897,7 @@ class _QuickActionButton extends StatelessWidget {
               width: 50,
               height: 50,
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 24),
@@ -956,7 +1014,7 @@ class _AppointmentCard extends StatelessWidget {
           Container(
              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
              decoration: BoxDecoration(
-               color: AppColors.secondary.withOpacity(0.1),
+               color: AppColors.secondary.withValues(alpha: 0.1),
                borderRadius: BorderRadius.circular(12),
              ),
              child: Column(
