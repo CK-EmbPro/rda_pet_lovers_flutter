@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/common_widgets.dart';
+
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/pet_providers.dart';
@@ -26,7 +26,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
     // Marketplace/Public view
     final petAsync = ref.watch(petDetailProvider(widget.petId));
     final cart = ref.watch(cartProvider);
-    final isInCart = cart.items.any((i) => i.productId == widget.petId && i.type == 'PET');
+    final isInCart = cart.any((i) => i.id == widget.petId && i.type == 'PET');
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC), // Light gray background
@@ -34,9 +34,9 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, st) => Center(child: Text('Error: $e')),
         data: (pet) {
-          final isSold = pet.isSold;
-          final isOwner = pet.owner?.id == ref.read(authProvider).user?.id;
-          final user = ref.watch(authProvider).user;
+          final isSold = pet.sellingStatus == 'SOLD';
+          final isOwner = pet.owner?.id == ref.read(currentUserProvider)?.id;
+          final user = ref.watch(currentUserProvider);
           
           return Column(
             children: [
@@ -52,7 +52,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                       leading: Container(
                         margin: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                         ),
                         child: IconButton(
@@ -64,7 +64,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                         Container(
                           margin: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             shape: BoxShape.circle,
                           ),
                           child: IconButton(
@@ -75,7 +75,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                             ),
                             onPressed: () {
                               final portalRoute = AppRouter.getPortalRoute(user?.primaryRole ?? 'user');
-                              context.push('$portalRoute/cart');
+                              context.go('$portalRoute?tab=cart');
                             },
                           ),
                         ),
@@ -92,7 +92,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                           color: Colors.white,
                           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
                         ),
-                        margin: const EdgeInsets.only(top: -24), // Overlap slider
+                        transform: Matrix4.translationValues(0, -24, 0), // Visual overlap without negative margin
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,7 +157,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isSold ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                                        color: isSold ? Colors.red.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
@@ -188,13 +188,187 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                             const SizedBox(height: 32),
 
                             // About Section
-                            const Text('About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
-                            const SizedBox(height: 12),
-                            Text(
-                              pet.description ?? 'No description available for this pet.',
-                              style: const TextStyle(color: Color(0xFF475569), height: 1.6, fontSize: 15),
-                            ),
+                            Container(
+                               padding: const EdgeInsets.all(24),
+                               decoration: BoxDecoration(
+                                 color: Colors.white,
+                                 borderRadius: BorderRadius.circular(24),
+                                 boxShadow: [
+                                   BoxShadow(
+                                     color: const Color(0xFF64748B).withValues(alpha: 0.08),
+                                     blurRadius: 16,
+                                     offset: const Offset(0, 4),
+                                   ),
+                                 ],
+                               ),
+                               child: Column(
+                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                 children: [
+                                   const Text('About', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                                   const SizedBox(height: 12),
+                                   Text(
+                                     pet.description ?? 'No description available for this pet.',
+                                     style: const TextStyle(color: Color(0xFF475569), height: 1.6, fontSize: 15),
+                                   ),
+                                 ],
+                               ),
+                             ),
                             const SizedBox(height: 32),
+                            
+                            // Health & Vaccination Section (NEW)
+                            if ((pet.healthSummary != null && pet.healthSummary!.isNotEmpty) || (pet.vaccinations != null && pet.vaccinations!.isNotEmpty))
+                              Container(
+                                 padding: const EdgeInsets.all(20),
+                                 margin: const EdgeInsets.only(bottom: 32), // Separator
+                                 decoration: BoxDecoration(
+                                   color: Colors.white,
+                                   borderRadius: BorderRadius.circular(24),
+                                   boxShadow: [
+                                     BoxShadow(
+                                       color: const Color(0xFF64748B).withValues(alpha: 0.08),
+                                       blurRadius: 16,
+                                       offset: const Offset(0, 4),
+                                     ),
+                                   ],
+                                 ),
+                                 child: Column(
+                                   children: [
+                                     Row(
+                                       children: [
+                                         Container(
+                                           padding: const EdgeInsets.all(10),
+                                           decoration: BoxDecoration(
+                                             color: const Color(0xFFE0F2FE), // Light Blue bg
+                                             borderRadius: BorderRadius.circular(12),
+                                           ),
+                                           child: const Icon(Icons.medical_services_outlined, color: AppColors.secondary, size: 20),
+                                         ),
+                                         const SizedBox(width: 14),
+                                         const Text('Health & Vaccines', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.bold, fontSize: 16)),
+                                       ],
+                                     ),
+                                     const SizedBox(height: 20),
+                        
+                                     // Health Description
+                                     if (pet.healthSummary != null && pet.healthSummary!.isNotEmpty)
+                                       Padding(
+                                         padding: const EdgeInsets.only(bottom: 20),
+                                         child: Container(
+                                           width: double.infinity,
+                                           padding: const EdgeInsets.all(16),
+                                           decoration: BoxDecoration(
+                                             color: const Color(0xFFF8FAFC),
+                                             borderRadius: BorderRadius.circular(16),
+                                             border: Border.all(color: const Color(0xFFE2E8F0)),
+                                           ),
+                                           child: Column(
+                                             crossAxisAlignment: CrossAxisAlignment.start,
+                                             children: [
+                                               const Text(
+                                                 'Condition & Notes',
+                                                 style: TextStyle(
+                                                   fontSize: 13,
+                                                   fontWeight: FontWeight.bold,
+                                                   color: Color(0xFF64748B),
+                                                   letterSpacing: 0.5,
+                                                 ),
+                                               ),
+                                               const SizedBox(height: 8),
+                                               Text(
+                                                 pet.healthSummary!,
+                                                 style: const TextStyle(
+                                                   fontSize: 14,
+                                                   color: Color(0xFF334155),
+                                                   height: 1.5,
+                                                  ),
+                                               ),
+                                             ],
+                                           ),
+                                         ),
+                                       ),
+                                     
+                                     if (pet.vaccinations != null && pet.vaccinations!.isNotEmpty) ...[
+                                       ...pet.vaccinations!.map((v) => Container(
+                                         margin: const EdgeInsets.only(bottom: 12),
+                                         padding: const EdgeInsets.all(16),
+                                         decoration: BoxDecoration(
+                                           color: const Color(0xFFF8FAFC),
+                                           borderRadius: BorderRadius.circular(16),
+                                           border: Border.all(color: const Color(0xFFE2E8F0)),
+                                         ),
+                                         child: Row(
+                                           children: [
+                                             const Icon(Icons.check_circle, size: 20, color: AppColors.success),
+                                             const SizedBox(width: 12),
+                                             Column(
+                                               crossAxisAlignment: CrossAxisAlignment.start,
+                                               children: [
+                                                 Text(v.vaccination?.name ?? 'Vaccination', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: Color(0xFF334155))),
+                                                 if (v.administeredAt != null)
+                                                   Text(
+                                                     'Administered: ${v.administeredAt!.substring(0, 10)}', 
+                                                     style: const TextStyle(fontSize: 12, color: Color(0xFF64748B), height: 1.4)
+                                                   ),
+                                               ],
+                                             ),
+                                           ],
+                                         ),
+                                       )),
+                                     ],
+                                   ],
+                                 ),
+                              ),
+
+                            // Ancestry Section (NEW)
+                            if (pet.metadata != null && pet.metadata!.isNotEmpty)
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                margin: const EdgeInsets.only(bottom: 32),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(24),
+                                  boxShadow: [
+                                   BoxShadow(
+                                     color: const Color(0xFF64748B).withValues(alpha: 0.08),
+                                     blurRadius: 16,
+                                     offset: const Offset(0, 4),
+                                   ),
+                                 ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Ancestry', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                                    const SizedBox(height: 16),
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 12,
+                                      children: pet.metadata!.entries.map((e) {
+                                         // Format key: motherPetCode -> Mother
+                                         String label = e.key.replaceAll('PetCode', '');
+                                         label = label[0].toUpperCase() + label.substring(1);
+                                         return Container(
+                                           width: (MediaQuery.of(context).size.width - 96) / 2, // 2 cols depending on padding
+                                           padding: const EdgeInsets.all(12),
+                                           decoration: BoxDecoration(
+                                             color: const Color(0xFFF8FAFC),
+                                             borderRadius: BorderRadius.circular(12),
+                                             border: Border.all(color: const Color(0xFFE2E8F0)),
+                                           ),
+                                           child: Column(
+                                             crossAxisAlignment: CrossAxisAlignment.start,
+                                             children: [
+                                               Text(label, style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w500)),
+                                               const SizedBox(height: 4),
+                                               Text('${e.value}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.secondary)),
+                                             ],
+                                           ),
+                                         );
+                                      }).toList(),
+                                    ),
+                                  ],
+                                ),
+                              ),
 
                             // Owner / Seller Info
                             if (pet.owner != null)
@@ -202,15 +376,22 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                 padding: const EdgeInsets.all(16),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(16), // Rounded
                                   border: Border.all(color: const Color(0xFFE2E8F0)),
+                                  boxShadow: [ // Added shadow
+                                   BoxShadow(
+                                     color: const Color(0xFF64748B).withValues(alpha: 0.08),
+                                     blurRadius: 16,
+                                     offset: const Offset(0, 4),
+                                   ),
+                                 ],
                                 ),
                                 child: Row(
                                   children: [
                                     CircleAvatar(
                                       radius: 24,
-                                      backgroundImage: pet.owner?.profileImage != null ? CachedNetworkImageProvider(pet.owner!.profileImage!) : null,
-                                      child: pet.owner?.profileImage == null ? const Icon(Icons.person, color: Colors.white) : null,
+                                      backgroundImage: pet.owner?.avatarUrl != null ? CachedNetworkImageProvider(pet.owner!.avatarUrl!) : null,
+                                      child: pet.owner?.avatarUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
@@ -218,7 +399,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            pet.owner!.name,
+                                            pet.owner!.fullName,
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
                                           ),
                                           const Text(
@@ -254,7 +435,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                     color: Colors.white,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
+                        color: Colors.black.withValues(alpha: 0.05),
                         blurRadius: 10,
                         offset: const Offset(0, -5),
                       ),
@@ -265,16 +446,8 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                       Expanded(
                         child: OutlinedButton(
                           onPressed: isInCart
-                              ? () => ref.read(cartProvider.notifier).removeItem(widget.petId)
-                              : () => ref.read(cartProvider.notifier).addItem(
-                                    CartItem(
-                                      productId: widget.petId,
-                                      name: pet.name,
-                                      price: pet.price ?? 0,
-                                      image: pet.images.isNotEmpty ? pet.images.first : null,
-                                      type: 'PET',
-                                    ),
-                                  ),
+                              ? () => ref.read(cartProvider.notifier).removeItem(widget.petId, 'PET')
+                              : () => ref.read(cartProvider.notifier).addPet(pet),
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             side: BorderSide(color: isInCart ? Colors.red : AppColors.secondary),
@@ -294,18 +467,10 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                         child: ElevatedButton(
                           onPressed: () {
                              if (!isInCart) {
-                               ref.read(cartProvider.notifier).addItem(
-                                    CartItem(
-                                      productId: widget.petId,
-                                      name: pet.name,
-                                      price: pet.price ?? 0,
-                                      image: pet.images.isNotEmpty ? pet.images.first : null,
-                                      type: 'PET',
-                                    ),
-                                  );
+                               ref.read(cartProvider.notifier).addPet(pet);
                             }
                             final portalRoute = AppRouter.getPortalRoute(user?.primaryRole ?? 'user');
-                            context.push('$portalRoute/cart');
+                            context.go('$portalRoute?tab=cart');
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.secondary,
@@ -340,11 +505,31 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
           itemCount: pet.images.length,
           onPageChanged: (index) => setState(() => _currentImageIndex = index),
           itemBuilder: (context, index) {
-            return CachedNetworkImage(
-              imageUrl: pet.images[index],
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(color: Colors.grey[200]),
-              errorWidget: (context, url, _) => const Icon(Icons.error),
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                CachedNetworkImage(
+                  imageUrl: pet.images[index],
+                  fit: BoxFit.cover,
+                  placeholder: (context, url) => Container(color: Colors.grey[200]),
+                  errorWidget: (context, url, _) => const Icon(Icons.error),
+                ),
+                // Gradient Overlay for readability (especially on first image with title overlay if we had one there)
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.3),
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.1),
+                      ],
+                      stops: const [0.0, 0.4, 1.0],
+                    ),
+                  ),
+                ),
+              ],
             );
           },
         ),
@@ -362,7 +547,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                 height: 8,
                 width: _currentImageIndex == index ? 24 : 8,
                 decoration: BoxDecoration(
-                  color: _currentImageIndex == index ? Colors.white : Colors.white.withOpacity(0.5),
+                  color: _currentImageIndex == index ? Colors.white : Colors.white.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(4),
                 ),
               );
@@ -377,9 +562,16 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
+        color: Colors.white, // Changed to white
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
+        // Removed border, added shadow
+        boxShadow: [
+           BoxShadow(
+             color: const Color(0xFF64748B).withValues(alpha: 0.08),
+             blurRadius: 16,
+             offset: const Offset(0, 4),
+           ),
+        ],
       ),
       child: Column(
         children: [

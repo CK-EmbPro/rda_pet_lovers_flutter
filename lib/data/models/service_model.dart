@@ -54,16 +54,16 @@ class ServiceModel {
     return ServiceModel(
       id: json['id'] as String,
       providerId: json['providerId'] as String,
-      serviceType: json['serviceType'] as String? ?? json['category']?['name'] as String? ?? 'OTHER',
+      serviceType: _extractString(json['serviceType']) ?? _extractString(json['category'], key: 'name') ?? 'OTHER',
       name: json['name'] as String,
-      description: json['description'] as String?,
+      description: _extractString(json['description']),
       fee: _parseDouble(json['basePrice']) ?? _parseDouble(json['fee']) ?? 0,
       priceYoungPet: _parseDouble(json['priceYoungPet']),
       priceOldPet: _parseDouble(json['priceOldPet']),
       durationMinutes: json['durationMinutes'] as int?,
-      categoryId: json['categoryId'] as String?,
-      paymentMethod: json['paymentMethod'] as String? ?? json['paymentType'] as String? ?? 'PAY_BEFORE',
-      paymentType: json['paymentType'] as String?,
+      categoryId: _extractString(json['categoryId'], key: 'id'),
+      paymentMethod: _extractString(json['paymentMethod']) ?? _extractString(json['paymentType']) ?? 'PAY_BEFORE',
+      paymentType: _extractString(json['paymentType']),
       requiresSubscription: json['requiresSubscription'] as bool?,
       isActive: json['isActive'] as bool? ?? true,
       createdAt: json['createdAt'] != null
@@ -73,6 +73,15 @@ class ServiceModel {
           ? ProviderInfo.fromJson(json['provider'] as Map<String, dynamic>)
           : null,
     );
+  }
+
+  /// Safely extract a String from a value that might be a String, Map, or null.
+  /// If it's a Map, extracts [key] (default 'name') from it.
+  static String? _extractString(dynamic value, {String key = 'name'}) {
+    if (value == null) return null;
+    if (value is String) return value;
+    if (value is Map) return value[key]?.toString();
+    return value.toString();
   }
 
   static double? _parseDouble(dynamic value) {

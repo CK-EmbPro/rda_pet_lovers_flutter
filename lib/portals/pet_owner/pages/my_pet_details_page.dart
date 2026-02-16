@@ -44,7 +44,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
         body: Center(child: Text('Failed to load pet details: $e')),
       ),
       data: (pet) => Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFF8FAFC), // Premium light gray
         body: Column(
           children: [
             // Header with Back Button and Tabs
@@ -569,8 +569,8 @@ class _OwnStatCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
+              color: const Color(0xFF64748B).withValues(alpha: 0.08),
+              blurRadius: 16,
               offset: const Offset(0, 4),
             ),
           ],

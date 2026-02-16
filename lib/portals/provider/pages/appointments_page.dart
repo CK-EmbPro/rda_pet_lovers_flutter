@@ -24,8 +24,6 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   @override
   Widget build(BuildContext context) {
     // Fetch all provider appointments. 
-    // Optimization: We could filter by status if we wanted to fetch only tab data, 
-    // but for now fetching all allows smooth tab switching without loading.
     final appointmentsAsync = ref.watch(providerAppointmentsProvider(null));
     final isCardView = ref.watch(appointmentsViewModeProvider);
 
@@ -35,13 +33,16 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 60, 20, 24),
+            padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 24),
             decoration: BoxDecoration(
               gradient: AppTheme.primaryGradient,
               borderRadius: const BorderRadius.only(
                 bottomLeft: Radius.circular(30),
                 bottomRight: Radius.circular(30),
               ),
+              boxShadow: [
+                BoxShadow(color: AppColors.primary.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,13 +56,14 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                   'Manage your bookings',
                   style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 // Filter Pills - Improved styling per design
                 Container(
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: Row(
                     children: List.generate(_filters.length, (index) {
@@ -75,14 +77,15 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                             decoration: BoxDecoration(
                               color: isSelected ? Colors.white : Colors.transparent,
                               borderRadius: BorderRadius.circular(25),
+                              boxShadow: isSelected ? [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4, offset: const Offset(0, 2))] : null,
                             ),
                             child: Text(
                               _filters[index],
                               textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: isSelected ? AppColors.secondary : Colors.white,
-                                fontWeight: FontWeight.w600,
-                                fontSize: 14,
+                                color: isSelected ? AppColors.primary : Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
                               ),
                             ),
                           ),
@@ -108,7 +111,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                   children: [
                     // View toggle and count
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -116,7 +119,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
                             '${filtered.length} Appointments',
                             style: const TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
                             ),
                           ),
@@ -184,7 +187,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 0.85,
+            childAspectRatio: 0.82,
           ),
           itemCount: filtered.length,
           itemBuilder: (context, index) => _AppointmentCardView(appointment: filtered[index]),
@@ -219,11 +222,14 @@ class _ViewToggleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.secondary : AppColors.inputFill,
+          color: isSelected ? AppColors.secondary : Colors.white,
           borderRadius: BorderRadius.circular(8),
+          border: isSelected ? null : Border.all(color: AppColors.border),
+           boxShadow: isSelected ? [BoxShadow(color: AppColors.secondary.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))] : null,
         ),
         child: Icon(
           icon,
@@ -249,11 +255,12 @@ class _AppointmentCardView extends StatelessWidget {
     return GestureDetector(
       onTap: () => AppointmentDetailSheet.show(context, appointment),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
           boxShadow: AppTheme.cardShadow,
+          border: Border.all(color: Colors.transparent),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,7 +275,7 @@ class _AppointmentCardView extends StatelessWidget {
               child: Text(
                 status.toUpperCase(),
                 style: TextStyle(
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.w700,
                   fontSize: 10,
                   color: statusColor,
                 ),
@@ -276,47 +283,59 @@ class _AppointmentCardView extends StatelessWidget {
             ),
             const Spacer(),
             // Pet avatar
-            CircleAvatar(
-              radius: 24,
-              backgroundColor: AppColors.inputFill,
-              child: appointment.pet?.name != null
-                  ? Text(
-                      appointment.pet!.name[0].toUpperCase(),
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                    )
-                  : const Icon(Icons.pets, color: AppColors.textSecondary),
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.inputFill,
+                  child: appointment.pet?.name != null
+                      ? Text(
+                          appointment.pet!.name[0].toUpperCase(),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                        )
+                      : const Icon(Icons.pets, color: AppColors.textSecondary, size: 16),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        appointment.pet?.name ?? 'Unknown',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1E293B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        appointment.pet?.breed ?? '--',
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 10),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 10),
-            // Pet name
-            Text(
-              appointment.pet?.name ?? 'Unknown Pet',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 2),
-            Text(
-              appointment.pet?.breed ?? 'Unknown breed',
-              style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const Spacer(),
+            const SizedBox(height: 12),
             // Date & Time
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
                 color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(Icons.access_time, size: 12, color: AppColors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text(
-                    _formatTime(appointment.scheduledAt),
-                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      '${_formatDate(appointment.scheduledAt)}, ${_formatTime(appointment.scheduledAt)}',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -341,6 +360,11 @@ class _AppointmentCardView extends StatelessWidget {
       default:
         return AppColors.textSecondary;
     }
+  }
+
+  String _formatDate(DateTime date) {
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[date.month - 1]} ${date.day}';
   }
 
   String _formatTime(DateTime date) {
@@ -376,26 +400,26 @@ class _AppointmentListView extends StatelessWidget {
             Row(
               children: [
                 CircleAvatar(
-                  radius: 25,
+                  radius: 26,
                   backgroundColor: AppColors.inputFill,
                   child: appointment.pet?.name != null
                       ? Text(
                           appointment.pet!.name[0].toUpperCase(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.primary),
                         )
                       : const Icon(Icons.pets, color: AppColors.textSecondary),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         appointment.pet?.name ?? 'Unknown Pet',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
                       ),
                       Text(
-                        appointment.pet?.breed ?? 'Unknown',
+                        appointment.pet?.breed ?? 'Unknown Breed',
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
@@ -405,13 +429,13 @@ class _AppointmentListView extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     status.toUpperCase(),
                     style: TextStyle(
                       color: statusColor,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                       fontSize: 11,
                     ),
                   ),
@@ -420,32 +444,38 @@ class _AppointmentListView extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
                 color: AppColors.inputFill,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Icon(Icons.calendar_today, size: 14, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatDate(appointment.scheduledAt),
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                  Row(
+                    children: [
+                      const Icon(Icons.calendar_today, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatDate(appointment.scheduledAt),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155)),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 20),
-                  const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
-                  const SizedBox(width: 8),
-                  Text(
-                    _formatTime(appointment.scheduledAt),
-                    style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+                  Container(width: 1, height: 16, color: AppColors.textMuted),
+                  Row(
+                    children: [
+                      const Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
+                      const SizedBox(width: 8),
+                      Text(
+                        _formatTime(appointment.scheduledAt),
+                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Color(0xFF334155)),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
-            // Accept/Decline Logic can be implemented here using AppointmentActionNotifier
-            // For now, let's leave it as is, or use the Sheet for actions
           ],
         ),
       ),
