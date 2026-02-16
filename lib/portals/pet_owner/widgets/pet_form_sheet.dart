@@ -35,9 +35,18 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   final _weightController = TextEditingController();
   final _healthController = TextEditingController();
   final _descController = TextEditingController();
-  final _nationalityController = TextEditingController();
-  final _priceController = TextEditingController();
+  // Ancestry Controllers
+  final _motherController = TextEditingController();
+  final _fatherController = TextEditingController();
+  final _grandMotherController = TextEditingController(); 
+  final _grandFatherController = TextEditingController();
 
+  // Vaccination State
+  final List<Map<String, dynamic>> _addedVaccinations = [];
+  String? _selectedVaccinationId;
+  DateTime _vaccinationDate = DateTime.now();
+
+  // Restored State Variables
   String? _selectedSpeciesId;
   String? _selectedBreedId;
   String? _selectedGender;
@@ -61,8 +70,23 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
       _ageController.text = widget.pet!.ageYears?.toString() ?? '';
       _weightController.text = widget.pet!.weightKg?.toString() ?? '';
       _descController.text = widget.pet!.description ?? '';
+      _healthController.text = widget.pet!.healthSummary ?? '';
+      _nationalityController.text = widget.pet!.nationality ?? '';
       _isForSale = widget.pet!.isForSale;
       _priceController.text = widget.pet!.price?.toString() ?? '';
+      
+      // Parse BirthDate
+      if (widget.pet!.birthDate != null) {
+        _selectedBirthDate = widget.pet!.birthDate;
+      }
+
+      // Pre-fill ancestry from metadata if available
+      if (widget.pet!.metadata != null) {
+        _motherController.text = widget.pet!.metadata!['motherPetCode'] ?? '';
+        _fatherController.text = widget.pet!.metadata!['fatherPetCode'] ?? '';
+        _grandMotherController.text = widget.pet!.metadata!['grandmotherPetCode'] ?? '';
+        _grandFatherController.text = widget.pet!.metadata!['grandfatherPetCode'] ?? '';
+      }
     }
   }
 
@@ -75,8 +99,14 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     _descController.dispose();
     _nationalityController.dispose();
     _priceController.dispose();
+    _motherController.dispose();
+    _fatherController.dispose();
+    _grandMotherController.dispose();
+    _grandFatherController.dispose();
     super.dispose();
   }
+
+  // ... (Image Picker methods unchanged)
 
   // ─── Image Picker Methods ─────────────────────
 
@@ -274,7 +304,15 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         ...galleryUrls,
       ];
 
-      // 2. Create Pet
+      // Prepare Metadata (Ancestry)
+      final metadata = <String, dynamic>{
+        if (_motherController.text.isNotEmpty) 'motherPetCode': _motherController.text.trim(),
+        if (_fatherController.text.isNotEmpty) 'fatherPetCode': _fatherController.text.trim(),
+        if (_grandMotherController.text.isNotEmpty) 'grandmotherPetCode': _grandMotherController.text.trim(),
+        if (_grandFatherController.text.isNotEmpty) 'grandfatherPetCode': _grandFatherController.text.trim(),
+      };
+
+      // 3. Create Pet
       final pet = await ref.read(petCrudProvider.notifier).createPet(
         name: _nameController.text.trim(),
         speciesId: _selectedSpeciesId!,
@@ -293,9 +331,11 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         description: _descController.text.isNotEmpty
             ? _descController.text.trim()
             : null,
+        metadata: metadata.isNotEmpty ? metadata : null,
+        vaccinations: _addedVaccinations.isNotEmpty ? _addedVaccinations : null,
       );
 
-      // 3. List for Sale if selected
+      // 4. List for Sale if selected
       if (pet != null && _isForSale) {
         final price = double.tryParse(_priceController.text) ?? 0.0;
         await ref.read(petCrudProvider.notifier).listForSale(
@@ -335,6 +375,11 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     final breedsAsync = _selectedSpeciesId != null
         ? ref.watch(breedsProvider(_selectedSpeciesId!))
         : const AsyncValue.data(<BreedModel>[]);
+    
+    // Fetch vaccinations for selected species (or all if none selected, though simplified to species)
+    // We reuse the catalog provider, but strictly we might want to filter by species ID if the catalog is huge
+    // For now we assume catalog is small enough or we filter client side.
+    final vaccinationCatalogAsync = ref.watch(vaccinationCatalogProvider);
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -394,6 +439,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                               (v) => setState(() {
                                 _selectedSpeciesId = v;
                                 _selectedBreedId = null;
+                                // clear vaccinations if species changes? maybe better to keep until logic is firm
                               }),
                             ),
                             loading: () => _buildDropdown('Species', 'Loading...', [], null, null),
@@ -478,7 +524,15 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                       maxLines: 3,
                       controller: _healthController,
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+
+                    // ── Vaccinations Section ──
+                    _buildVaccinationSection(vaccinationCatalogAsync),
+                    const SizedBox(height: 24),
+
+                    // ── Ancestry Section ──
+                    _buildAncestrySection(),
+                    const SizedBox(height: 24),
 
                     // ── Description ──
                     AppTextField(
@@ -509,6 +563,195 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  // ─── New Sections ───
+
+  Widget _buildVaccinationSection(AsyncValue<List<dynamic>> catalogAsync) {
+    // Note: catalogAsync returns List<VaccinationModel>
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Vaccinations', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        const SizedBox(height: 4),
+        const Text('Add recent vaccinations', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        const SizedBox(height: 12),
+        
+        // Added vaccinations list
+        if (_addedVaccinations.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _addedVaccinations.map((vac) {
+              final date = DateTime.tryParse(vac['administeredAt']);
+              final dateStr = date != null ? '${date.day}/${date.month}/${date.year}' : '';
+              // We need the name - bit tricky since we store ID. We can lookup or just store name too for display.
+              // For simplicity, let's store name in logic when adding.
+              return Chip(
+                label: Text('${vac['name']} ($dateStr)'),
+                deleteIcon: const Icon(Icons.close, size: 16),
+                onDeleted: () {
+                  setState(() => _addedVaccinations.remove(vac));
+                },
+                backgroundColor: AppColors.inputFill,
+                labelStyle: const TextStyle(fontSize: 12),
+              );
+            }).toList(),
+          ),
+        
+        if (_addedVaccinations.isNotEmpty) const SizedBox(height: 12),
+
+        // Add Vaccination Controls
+        catalogAsync.when(
+          data: (vaccinations) {
+            // Filter by selected species if known? The catalog returned might encompass all, 
+            // but we can filter simply if models have speciesId. 
+            // Current model definitions might not have species relation on client fully filtered, 
+            // but let's assume all valid for now or filter if we can. 
+            // NOTE: VaccinationModel doesn't strictly have speciesId visible in the simple snippet we saw earlier?
+            // Wait, we do not have speciesId in VaccinationModel in `vaccination_service.dart` snippet!
+            // We'll list all for now.
+            return Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.border),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: [
+                  DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      isExpanded: true,
+                      hint: const Text('Select Vaccination'),
+                      value: _selectedVaccinationId,
+                      items: vaccinations.map((v) => DropdownMenuItem(
+                        value: v.id,
+                        child: Text(v.name),
+                      )).toList(),
+                      onChanged: (v) => setState(() => _selectedVaccinationId = v),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      // Date picker for vax
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: _vaccinationDate,
+                              firstDate: DateTime(2020),
+                              lastDate: DateTime.now(),
+                              builder: (context, child) => Theme(
+                                data: Theme.of(context).copyWith(colorScheme: const ColorScheme.light(primary: AppColors.secondary)),
+                                child: child!,
+                              ),
+                            );
+                            if (picked != null) setState(() => _vaccinationDate = picked);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: AppColors.inputFill,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.event, size: 16, color: AppColors.textSecondary),
+                                const SizedBox(width: 8),
+                                Text('${_vaccinationDate.day}/${_vaccinationDate.month}/${_vaccinationDate.year}', style: const TextStyle(fontSize: 13)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Add Button
+                      GestureDetector(
+                        onTap: () {
+                          if (_selectedVaccinationId == null) return;
+                          final vaxDef = vaccinations.firstWhere((v) => v.id == _selectedVaccinationId);
+                          setState(() {
+                            _addedVaccinations.add({
+                              'vaccinationId': _selectedVaccinationId,
+                              'administeredAt': _vaccinationDate.toIso8601String(),
+                              'name': vaxDef.name, // Helpher for display
+                            });
+                            _selectedVaccinationId = null; // Reset selection
+                          });
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: AppColors.secondary,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Text('Add', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const LinearProgressIndicator(),
+          error: (_,__) => const Text('Could not load vaccinations'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAncestrySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Ancestry (Optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+        const SizedBox(height: 4),
+        const Text('Enter pet codes if known (e.g. PET-2024-...)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: AppTextField(
+                label: 'Mother Code',
+                hint: 'Mother',
+                controller: _motherController,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppTextField(
+                label: 'Father Code',
+                hint: 'Father',
+                controller: _fatherController,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: AppTextField(
+                label: 'Grandmother Code',
+                hint: 'Grandmother',
+                controller: _grandMotherController,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: AppTextField(
+                label: 'Grandfather Code',
+                hint: 'Grandfather',
+                controller: _grandFatherController,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -585,54 +828,34 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         const SizedBox(height: 4),
         const Text('Additional photos (up to 4)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
         const SizedBox(height: 10),
-        SizedBox(
-          height: 110,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
+        Center(
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
             children: [
-              // Add button (only if < 4)
-              if (_galleryImages.length < 4)
-                GestureDetector(
-                  onTap: () => _showImageSourcePicker(isProfile: false),
-                  child: Container(
-                    width: 90,
-                    height: 90,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: AppColors.inputFill,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: Colors.purple.withValues(alpha: 0.4),
-                        width: 2,
-                        strokeAlign: BorderSide.strokeAlignInside,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(Icons.add_photo_alternate_rounded, size: 28, color: Colors.purple),
-                        const SizedBox(height: 4),
-                        Text('Add More', style: TextStyle(color: Colors.purple, fontSize: 10, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                  ),
-                ),
               // Gallery images
               ..._galleryImages.asMap().entries.map((entry) {
                 final index = entry.key;
                 final file = entry.value;
                 return Container(
-                  width: 90,
-                  height: 90,
-                  margin: const EdgeInsets.only(right: 12),
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.secondary.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
                   child: Stack(
                     children: [
                       ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(18),
                         child: Image.file(
                           File(file.path),
-                          width: 90,
-                          height: 90,
+                          width: 130,
+                          height: 130,
                           fit: BoxFit.cover,
                         ),
                       ),
@@ -642,10 +865,10 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                         child: GestureDetector(
                           onTap: () => _removeGalleryImage(index),
                           child: Container(
-                            width: 22,
-                            height: 22,
+                            width: 24,
+                            height: 24,
                             decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                            child: const Icon(Icons.close, color: Colors.white, size: 12),
+                            child: const Icon(Icons.close, color: Colors.white, size: 14),
                           ),
                         ),
                       ),
@@ -653,6 +876,31 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                   ),
                 );
               }),
+              // Add button (only if < 4)
+              if (_galleryImages.length < 4)
+                GestureDetector(
+                  onTap: () => _showImageSourcePicker(isProfile: false),
+                  child: Container(
+                    width: 130,
+                    height: 130,
+                    decoration: BoxDecoration(
+                      color: AppColors.inputFill,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: AppColors.secondary.withValues(alpha: 0.5),
+                        width: 2,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_photo_alternate_rounded, size: 40, color: AppColors.secondary),
+                        const SizedBox(height: 4),
+                        Text('Add Photo', style: TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w500)),
+                      ],
+                    ),
+                  ),
+                ),
             ],
           ),
         ),

@@ -140,6 +140,8 @@ class PetService extends BaseApiService {
     List<String>? videos,
     String? description,
     String? healthSummary,
+    Map<String, dynamic>? metadata,
+    List<Map<String, dynamic>>? vaccinations,
   }) async {
     return safeApiCall(() async {
       final data = <String, dynamic>{
@@ -156,6 +158,8 @@ class PetService extends BaseApiService {
         if (videos != null) 'videos': videos,
         if (description != null) 'description': description,
         if (healthSummary != null) 'healthSummary': healthSummary,
+        if (metadata != null) 'metadata': metadata,
+        if (vaccinations != null) 'vaccinations': vaccinations,
       };
 
       final response = await dio.post(ApiEndpoints.pets, data: data);

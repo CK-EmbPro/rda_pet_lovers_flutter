@@ -16,6 +16,7 @@ class PetModel {
   final List<String> videos;
   final String? description;
   final String? healthSummary;
+  final Map<String, dynamic>? metadata;
   final Map<String, dynamic>? vaccinationStatus;
   final String donationStatus;
   final String sellingStatus;
@@ -46,6 +47,7 @@ class PetModel {
     this.videos = const [],
     this.description,
     this.healthSummary,
+    this.metadata,
     this.vaccinationStatus,
     required this.donationStatus,
     required this.sellingStatus,
@@ -86,6 +88,7 @@ class PetModel {
           [],
       description: json['description'] as String?,
       healthSummary: json['healthSummary'] as String?,
+      metadata: json['metadata'] as Map<String, dynamic>?,
       vaccinationStatus: json['vaccinationStatus'] as Map<String, dynamic>?,
       donationStatus: json['donationStatus'] as String? ?? 'ACTIVE',
       sellingStatus: json['sellingStatus'] as String? ?? 'ACTIVE',
@@ -134,6 +137,7 @@ class PetModel {
       'videos': videos,
       'description': description,
       'healthSummary': healthSummary,
+      'metadata': metadata,
       'vaccinationStatus': vaccinationStatus,
       'donationStatus': donationStatus,
       'sellingStatus': sellingStatus,

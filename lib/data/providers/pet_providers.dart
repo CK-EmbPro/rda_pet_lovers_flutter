@@ -56,6 +56,8 @@ class PetCrudNotifier extends StateNotifier<AsyncValue<void>> {
     List<String>? videos,
     String? description,
     String? healthSummary,
+    Map<String, dynamic>? metadata,
+    List<Map<String, dynamic>>? vaccinations,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -73,6 +75,8 @@ class PetCrudNotifier extends StateNotifier<AsyncValue<void>> {
         videos: videos,
         description: description,
         healthSummary: healthSummary,
+        metadata: metadata,
+        vaccinations: vaccinations,
       );
       state = const AsyncValue.data(null);
       return pet;
