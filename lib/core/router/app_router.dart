@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 // Import portals (will be created)
 import '../../portals/user/user_portal.dart';
 import '../../portals/pet_owner/pet_owner_portal.dart';
+import '../../portals/pet_owner/pages/my_pet_details_page.dart';
 import '../../portals/shop_owner/shop_owner_portal.dart';
 import '../../portals/provider/provider_portal.dart';
 
@@ -86,6 +87,13 @@ class AppRouter {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return PetDetailsPage(petId: id);
+        },
+      ),
+      GoRoute(
+        path: '/my-pet-details/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return MyPetDetailsPage(petId: id);
         },
       ),
       GoRoute(

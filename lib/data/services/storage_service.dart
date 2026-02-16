@@ -9,12 +9,14 @@ class StorageService extends BaseApiService {
   /// Upload a single file and return its URL.
   /// [filePath] is the local file path on device.
   /// [folder] is the target folder on the server (e.g. 'pets', 'products', 'avatars').
-  Future<String> uploadFile(String filePath, {String folder = 'general'}) async {
+  /// [filename] is an optional custom filename.
+  Future<String> uploadFile(String filePath, {String folder = 'general', String? filename}) async {
     return safeApiCall(() async {
-      final fileName = filePath.split('/').last.split('\\').last;
+      final fileName = filename ?? filePath.split('/').last.split('\\').last;
       final formData = FormData.fromMap({
         'file': await MultipartFile.fromFile(filePath, filename: fileName),
         'folder': folder,
+        if (filename != null) 'filename': filename,
       });
 
       final response = await dio.post(

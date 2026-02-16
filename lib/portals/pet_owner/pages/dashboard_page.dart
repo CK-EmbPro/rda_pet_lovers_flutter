@@ -729,7 +729,7 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               TextButton(
                 onPressed: () {
                   final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                  portal?.navigateToTab(2);
+                  portal?.navigateToTab(1); // 1 = Services, 2 = Marketplace
                 },
                 child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
               ),

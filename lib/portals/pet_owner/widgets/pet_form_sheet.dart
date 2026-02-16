@@ -9,6 +9,7 @@ import '../../../data/providers/species_provider.dart';
 import '../../../data/providers/pet_providers.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../data/models/models.dart';
+import '../../../data/providers/vaccination_providers.dart';
 
 class PetFormSheet extends ConsumerStatefulWidget {
   final PetModel? pet;
@@ -40,6 +41,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   final _fatherController = TextEditingController();
   final _grandMotherController = TextEditingController(); 
   final _grandFatherController = TextEditingController();
+  final _nationalityController = TextEditingController();
+  final _priceController = TextEditingController();
 
   // Vaccination State
   final List<Map<String, dynamic>> _addedVaccinations = [];
@@ -52,9 +55,10 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   String? _selectedGender;
   DateTime? _selectedBirthDate;
   XFile? _profileImage;
-  List<XFile> _galleryImages = [];
+  final List<XFile> _galleryImages = [];
   bool _isLoading = false;
   bool _isForSale = false;
+  bool _addAncestryInfo = false;
 
   final _picker = ImagePicker();
   final _storageService = StorageService(DioClient());
@@ -285,17 +289,33 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     setState(() => _isLoading = true);
 
     try {
+      // 0. Generate Pet Code
+      final petCode = await ref.read(petCrudProvider.notifier).generatePetCode();
+
       // 1. Upload profile image if any
       String? profileUrl;
       if (_profileImage != null) {
-        profileUrl = await _storageService.uploadFile(_profileImage!.path, folder: 'pets');
+        final ext = _profileImage!.path.split('.').last;
+        profileUrl = await _storageService.uploadFile(
+          _profileImage!.path,
+          folder: 'pets/$petCode',
+          filename: '${petCode}_profile.$ext',
+        );
       }
 
       // 2. Upload gallery images if any
       List<String> galleryUrls = [];
       if (_galleryImages.isNotEmpty) {
-        final paths = _galleryImages.map((f) => f.path).toList();
-        galleryUrls = await _storageService.uploadMultiple(paths, folder: 'pets');
+        for (int i = 0; i < _galleryImages.length; i++) {
+          final img = _galleryImages[i];
+          final ext = img.path.split('.').last;
+          final url = await _storageService.uploadFile(
+            img.path,
+            folder: 'pets/$petCode',
+            filename: '${petCode}_gallery_${i + 1}.$ext',
+          );
+          galleryUrls.add(url);
+        }
       }
 
       // Combine: profile first, then gallery
@@ -312,34 +332,66 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         if (_grandFatherController.text.isNotEmpty) 'grandfatherPetCode': _grandFatherController.text.trim(),
       };
 
-      // 3. Create Pet
-      final pet = await ref.read(petCrudProvider.notifier).createPet(
-        name: _nameController.text.trim(),
-        speciesId: _selectedSpeciesId!,
-        gender: _selectedGender!,
-        breedId: _selectedBreedId,
-        ageYears: int.tryParse(_ageController.text),
-        weightKg: double.tryParse(_weightController.text),
-        birthDate: _selectedBirthDate?.toIso8601String(),
-        nationality: _nationalityController.text.isNotEmpty
-            ? _nationalityController.text.trim()
-            : null,
-        images: allImages.isNotEmpty ? allImages : null,
-        healthSummary: _healthController.text.isNotEmpty
-            ? _healthController.text.trim()
-            : null,
-        description: _descController.text.isNotEmpty
-            ? _descController.text.trim()
-            : null,
-        metadata: metadata.isNotEmpty ? metadata : null,
-        vaccinations: _addedVaccinations.isNotEmpty ? _addedVaccinations : null,
-      );
+      // 3. Create or Update Pet
+      PetModel? result;
+      
+      if (widget.pet != null) {
+        // UPDATE MODE
+        final updates = <String, dynamic>{
+          'name': _nameController.text.trim(),
+          'speciesId': _selectedSpeciesId,
+          'gender': _selectedGender,
+          'breedId': _selectedBreedId,
+          'ageYears': int.tryParse(_ageController.text),
+          'weightKg': double.tryParse(_weightController.text),
+          'birthDate': _selectedBirthDate?.toIso8601String(),
+          'nationality': _nationalityController.text.trim().isNotEmpty ? _nationalityController.text.trim() : null,
+          'healthSummary': _healthController.text.trim().isNotEmpty ? _healthController.text.trim() : null,
+          'description': _descController.text.trim().isNotEmpty ? _descController.text.trim() : null,
+          if (metadata.isNotEmpty) 'metadata': metadata,
+          // Images handling: If new images added, we need to merge or replace? 
+          // Current logic uploads to unique names. 
+          // If we add to existing images, we should pass the new list. 
+          // The API update checks provided keys. If 'images' provided, does it replace? Usually yes.
+          // So we should combine existing (unmodified) + new uploads.
+        };
 
-      // 4. List for Sale if selected
-      if (pet != null && _isForSale) {
+        // Handle Images for Update
+        // final existingImages = widget.pet!.images; // Unused for now
+        
+        result = await ref.read(petCrudProvider.notifier).updatePet(widget.pet!.id, updates);
+        
+      } else {
+         // CREATE MODE
+        result = await ref.read(petCrudProvider.notifier).createPet(
+          name: _nameController.text.trim(),
+          speciesId: _selectedSpeciesId!,
+          gender: _selectedGender!,
+          petCode: petCode,
+          breedId: _selectedBreedId,
+          ageYears: int.tryParse(_ageController.text),
+          weightKg: double.tryParse(_weightController.text),
+          birthDate: _selectedBirthDate?.toIso8601String(),
+          nationality: _nationalityController.text.isNotEmpty
+              ? _nationalityController.text.trim()
+              : null,
+          images: allImages.isNotEmpty ? allImages : null,
+          healthSummary: _healthController.text.isNotEmpty
+              ? _healthController.text.trim()
+              : null,
+          description: _descController.text.isNotEmpty
+              ? _descController.text.trim()
+              : null,
+          metadata: metadata.isNotEmpty ? metadata : null,
+          vaccinations: _addedVaccinations.isNotEmpty ? _addedVaccinations : null,
+        );
+      }
+
+      // 4. List for Sale if selected (Only for Create or if toggled? update logic for sale is separate)
+      if (result != null && _isForSale) {
         final price = double.tryParse(_priceController.text) ?? 0.0;
         await ref.read(petCrudProvider.notifier).listForSale(
-          pet.id,
+          result.id,
           price: price,
         );
       }
@@ -434,7 +486,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                           child: speciesAsync.when(
                             data: (species) => _buildDropdown(
                               'Species', 'Select species',
-                              species.map((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                              species.map<DropdownMenuItem<String>>((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
                               _selectedSpeciesId,
                               (v) => setState(() {
                                 _selectedSpeciesId = v;
@@ -451,7 +503,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                           child: breedsAsync.when(
                             data: (breeds) => _buildDropdown(
                               'Breed', 'Select breed',
-                              breeds.map((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
+                              breeds.map<DropdownMenuItem<String>>((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
                               _selectedBreedId,
                               (v) => setState(() => _selectedBreedId = v),
                             ),
@@ -625,7 +677,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                       isExpanded: true,
                       hint: const Text('Select Vaccination'),
                       value: _selectedVaccinationId,
-                      items: vaccinations.map((v) => DropdownMenuItem(
+                      items: vaccinations.map<DropdownMenuItem<String>>((v) => DropdownMenuItem(
                         value: v.id,
                         child: Text(v.name),
                       )).toList(),
@@ -698,60 +750,86 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
             );
           },
           loading: () => const LinearProgressIndicator(),
-          error: (_,__) => const Text('Could not load vaccinations'),
+          error: (e, _) => Text('Could not load vaccinations: $e', style: const TextStyle(color: Colors.red)),
         ),
       ],
     );
   }
 
+  // ─── Ancestry Section ───
+
   Widget _buildAncestrySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text('Ancestry (Optional)', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-        const SizedBox(height: 4),
-        const Text('Enter pet codes if known (e.g. PET-2024-...)', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                label: 'Mother Code',
-                hint: 'Mother',
-                controller: _motherController,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.secondary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Add Ancestry Info', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const Text('Parents & Grandparents codes', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                ],
               ),
+              Switch(
+                value: _addAncestryInfo,
+                activeTrackColor: AppColors.secondary,
+                onChanged: (v) => setState(() => _addAncestryInfo = v),
+              ),
+            ],
+          ),
+          
+          if (_addAncestryInfo) ...[
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    label: 'Mother Code',
+                    hint: 'Mother',
+                    controller: _motherController,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppTextField(
+                    label: 'Father Code',
+                    hint: 'Father',
+                    controller: _fatherController,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AppTextField(
-                label: 'Father Code',
-                hint: 'Father',
-                controller: _fatherController,
-              ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: AppTextField(
+                    label: 'Grandmother Code',
+                    hint: 'Grandmother',
+                    controller: _grandMotherController,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: AppTextField(
+                    label: 'Grandfather Code',
+                    hint: 'Grandfather',
+                    controller: _grandFatherController,
+                  ),
+                ),
+              ],
             ),
           ],
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: AppTextField(
-                label: 'Grandmother Code',
-                hint: 'Grandmother',
-                controller: _grandMotherController,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: AppTextField(
-                label: 'Grandfather Code',
-                hint: 'Grandfather',
-                controller: _grandFatherController,
-              ),
-            ),
-          ],
-        ),
-      ],
+        ],
+      ),
     );
   }
 

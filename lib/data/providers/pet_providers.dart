@@ -42,6 +42,10 @@ class PetCrudNotifier extends StateNotifier<AsyncValue<void>> {
 
   PetCrudNotifier(this._service) : super(const AsyncValue.data(null));
 
+  Future<String> generatePetCode() async {
+    return _service.generatePetCode();
+  }
+
   Future<PetModel?> createPet({
     required String name,
     required String speciesId,
@@ -58,6 +62,7 @@ class PetCrudNotifier extends StateNotifier<AsyncValue<void>> {
     String? healthSummary,
     Map<String, dynamic>? metadata,
     List<Map<String, dynamic>>? vaccinations,
+    String? petCode,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -65,6 +70,7 @@ class PetCrudNotifier extends StateNotifier<AsyncValue<void>> {
         name: name,
         speciesId: speciesId,
         gender: gender,
+        petCode: petCode,
         breedId: breedId,
         weightKg: weightKg,
         ageYears: ageYears,

@@ -18,6 +18,7 @@ class PetModel {
   final String? healthSummary;
   final Map<String, dynamic>? metadata;
   final Map<String, dynamic>? vaccinationStatus;
+  final List<VaccinationRecordModel>? vaccinations;
   final String donationStatus;
   final String sellingStatus;
   final bool isActive;
@@ -49,6 +50,7 @@ class PetModel {
     this.healthSummary,
     this.metadata,
     this.vaccinationStatus,
+    this.vaccinations,
     required this.donationStatus,
     required this.sellingStatus,
     required this.isActive,
@@ -90,6 +92,9 @@ class PetModel {
       healthSummary: json['healthSummary'] as String?,
       metadata: json['metadata'] as Map<String, dynamic>?,
       vaccinationStatus: json['vaccinationStatus'] as Map<String, dynamic>?,
+      vaccinations: (json['vaccinations'] as List<dynamic>?)
+          ?.map((e) => VaccinationRecordModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
       donationStatus: json['donationStatus'] as String? ?? 'ACTIVE',
       sellingStatus: json['sellingStatus'] as String? ?? 'ACTIVE',
       isActive: json['isActive'] as bool? ?? true,
@@ -139,6 +144,7 @@ class PetModel {
       'healthSummary': healthSummary,
       'metadata': metadata,
       'vaccinationStatus': vaccinationStatus,
+      // 'vaccinations': vaccinations, // usually not sent back in toJson unless needed
       'donationStatus': donationStatus,
       'sellingStatus': sellingStatus,
       'isActive': isActive,
@@ -252,5 +258,70 @@ class LocationModel {
   String get fullAddress {
     final parts = [sector, district, province].whereType<String>().where((s) => s.isNotEmpty);
     return parts.isNotEmpty ? parts.join(', ') : name;
+  }
+}
+
+/// Vaccination Record Model (Pivot)
+class VaccinationRecordModel {
+  final String id;
+  final String petId;
+  final String vaccinationId;
+  final String? administeredAt;
+  final String? nextDueDate;
+  final String? notes;
+  final String? vetName;
+  final VaccinationModel? vaccination;
+
+  VaccinationRecordModel({
+    required this.id,
+    required this.petId,
+    required this.vaccinationId,
+    this.administeredAt,
+    this.nextDueDate,
+    this.notes,
+    this.vetName,
+    this.vaccination,
+  });
+
+  factory VaccinationRecordModel.fromJson(Map<String, dynamic> json) {
+    return VaccinationRecordModel(
+      id: json['id'] as String? ?? '',
+      petId: json['petId'] as String? ?? '',
+      vaccinationId: json['vaccinationId'] as String? ?? '',
+      administeredAt: json['administeredAt'] as String?,
+      nextDueDate: json['nextDueDate'] as String?,
+      notes: json['notes'] as String?,
+      vetName: json['vetName'] as String?,
+      vaccination: json['vaccination'] != null
+          ? VaccinationModel.fromJson(json['vaccination'] as Map<String, dynamic>)
+          : null,
+    );
+  }
+}
+
+/// Vaccination Catalog Model
+class VaccinationModel {
+  final String id;
+  final String name;
+  final String? description;
+  final String speciesId;
+  final bool isCore;
+
+  VaccinationModel({
+    required this.id,
+    required this.name,
+    this.description,
+    required this.speciesId,
+    required this.isCore,
+  });
+
+  factory VaccinationModel.fromJson(Map<String, dynamic> json) {
+    return VaccinationModel(
+      id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? '',
+      description: json['description'] as String?,
+      speciesId: json['speciesId'] as String? ?? '',
+      isCore: json['isCore'] as bool? ?? false,
+    );
   }
 }

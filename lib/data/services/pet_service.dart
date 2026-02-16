@@ -40,6 +40,14 @@ class PaginatedResponse<T> {
 /// Protected endpoints: create, update, delete, getMyPets, listForSale, listForDonation, cancelListing
 class PetService extends BaseApiService {
   PetService(super.client);
+  
+  /// Generate a unique pet code (public)
+  Future<String> generatePetCode() async {
+    return safeApiCall(() async {
+      final response = await dio.get('${ApiEndpoints.pets}/generate-code');
+      return response.data['code'] as String;
+    });
+  }
 
   /// Get all pets (public) — paginated with optional filters
   Future<PaginatedResponse<PetModel>> getAll({
@@ -142,12 +150,14 @@ class PetService extends BaseApiService {
     String? healthSummary,
     Map<String, dynamic>? metadata,
     List<Map<String, dynamic>>? vaccinations,
+    String? petCode,
   }) async {
     return safeApiCall(() async {
       final data = <String, dynamic>{
         'name': name,
         'speciesId': speciesId,
         'gender': gender,
+        if (petCode != null) 'petCode': petCode,
         if (breedId != null) 'breedId': breedId,
         if (weightKg != null) 'weightKg': weightKg,
         if (ageYears != null) 'ageYears': ageYears,

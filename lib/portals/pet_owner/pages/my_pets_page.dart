@@ -228,7 +228,7 @@ class _PetCarouselCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/pet-details/${pet.id}'),
+      onTap: () => context.push('/my-pet-details/${pet.id}'),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
         decoration: BoxDecoration(
@@ -316,7 +316,7 @@ class _PetGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.push('/pet-details/${pet.id}'),
+      onTap: () => context.push('/my-pet-details/${pet.id}'),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
