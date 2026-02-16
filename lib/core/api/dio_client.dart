@@ -127,4 +127,8 @@ class ApiEndpoints {
   static const String locations = '/locations';
   static const String districts = '/locations/districts';
   static const String provinces = '/locations/provinces';
+
+  // ── Storage ───────────────────────────────────
+  static const String storageUpload = '/storage/upload';
+  static const String storageUploadMultiple = '/storage/upload/multiple';
 }
