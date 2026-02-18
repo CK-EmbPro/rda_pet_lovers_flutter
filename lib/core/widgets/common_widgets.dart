@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
 // ignore_for_file: use_null_aware_elements
 import '../theme/app_theme.dart';
+import '../api/dio_client.dart';
+
+/// Helper to resolve image URLs (handling localhost -> device-accessible IP)
+String resolveImageUrl(String? url) {
+  if (url == null || url.isEmpty) return '';
+  if (url.contains('localhost')) {
+    try {
+      final apiBase = Uri.parse(ApiEndpoints.baseUrl);
+      final origin = '${apiBase.scheme}://${apiBase.host}:${apiBase.port}';
+      return url.replaceFirst(RegExp(r'http://localhost:\d+'), origin);
+    } catch (e) {
+      return url;
+    }
+  }
+  return url;
+}
 
 /// Floating Bottom Navigation Bar with pill-style active state
 class FloatingBottomNav extends StatelessWidget {

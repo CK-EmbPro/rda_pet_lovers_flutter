@@ -297,9 +297,9 @@ class _PetCarouselCard extends StatelessWidget {
                   children: [
                     pet.displayImage.isNotEmpty
                         ? CachedNetworkImage(
-                            imageUrl: pet.displayImage,
+                            imageUrl: resolveImageUrl(pet.displayImage),
                             width: double.infinity,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.fill,
                             placeholder: (_, _) => Container(color: AppColors.inputFill),
                             errorWidget: (_, _, _) => _placeholderImage(),
                           )
@@ -441,9 +441,9 @@ class _PetGridCard extends StatelessWidget {
                 children: [
                    pet.displayImage.isNotEmpty
                   ? CachedNetworkImage(
-                      imageUrl: pet.displayImage,
+                      imageUrl: resolveImageUrl(pet.displayImage),
                       width: double.infinity,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.fill,
                       placeholder: (_, _) => Container(color: AppColors.inputFill),
                       errorWidget: (_, _, _) => _placeholderImage(),
                     )

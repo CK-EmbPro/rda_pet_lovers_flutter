@@ -374,8 +374,8 @@ class _ProductCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
                   child: imageUrl != null && imageUrl.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          fit: BoxFit.cover,
+                          imageUrl: resolveImageUrl(imageUrl),
+                          fit: BoxFit.fill,
                           placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
                           errorWidget: (_, _, _) => _placeholderImage(),
                         )
@@ -535,8 +535,8 @@ class _ProductGridCard extends StatelessWidget {
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                   child: imageUrl != null && imageUrl.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: imageUrl,
-                          fit: BoxFit.cover,
+                          imageUrl: resolveImageUrl(imageUrl),
+                          fit: BoxFit.fill,
                           placeholder: (_, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                           errorWidget: (_, _, _) => _placeholderImage(),
                         )

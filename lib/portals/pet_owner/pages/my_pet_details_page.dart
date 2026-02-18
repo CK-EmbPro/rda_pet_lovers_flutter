@@ -411,7 +411,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
                     ),
                   ],
                   image: DecorationImage(
-                    image: CachedNetworkImageProvider(pet.images[index]),
+                    image: CachedNetworkImageProvider(resolveImageUrl(pet.images[index])),
                     fit: BoxFit.cover,
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/providers/service_providers.dart';
 import '../../../data/models/models.dart';
@@ -266,7 +267,7 @@ class _ProviderCard extends ConsumerWidget {
                   radius: 30,
                   backgroundColor: AppColors.inputFill,
                   backgroundImage: service.provider?.avatarUrl != null
-                      ? CachedNetworkImageProvider(service.provider!.avatarUrl!)
+                      ? CachedNetworkImageProvider(resolveImageUrl(service.provider!.avatarUrl!))
                       : null,
                   child: service.provider?.avatarUrl == null
                       ? const Icon(Icons.person, size: 28, color: AppColors.textSecondary)

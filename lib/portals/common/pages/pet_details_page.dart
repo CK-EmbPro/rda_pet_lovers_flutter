@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/common_widgets.dart';
 
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/models/models.dart';
@@ -390,7 +391,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                   children: [
                                     CircleAvatar(
                                       radius: 24,
-                                      backgroundImage: pet.owner?.avatarUrl != null ? CachedNetworkImageProvider(pet.owner!.avatarUrl!) : null,
+                                      backgroundImage: pet.owner?.avatarUrl != null ? CachedNetworkImageProvider(resolveImageUrl(pet.owner!.avatarUrl!)) : null,
                                       child: pet.owner?.avatarUrl == null ? const Icon(Icons.person, color: Colors.white) : null,
                                     ),
                                     const SizedBox(width: 16),
@@ -509,8 +510,8 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
               fit: StackFit.expand,
               children: [
                 CachedNetworkImage(
-                  imageUrl: pet.images[index],
-                  fit: BoxFit.cover,
+                  imageUrl: resolveImageUrl(pet.images[index]),
+                  fit: BoxFit.fill,
                   placeholder: (context, url) => Container(color: Colors.grey[200]),
                   errorWidget: (context, url, _) => const Icon(Icons.error),
                 ),

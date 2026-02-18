@@ -157,10 +157,10 @@ class _HorizontalCartCard extends StatelessWidget {
                     children: [
                       item.image != null
                           ? CachedNetworkImage(
-                              imageUrl: item.image!,
+                              imageUrl: resolveImageUrl(item.image!),
                               width: double.infinity,
                               height: double.infinity,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.fill,
                             )
                           : Container(color: AppColors.inputFill),
                       // Remove button

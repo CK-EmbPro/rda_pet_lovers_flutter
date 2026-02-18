@@ -54,7 +54,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                    ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: item.image != null
-                        ? CachedNetworkImage(imageUrl: item.image!, width: 50, height: 50, fit: BoxFit.cover)
+                        ? CachedNetworkImage(imageUrl: resolveImageUrl(item.image!), width: 50, height: 50, fit: BoxFit.fill)
                         : Container(width: 50, height: 50, color: AppColors.inputFill),
                   ),
                   const SizedBox(width: 12),

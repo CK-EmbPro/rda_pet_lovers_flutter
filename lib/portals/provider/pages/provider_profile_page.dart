@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../core/utils/toast_utils.dart';
 import '../../../data/providers/appointment_providers.dart';
@@ -45,7 +46,7 @@ class ProviderProfilePage extends ConsumerWidget {
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.white,
-                    backgroundImage: user.avatarUrl != null ? CachedNetworkImageProvider(user.avatarUrl!) : null,
+                    backgroundImage: user.avatarUrl != null ? CachedNetworkImageProvider(resolveImageUrl(user.avatarUrl!)) : null,
                     child: user.avatarUrl == null 
                         ? const Icon(Icons.person, size: 50, color: AppColors.secondary) 
                         : null,

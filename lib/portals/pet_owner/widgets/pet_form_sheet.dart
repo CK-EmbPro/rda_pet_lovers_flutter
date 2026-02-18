@@ -302,8 +302,13 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     setState(() => _isLoading = true);
 
     try {
-      // 0. Generate Pet Code
-      final petCode = await ref.read(petCrudProvider.notifier).generatePetCode();
+      // 0. Get or Generate Pet Code
+      String petCode;
+      if (widget.pet != null && widget.pet!.petCode != null) {
+        petCode = widget.pet!.petCode!;
+      } else {
+        petCode = await ref.read(petCrudProvider.notifier).generatePetCode();
+      }
 
       // 1. Upload profile image if any
       String? profileUrl;
@@ -322,10 +327,13 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         for (int i = 0; i < _galleryImages.length; i++) {
           final img = _galleryImages[i];
           final ext = img.path.split('.').last;
+          // User requested format: petcode_gallery1 (no underscore before number)
+          final filename = '${petCode}_gallery${i + 1}.$ext';
+          
           final url = await _storageService.uploadFile(
             img.path,
             folder: 'pets/$petCode',
-            filename: '${petCode}_gallery_${i + 1}.$ext',
+            filename: filename,
           );
           galleryUrls.add(url);
         }
@@ -371,7 +379,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
              // Gallery: Existing keys + New uploads
              ..._existingGalleryUrls,
              ...galleryUrls,
-          ],
+           ],
           if (_addedVaccinations.isNotEmpty) 'vaccinations': _addedVaccinations,
         };
 
@@ -406,8 +414,29 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         );
       }
 
+      // Check for failure (null result)
+      if (result == null) {
+         // Check for actual error in provider state if needed, or just show generic error
+         // Ideally we should extract the error message from the provider state
+         // final errorState = ref.read(petCrudProvider);
+         // String errorMessage = 'Failed to save pet. Please try again.';
+         // if (errorState is AsyncError) {
+         //   errorMessage = errorState.error.toString();
+         // }
+
+         if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+             const SnackBar(
+               content: Text('Failed to save pet. Please try again.'),
+               backgroundColor: AppColors.error,
+             ),
+           );
+         }
+         return;
+      }
+
       // 4. List for Sale if selected (Only for Create or if toggled? update logic for sale is separate)
-      if (result != null && _isForSale) {
+      if (_isForSale) {
         final price = double.tryParse(_priceController.text) ?? 0.0;
         await ref.read(petCrudProvider.notifier).listForSale(
           result.id,
@@ -418,8 +447,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
       if (mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pet saved successfully!'),
+          SnackBar(
+            content: Text(widget.pet != null ? 'Pet updated successfully!' : 'Pet registered successfully!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -878,12 +907,12 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                 image: _profileImage != null
                     ? DecorationImage(
                         image: FileImage(File(_profileImage!.path)),
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
                       )
                     : (_existingProfileUrl != null
                         ? DecorationImage(
-                            image: NetworkImage(_existingProfileUrl!),
-                            fit: BoxFit.cover,
+                            image: CachedNetworkImageProvider(resolveImageUrl(_existingProfileUrl!)),
+                            fit: BoxFit.fill,
                           )
                         : null),
               ),
@@ -972,10 +1001,10 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(18),
                         child: CachedNetworkImage(
-                          imageUrl: url,
+                          imageUrl: resolveImageUrl(url),
                           width: 130,
                           height: 130,
-                          fit: BoxFit.cover,
+                          fit: BoxFit.fill,
                           placeholder: (_, __) => Container(color: AppColors.inputFill),
                         ),
                       ),

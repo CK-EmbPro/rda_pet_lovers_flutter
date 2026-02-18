@@ -75,7 +75,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                         Padding(
                           padding: const EdgeInsets.all(40),
                           child: CachedNetworkImage(
-                            imageUrl: product.mainImage!,
+                            imageUrl: resolveImageUrl(product.mainImage!),
                             fit: BoxFit.contain,
                           ),
                         ),
@@ -187,7 +187,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                               children: [
                                 CircleAvatar(
                                   radius: 28,
-                                  backgroundImage: shop.logoUrl != null ? CachedNetworkImageProvider(shop.logoUrl!) : null,
+                                  backgroundImage: shop.logoUrl != null ? CachedNetworkImageProvider(resolveImageUrl(shop.logoUrl!)) : null,
                                   child: shop.logoUrl == null ? const Icon(Icons.store) : null,
                                 ),
                                 const SizedBox(width: 16),

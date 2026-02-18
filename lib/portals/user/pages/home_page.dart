@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/common_widgets.dart';
 
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
@@ -150,7 +151,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             radius: 22,
                             backgroundColor: AppColors.inputFill,
                             backgroundImage: user?.avatarUrl != null
-                                ? CachedNetworkImageProvider(user!.avatarUrl!)
+                                ? CachedNetworkImageProvider(resolveImageUrl(user!.avatarUrl!))
                                 : null,
                             child: user?.avatarUrl == null
                                 ? const Icon(Icons.person, color: AppColors.textSecondary)
@@ -596,7 +597,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                             radius: 20,
                             backgroundColor: AppColors.inputFill,
                             backgroundImage: shop.logoUrl != null
-                                ? CachedNetworkImageProvider(shop.logoUrl!)
+                                ? CachedNetworkImageProvider(resolveImageUrl(shop.logoUrl!))
                                 : null,
                             child: shop.logoUrl == null
                                 ? const Icon(Icons.store, color: AppColors.secondary)
@@ -680,9 +681,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                           borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                           child: product.mainImage != null
                               ? CachedNetworkImage(
-                                  imageUrl: product.mainImage!,
+                                  imageUrl: resolveImageUrl(product.mainImage!),
                                   width: double.infinity,
-                                  fit: BoxFit.cover,
+                                  fit: BoxFit.fill,
                                 )
                               : Container(color: AppColors.inputFill),
                         ),
@@ -836,7 +837,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                       child: pet.images.isNotEmpty
                           ? CachedNetworkImage(
-                              imageUrl: pet.images.first,
+                              imageUrl: resolveImageUrl(pet.images.first),
                               width: double.infinity,
                               fit: BoxFit.cover,
                             )

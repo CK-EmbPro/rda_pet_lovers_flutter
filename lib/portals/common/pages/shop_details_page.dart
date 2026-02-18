@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../../../data/models/models.dart';
 // import '../../../data/providers/mock_data_provider.dart'; // No longer needed
 import '../../../data/providers/shop_providers.dart';
@@ -81,8 +82,8 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                   children: [
                     if (shop.bannerUrl != null)
                       CachedNetworkImage(
-                        imageUrl: shop.bannerUrl!,
-                        fit: BoxFit.cover,
+                        imageUrl: resolveImageUrl(shop.bannerUrl!),
+                        fit: BoxFit.fill,
                       )
                     else
                       Container(
@@ -144,10 +145,10 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                                     ? ClipRRect(
                                         borderRadius: BorderRadius.circular(36),
                                         child: CachedNetworkImage(
-                                          imageUrl: shop.logoUrl!,
+                                          imageUrl: resolveImageUrl(shop.logoUrl!),
                                           width: 72,
                                           height: 72,
-                                          fit: BoxFit.cover,
+                                          fit: BoxFit.fill,
                                         ),
                                       )
                                     : const Icon(Icons.store, size: 40, color: Color(0xFF21314C)),
@@ -449,7 +450,7 @@ class _ProductCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               child: product.mainImage != null
                   ? CachedNetworkImage(
-                      imageUrl: product.mainImage!,
+                      imageUrl: resolveImageUrl(product.mainImage!),
                       width: double.infinity,
                       fit: BoxFit.cover,
                     )
@@ -507,7 +508,7 @@ class _ProductListItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: product.mainImage != null
                 ? CachedNetworkImage(
-                    imageUrl: product.mainImage!,
+                    imageUrl: resolveImageUrl(product.mainImage!),
                     width: 70,
                     height: 70,
                     fit: BoxFit.cover,

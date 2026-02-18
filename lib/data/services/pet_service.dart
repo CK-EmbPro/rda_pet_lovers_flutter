@@ -180,7 +180,7 @@ class PetService extends BaseApiService {
   /// Update a pet (protected)
   Future<PetModel> update(String id, Map<String, dynamic> updates) async {
     return safeApiCall(() async {
-      final response = await dio.patch(
+      final response = await dio.put(
         '${ApiEndpoints.pets}/$id',
         data: updates,
       );

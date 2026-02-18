@@ -217,7 +217,7 @@ class ServiceDetailsPage extends ConsumerWidget {
                 radius: 30,
                 backgroundColor: AppColors.inputFill,
                 backgroundImage: provider.avatarUrl != null 
-                    ? CachedNetworkImageProvider(provider.avatarUrl!) 
+                    ? CachedNetworkImageProvider(resolveImageUrl(provider.avatarUrl!)) 
                     : null,
                 child: provider.avatarUrl == null 
                     ? const Icon(Icons.person, color: AppColors.secondary) 

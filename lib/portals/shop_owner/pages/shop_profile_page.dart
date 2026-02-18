@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/toast_utils.dart';
+import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/shop_providers.dart';
 import '../shop_owner_portal.dart';
@@ -56,7 +57,7 @@ class ShopProfilePage extends ConsumerWidget {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(25),
                           image: shop.logoUrl != null 
-                              ? DecorationImage(image: CachedNetworkImageProvider(shop.logoUrl!), fit: BoxFit.cover)
+                              ? DecorationImage(image: CachedNetworkImageProvider(resolveImageUrl(shop.logoUrl!)), fit: BoxFit.fill)
                               : null,
                         ),
                         child: shop.logoUrl == null 

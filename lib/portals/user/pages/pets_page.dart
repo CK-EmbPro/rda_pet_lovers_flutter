@@ -255,9 +255,9 @@ class _PetGridCard extends StatelessWidget {
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 child: pet.displayImage.isNotEmpty
                     ? CachedNetworkImage(
-                        imageUrl: pet.displayImage,
+                        imageUrl: resolveImageUrl(pet.displayImage),
                         width: double.infinity,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.fill,
                         placeholder: (_, _) => Container(color: AppColors.inputFill),
                         errorWidget: (_, _, _) => _petPlaceholder(),
                       )
@@ -346,9 +346,9 @@ class _PetCarouselCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
               child: pet.displayImage.isNotEmpty
                   ? CachedNetworkImage(
-                      imageUrl: pet.displayImage,
+                      imageUrl: resolveImageUrl(pet.displayImage),
                       width: double.infinity,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.fill,
                       placeholder: (_, _) => Container(color: AppColors.inputFill),
                       errorWidget: (_, _, _) => _petPlaceholder(),
                     )

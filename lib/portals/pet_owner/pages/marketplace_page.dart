@@ -227,7 +227,7 @@ class _ShopCard extends StatelessWidget {
                 CircleAvatar(
                   radius: 25,
                   backgroundColor: AppColors.inputFill,
-                  backgroundImage: shop.logoUrl != null ? CachedNetworkImageProvider(shop.logoUrl!) : null,
+                  backgroundImage: shop.logoUrl != null ? CachedNetworkImageProvider(resolveImageUrl(shop.logoUrl!)) : null,
                   child: shop.logoUrl == null ? const Icon(Icons.store, color: AppColors.secondary) : null,
                 ),
                 const SizedBox(width: 12),
@@ -284,7 +284,7 @@ class _ProductCard extends StatelessWidget {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
               child: product.mainImage != null
                   ? CachedNetworkImage(
-                      imageUrl: product.mainImage!,
+                      imageUrl: resolveImageUrl(product.mainImage!),
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorWidget: (context, url, error) => Container(color: Colors.grey[200], child: const Icon(Icons.error)),
@@ -348,7 +348,7 @@ class _ProductListItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
             child: product.mainImage != null
                 ? CachedNetworkImage(
-                    imageUrl: product.mainImage!,
+                    imageUrl: resolveImageUrl(product.mainImage!),
                     width: 70,
                     height: 70,
                     fit: BoxFit.cover,
