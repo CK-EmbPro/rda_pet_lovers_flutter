@@ -52,10 +52,10 @@ class ServiceModel {
 
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     return ServiceModel(
-      id: json['id'] as String,
-      providerId: json['providerId'] as String,
+      id: _extractString(json['id'], key: 'id') ?? '',
+      providerId: _extractString(json['providerId'], key: 'id') ?? '',
       serviceType: _extractString(json['serviceType']) ?? _extractString(json['category'], key: 'name') ?? 'OTHER',
-      name: json['name'] as String,
+      name: _extractString(json['name']) ?? 'Unknown Service',
       description: _extractString(json['description']),
       fee: _parseDouble(json['basePrice']) ?? _parseDouble(json['fee']) ?? 0,
       priceYoungPet: _parseDouble(json['priceYoungPet']),
@@ -73,15 +73,6 @@ class ServiceModel {
           ? ProviderInfo.fromJson(json['provider'] as Map<String, dynamic>)
           : null,
     );
-  }
-
-  /// Safely extract a String from a value that might be a String, Map, or null.
-  /// If it's a Map, extracts [key] (default 'name') from it.
-  static String? _extractString(dynamic value, {String key = 'name'}) {
-    if (value == null) return null;
-    if (value is String) return value;
-    if (value is Map) return value[key]?.toString();
-    return value.toString();
   }
 
   static double? _parseDouble(dynamic value) {
@@ -156,6 +147,14 @@ class ServiceModel {
   }
 }
 
+/// Safely extract a String from a value that might be a String, Map, or null.
+/// If it's a Map, extracts [key] (default 'name') from it.
+String? _extractString(dynamic value, {String key = 'name'}) {
+  if (value == null) return null;
+  if (value is String) return value;
+  if (value is Map) return value[key]?.toString();
+  return value.toString();
+}
 
 /// Provider Info (for service cards)
 class ProviderInfo {
@@ -183,14 +182,14 @@ class ProviderInfo {
 
   factory ProviderInfo.fromJson(Map<String, dynamic> json) {
     return ProviderInfo(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      phone: json['phone'] as String?,
-      email: json['email'] as String?,
-      specialty: json['specialty'] as String?,
-      businessName: json['businessName'] as String?,
-      workingHours: json['workingHours'] as String?,
+      id: _extractString(json['id'], key: 'id') ?? '',
+      fullName: _extractString(json['fullName'], key: 'fullName') ?? _extractString(json['user'], key: 'firstName') ?? 'Provider',
+      avatarUrl: _extractString(json['avatarUrl']),
+      phone: _extractString(json['phone']),
+      email: _extractString(json['email']),
+      specialty: _extractString(json['specialty']),
+      businessName: _extractString(json['businessName']),
+      workingHours: _extractString(json['workingHours']),
       isAvailable: json['isAvailable'] as bool? ?? true,
     );
   }

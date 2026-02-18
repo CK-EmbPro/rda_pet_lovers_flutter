@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
@@ -59,6 +60,10 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   bool _isLoading = false;
   bool _isForSale = false;
   bool _addAncestryInfo = false;
+  
+  // Existing Images (for Edit Mode)
+  String? _existingProfileUrl;
+  List<String> _existingGalleryUrls = [];
 
   final _picker = ImagePicker();
   final _storageService = StorageService(DioClient());
@@ -90,6 +95,14 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         _fatherController.text = widget.pet!.metadata!['fatherPetCode'] ?? '';
         _grandMotherController.text = widget.pet!.metadata!['grandmotherPetCode'] ?? '';
         _grandFatherController.text = widget.pet!.metadata!['grandfatherPetCode'] ?? '';
+      }
+      
+      // Initialize existing images
+      if (widget.pet!.images.isNotEmpty) {
+        _existingProfileUrl = widget.pet!.images.first;
+        if (widget.pet!.images.length > 1) {
+          _existingGalleryUrls = widget.pet!.images.sublist(1);
+        }
       }
     }
   }
@@ -349,11 +362,17 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           'healthSummary': _healthController.text.trim().isNotEmpty ? _healthController.text.trim() : null,
           'description': _descController.text.trim().isNotEmpty ? _descController.text.trim() : null,
           if (metadata.isNotEmpty) 'metadata': metadata,
-          // Images handling: If new images added, we need to merge or replace? 
-          // Current logic uploads to unique names. 
-          // If we add to existing images, we should pass the new list. 
-          // The API update checks provided keys. If 'images' provided, does it replace? Usually yes.
-          // So we should combine existing (unmodified) + new uploads.
+          // Merge existing (if not replaced/removed) + new uploads
+          'images': <String>[
+             // Profile: New upload OR Existing (if not removed/replaced)
+             if (profileUrl != null) profileUrl
+             else if (_existingProfileUrl != null) _existingProfileUrl!,
+             
+             // Gallery: Existing keys + New uploads
+             ..._existingGalleryUrls,
+             ...galleryUrls,
+          ],
+          if (_addedVaccinations.isNotEmpty) 'vaccinations': _addedVaccinations,
         };
 
         // Handle Images for Update
@@ -861,9 +880,14 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                         image: FileImage(File(_profileImage!.path)),
                         fit: BoxFit.cover,
                       )
-                    : null,
+                    : (_existingProfileUrl != null
+                        ? DecorationImage(
+                            image: NetworkImage(_existingProfileUrl!),
+                            fit: BoxFit.cover,
+                          )
+                        : null),
               ),
-              child: _profileImage == null
+              child: (_profileImage == null && _existingProfileUrl == null)
                   ? Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -872,7 +896,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                         Text('Add Profile', style: TextStyle(color: AppColors.secondary, fontSize: 12, fontWeight: FontWeight.w500)),
                       ],
                     )
-                  : Align(
+                  : (_profileImage != null)
+                      ? Align(
                       alignment: Alignment.topRight,
                       child: GestureDetector(
                         onTap: () => setState(() => _profileImage = null),
@@ -884,7 +909,23 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                           child: const Icon(Icons.close, color: Colors.white, size: 14),
                         ),
                       ),
-                    ),
+                    )
+                  : (_existingProfileUrl != null)
+                      ? Align(
+                          alignment: Alignment.topRight,
+                          child: GestureDetector(
+                            onTap: () => setState(() => _existingProfileUrl = null),
+                            child: Container(
+                              margin: const EdgeInsets.all(6),
+                              width: 24,
+                              height: 24,
+                              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                              child: const Icon(Icons.close, color: Colors.white, size: 14),
+                            ),
+                          ),
+                        )
+                      : null,
+
             ),
           ),
         ),
@@ -912,7 +953,50 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
             runSpacing: 12,
             alignment: WrapAlignment.center,
             children: [
-              // Gallery images
+              // Existing Gallery Images
+              ..._existingGalleryUrls.asMap().entries.map((entry) {
+                 final index = entry.key;
+                 final url = entry.value;
+                 return Container(
+                  width: 130,
+                  height: 130,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppColors.secondary.withValues(alpha: 0.5),
+                      width: 2,
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: CachedNetworkImage(
+                          imageUrl: url,
+                          width: 130,
+                          height: 130,
+                          fit: BoxFit.cover,
+                          placeholder: (_, __) => Container(color: AppColors.inputFill),
+                        ),
+                      ),
+                      Positioned(
+                        top: 4,
+                        right: 4,
+                        child: GestureDetector(
+                          onTap: () => setState(() => _existingGalleryUrls.removeAt(index)),
+                          child: Container(
+                            width: 24,
+                            height: 24,
+                            decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                            child: const Icon(Icons.close, color: Colors.white, size: 14),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
+              // New Gallery images
               ..._galleryImages.asMap().entries.map((entry) {
                 final index = entry.key;
                 final file = entry.value;

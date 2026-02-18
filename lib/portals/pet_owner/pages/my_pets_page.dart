@@ -179,7 +179,11 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
         childAspectRatio: 0.72,
       ),
       itemCount: pets.length,
-      itemBuilder: (context, index) => _PetGridCard(pet: pets[index]),
+      itemBuilder: (context, index) => _PetGridCard(
+        pet: pets[index],
+        onEdit: () => _showAddPetModal(context, pet: pets[index]),
+        onDelete: () => _confirmDelete(pets[index].id),
+      ),
     );
   }
 
@@ -188,12 +192,52 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
       key: const ValueKey('carousel'),
       controller: PageController(viewportFraction: 0.85),
       itemCount: pets.length,
-      itemBuilder: (context, index) => _PetCarouselCard(pet: pets[index]),
+      itemBuilder: (context, index) => _PetCarouselCard(
+        pet: pets[index],
+        onEdit: () => _showAddPetModal(context, pet: pets[index]),
+        onDelete: () => _confirmDelete(pets[index].id),
+      ),
     );
   }
 
-  void _showAddPetModal(BuildContext context) {
-    PetFormSheet.show(context);
+  void _showAddPetModal(BuildContext context, {PetModel? pet}) {
+    PetFormSheet.show(context, pet: pet);
+  }
+
+  Future<void> _confirmDelete(String petId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Pet?'),
+        content: const Text('Are you sure you want to delete this pet?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final success = await ref.read(petCrudProvider.notifier).deletePet(petId);
+      if (mounted) {
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pet deleted successfully'), backgroundColor: AppColors.success),
+          );
+          ref.invalidate(myPetsProvider);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete pet'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
   }
 }
 
@@ -223,7 +267,14 @@ class _ViewToggle extends StatelessWidget {
 
 class _PetCarouselCard extends StatelessWidget {
   final PetModel pet;
-  const _PetCarouselCard({required this.pet});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _PetCarouselCard({
+    required this.pet,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -242,16 +293,25 @@ class _PetCarouselCard extends StatelessWidget {
               flex: 3,
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-                child: pet.displayImage.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: pet.displayImage,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        placeholder: (_, _) => Container(color: AppColors.inputFill),
-                        errorWidget: (_, _, _) => _placeholderImage(),
-                    )
-                  : _placeholderImage(),
-            ),
+                child: Stack(
+                  children: [
+                    pet.displayImage.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: pet.displayImage,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            placeholder: (_, _) => Container(color: AppColors.inputFill),
+                            errorWidget: (_, _, _) => _placeholderImage(),
+                          )
+                        : _placeholderImage(),
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: _buildActionMenu(),
+                    ),
+                  ],
+                ),
+              ),
           ),
           Expanded(
             flex: 2,
@@ -307,11 +367,59 @@ class _PetCarouselCard extends StatelessWidget {
       child: const Center(child: Icon(Icons.pets, size: 80, color: AppColors.secondary)),
     );
   }
+
+  Widget _buildActionMenu() {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        shape: BoxShape.circle,
+      ),
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
+        padding: EdgeInsets.zero,
+        onSelected: (value) {
+          if (value == 'edit') onEdit();
+          if (value == 'delete') onDelete();
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit, size: 18, color: AppColors.textPrimary),
+                SizedBox(width: 8),
+                Text('Edit'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete, size: 18, color: AppColors.error),
+                SizedBox(width: 8),
+                Text('Delete', style: TextStyle(color: AppColors.error)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PetGridCard extends StatelessWidget {
   final PetModel pet;
-  const _PetGridCard({required this.pet});
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _PetGridCard({
+    required this.pet,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -329,7 +437,9 @@ class _PetGridCard extends StatelessWidget {
             flex: 3,
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              child: pet.displayImage.isNotEmpty
+              child: Stack(
+                children: [
+                   pet.displayImage.isNotEmpty
                   ? CachedNetworkImage(
                       imageUrl: pet.displayImage,
                       width: double.infinity,
@@ -338,6 +448,13 @@ class _PetGridCard extends StatelessWidget {
                       errorWidget: (_, _, _) => _placeholderImage(),
                     )
                   : _placeholderImage(),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: _buildActionMenu(),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -377,7 +494,49 @@ class _PetGridCard extends StatelessWidget {
   Widget _placeholderImage() {
     return Container(
       color: AppColors.inputFill,
+      width: double.infinity,
       child: const Center(child: Icon(Icons.pets, size: 40, color: AppColors.secondary)),
+    );
+  }
+
+  Widget _buildActionMenu() {
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.3),
+        shape: BoxShape.circle,
+      ),
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_horiz, color: Colors.white, size: 18),
+        padding: EdgeInsets.zero,
+        onSelected: (value) {
+          if (value == 'edit') onEdit();
+          if (value == 'delete') onDelete();
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit, size: 18, color: AppColors.textPrimary),
+                SizedBox(width: 8),
+                Text('Edit'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete, size: 18, color: AppColors.error),
+                SizedBox(width: 8),
+                Text('Delete', style: TextStyle(color: AppColors.error)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

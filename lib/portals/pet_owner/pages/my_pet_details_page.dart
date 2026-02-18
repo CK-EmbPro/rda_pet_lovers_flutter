@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
+import '../widgets/pet_form_sheet.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/pet_providers.dart';
 import '../../../data/providers/appointment_providers.dart';
@@ -61,6 +62,38 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
                           onPressed: () => context.pop(),
                         ),
                         const Spacer(),
+                        PopupMenuButton<String>(
+                          icon: const Icon(Icons.more_vert, color: Color(0xFF21314C)),
+                          onSelected: (value) {
+                            if (value == 'edit') {
+                              PetFormSheet.show(context, pet: pet);
+                            } else if (value == 'delete') {
+                              _confirmDelete(context, ref, pet.id);
+                            }
+                          },
+                          itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                            const PopupMenuItem<String>(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, size: 20, color: AppColors.textPrimary),
+                                  SizedBox(width: 12),
+                                  Text('Edit Pet'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem<String>(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete, size: 20, color: AppColors.error),
+                                  SizedBox(width: 12),
+                                  Text('Delete Pet', style: TextStyle(color: AppColors.error)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
@@ -550,6 +583,43 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
          );
        }
      );
+  }
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref, String petId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Pet?'),
+        content: const Text('Are you sure you want to delete this pet? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.textSecondary)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true && context.mounted) {
+      final success = await ref.read(petCrudProvider.notifier).deletePet(petId);
+      if (context.mounted) {
+        if (success) {
+          context.pop(); // Go back to My Pets list
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Pet deleted successfully'), backgroundColor: AppColors.success),
+          );
+          // Refresh the list
+          ref.invalidate(myPetsProvider);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Failed to delete pet'), backgroundColor: AppColors.error),
+          );
+        }
+      }
+    }
   }
 }
 

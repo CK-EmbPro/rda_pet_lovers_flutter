@@ -16,11 +16,12 @@
 
 **Root Cause**: The backend returns Map objects (e.g., `{ id: "...", name: "..." }`) for fields like `categoryId`, `paymentType`, `paymentMethod`, `description`, and `serviceType` — but `ServiceModel.fromJson` cast them directly with `as String?`.
 
-**Fix**: Added a `_extractString()` helper method that safely handles `String`, `Map`, and `null` values:
-- If `String` → returns as-is
-- If `Map` → extracts a specified key (default: `'name'`, or `'id'` for IDs)
-- If `null` → returns null
+**Fix**: Implemented a comprehensive `_extractString()` helper method and applied it to **ALL** string fields in `ServiceModel` and `ProviderInfo`.
+- Handles `String` (returns as-is)
+- Handles `Map` (returns specific key like `id` or `name` or `fullName`)
+- Handles `null` (returns null)
+- Added specific fallback for `ProviderInfo.fullName`: tries `fullName` -> `user.firstName` -> 'Provider'.
 
-Applied to: `serviceType`, `description`, `categoryId`, `paymentMethod`, `paymentType`
+This ensures the app will never crash even if the backend returns fully populated objects for relationship fields (like `providerId`, `categoryId`, `user`).
 
 **File**: `data/models/service_model.dart`
