@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/service_providers.dart';
 import '../../../data/models/models.dart';
@@ -79,25 +80,16 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
       } else {
         // Update
         // await ref.read(serviceCrudProvider.notifier).updateService(...)
-        // Need to check if update is supported in provider.
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Update not fully wired yet')));
+        AppToast.info(context, 'Service update coming soon');
       }
 
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.service == null ? 'Service created!' : 'Service updated!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
-        // Refresh? Providers usually auto-refresh if invalidate is called in notifier.
+        AppToast.success(context, widget.service == null ? 'Service created!' : 'Service updated!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e'), backgroundColor: AppColors.error),
-        );
+        AppToast.error(context, 'Failed to save service. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

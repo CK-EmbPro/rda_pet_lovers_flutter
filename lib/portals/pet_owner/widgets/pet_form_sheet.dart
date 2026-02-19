@@ -6,8 +6,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/species_provider.dart';
 import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/location_providers.dart';
+import '../../../data/providers/auth_providers.dart';
 import '../../../data/services/storage_service.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/vaccination_providers.dart';
@@ -54,11 +57,13 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   String? _selectedSpeciesId;
   String? _selectedBreedId;
   String? _selectedGender;
+  String? _selectedLocationId;
   DateTime? _selectedBirthDate;
   XFile? _profileImage;
   final List<XFile> _galleryImages = [];
   bool _isLoading = false;
   bool _isForSale = false;
+  bool _isForDonation = false;
   bool _addAncestryInfo = false;
   
   // Existing Images (for Edit Mode)
@@ -76,12 +81,14 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
       _selectedSpeciesId = widget.pet!.species?.id;
       _selectedBreedId = widget.pet!.breed?.id;
       _selectedGender = widget.pet!.gender;
+      _selectedLocationId = widget.pet!.locationId;
       _ageController.text = widget.pet!.ageYears?.toString() ?? '';
       _weightController.text = widget.pet!.weightKg?.toString() ?? '';
       _descController.text = widget.pet!.description ?? '';
       _healthController.text = widget.pet!.healthSummary ?? '';
       _nationalityController.text = widget.pet!.nationality ?? '';
       _isForSale = widget.pet!.isForSale;
+      _isForDonation = widget.pet!.isForDonation;
       _priceController.text = widget.pet!.price?.toString() ?? '';
       
       // Parse BirthDate
@@ -224,9 +231,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           if (_galleryImages.length < 4) {
             _galleryImages.add(image);
           } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Maximum 4 gallery images allowed')),
-            );
+            AppToast.warning(context, 'Maximum 4 gallery images allowed');
+
           }
         }
       });
@@ -247,9 +253,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         final remaining = 4 - _galleryImages.length;
         _galleryImages.addAll(images.take(remaining));
         if (images.length > remaining) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Only $remaining more image${remaining == 1 ? '' : 's'} allowed (max 4)')),
-          );
+          AppToast.warning(context, 'Only $remaining more image${remaining == 1 ? '' : 's'} allowed (max 4)');
         }
       });
     }
@@ -287,15 +291,11 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedSpeciesId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a species')),
-      );
+      AppToast.warning(context, 'Please select a species');
       return;
     }
     if (_selectedGender == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a gender')),
-      );
+      AppToast.warning(context, 'Please select a gender');
       return;
     }
 
@@ -304,8 +304,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     try {
       // 0. Get or Generate Pet Code
       String petCode;
-      if (widget.pet != null && widget.pet!.petCode != null) {
-        petCode = widget.pet!.petCode!;
+      if (widget.pet?.petCode != null) {
+        petCode = widget.pet!.petCode;
       } else {
         petCode = await ref.read(petCrudProvider.notifier).generatePetCode();
       }
@@ -370,6 +370,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           'speciesId': _selectedSpeciesId,
           'gender': _selectedGender,
           'breedId': _selectedBreedId,
+          if (_selectedLocationId != null) 'locationId': _selectedLocationId,
           'ageYears': int.tryParse(_ageController.text),
           'weightKg': double.tryParse(_weightController.text),
           'birthDate': _selectedBirthDate?.toIso8601String(),
@@ -400,6 +401,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           gender: _selectedGender!,
           petCode: petCode,
           breedId: _selectedBreedId,
+          locationId: _selectedLocationId,
           ageYears: int.tryParse(_ageController.text),
           weightKg: double.tryParse(_weightController.text),
           birthDate: _selectedBirthDate?.toIso8601String(),
@@ -416,6 +418,11 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           metadata: metadata.isNotEmpty ? metadata : null,
           vaccinations: cleanedVaccinations.isNotEmpty ? cleanedVaccinations : null,
         );
+        
+        // Refresh auth user so new PET_OWNER role is reflected immediately
+        if (result != null) {
+          await ref.read(authStateProvider.notifier).refreshUser();
+        }
       }
 
       // Check for failure (null result)
@@ -424,7 +431,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
          final errorState = ref.read(petCrudProvider);
          String errorMessage = 'Failed to save pet. Please try again.';
          if (errorState is AsyncError) {
-           final err = (errorState as AsyncError).error.toString();
+           final err = (errorState as AsyncError<Object?>).error.toString();
            // Parse API error messages for user-friendly display
            if (err.contains('pet code') && err.contains('not found')) {
              errorMessage = 'One or more ancestry pet codes are invalid. Please check and try again.';
@@ -436,17 +443,12 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
          }
 
          if (mounted) {
-           ScaffoldMessenger.of(context).showSnackBar(
-             SnackBar(
-               content: Text(errorMessage),
-               backgroundColor: AppColors.error,
-             ),
-           );
+           AppToast.error(context, errorMessage);
          }
          return;
       }
 
-      // 4. Handle listing changes
+      // 4. Handle listing changes (Sale)
       if (widget.pet != null && widget.pet!.isForSale && !_isForSale) {
         // Pet WAS listed but user toggled sale OFF → cancel the listing
         await ref.read(petCrudProvider.notifier).cancelListing(result.id);
@@ -461,14 +463,18 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         }
       }
 
+      // 5. Handle listing changes (Donation)
+      if (widget.pet != null && widget.pet!.isForDonation && !_isForDonation) {
+        // Pet WAS listed for donation but user toggled it OFF → cancel listing
+        await ref.read(petCrudProvider.notifier).cancelListing(result.id);
+      } else if (_isForDonation) {
+        // User wants to list for donation
+        await ref.read(petCrudProvider.notifier).listForDonation(result.id);
+      }
+
       if (mounted) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(widget.pet != null ? 'Pet updated successfully!' : 'Pet registered successfully!'),
-            backgroundColor: AppColors.success,
-          ),
-        );
+        AppToast.success(context, widget.pet != null ? 'Pet updated successfully!' : '🎉 Pet registered! You are now a Pet Owner.');
       }
     } catch (e) {
       if (mounted) {
@@ -481,12 +487,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         } else {
           errorMsg = 'Something went wrong. Please try again.';
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(errorMsg),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        if (mounted) AppToast.error(context, errorMsg);
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -501,10 +502,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     final breedsAsync = _selectedSpeciesId != null
         ? ref.watch(breedsProvider(_selectedSpeciesId!))
         : const AsyncValue.data(<BreedModel>[]);
-    
-    // Fetch vaccinations for selected species (or all if none selected, though simplified to species)
-    // We reuse the catalog provider, but strictly we might want to filter by species ID if the catalog is huge
-    // For now we assume catalog is small enough or we filter client side.
+    final locationsAsync = ref.watch(locationsProvider);
     final vaccinationCatalogAsync = ref.watch(vaccinationCatalogProvider);
 
     return Container(
@@ -526,7 +524,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
             ),
           ),
           const SizedBox(height: 20),
-          const Text('Add Your Pet', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+          Text(widget.pet != null ? 'Edit Your Pet' : 'Add Your Pet', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
           const SizedBox(height: 20),
           Expanded(
             child: SingleChildScrollView(
@@ -636,6 +634,21 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // ── Location ──
+                    locationsAsync.when(
+                      data: (locations) => _buildDropdown(
+                        'Location / District', 'Select district',
+                        locations.map<DropdownMenuItem<String>>((l) =>
+                          DropdownMenuItem(value: l.id, child: Text(l.name))
+                        ).toList(),
+                        _selectedLocationId,
+                        (v) => setState(() => _selectedLocationId = v),
+                      ),
+                      loading: () => _buildDropdown('Location / District', 'Loading...', [], null, null),
+                      error: (_, __) => _buildDropdown('Location / District', 'Failed to load', [], null, null),
                     ),
                     const SizedBox(height: 16),
 
@@ -1031,7 +1044,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                           width: 130,
                           height: 130,
                           fit: BoxFit.fill,
-                          placeholder: (_, __) => Container(color: AppColors.inputFill),
+                          placeholder: (ctx, url) => Container(color: AppColors.inputFill),
                         ),
                       ),
                       Positioned(
@@ -1167,43 +1180,82 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
   }
 
   Widget _buildSaleSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.secondary.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
-      ),
-      child: Column(
-        children: [
-          Row(
+    return Column(
+      children: [
+        // List for Sale
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.secondary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.secondary.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('List for Sale?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text('Post this pet to the marketplace', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                    ],
+                  ),
+                  Switch(
+                    value: _isForSale,
+                    onChanged: (v) => setState(() {
+                      _isForSale = v;
+                      if (v) _isForDonation = false; // Mutually exclusive
+                    }),
+                  ),
+                ],
+              ),
+              if (_isForSale) ...[
+                const SizedBox(height: 16),
+                AppTextField(
+                  label: 'Price (RWF)',
+                  hint: 'e.g. 50000',
+                  controller: _priceController,
+                  keyboardType: TextInputType.number,
+                  validator: (v) => _isForSale && (v?.isEmpty ?? true) ? 'Price is required' : null,
+                ),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        // List for Donation
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+          ),
+          child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('List for Sale?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text('Post this pet to the marketplace', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
+                  const Text('List for Donation?', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('Offer this pet for adoption', style: TextStyle(color: AppColors.textSecondary, fontSize: 12)),
                 ],
               ),
               Switch(
-                value: _isForSale,
-                onChanged: (v) => setState(() => _isForSale = v),
+                value: _isForDonation,
+                activeTrackColor: Colors.green.withValues(alpha: 0.5),
+                activeThumbColor: Colors.green,
+                onChanged: (v) => setState(() {
+                  _isForDonation = v;
+                  if (v) _isForSale = false; // Mutually exclusive
+                }),
               ),
             ],
           ),
-          if (_isForSale) ...[
-            const SizedBox(height: 16),
-            AppTextField(
-              label: 'Price (RWF)',
-              hint: 'e.g. 50000',
-              controller: _priceController,
-              keyboardType: TextInputType.number,
-              validator: (v) => _isForSale && (v?.isEmpty ?? true) ? 'Price is required' : null,
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 

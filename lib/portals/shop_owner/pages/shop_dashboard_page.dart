@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
 import '../../../data/models/models.dart';
@@ -12,6 +13,7 @@ import '../../../data/providers/order_providers.dart';
 import '../../../data/services/pet_service.dart';
 import '../shop_owner_portal.dart';
 import '../widgets/product_form_sheet.dart';
+
 
 class ShopDashboardPage extends ConsumerWidget {
   const ShopDashboardPage({super.key});
@@ -70,9 +72,9 @@ class ShopDashboardPage extends ConsumerWidget {
                      ElevatedButton(
                        onPressed: () {
                           // TODO: Implement Create Shop Flow
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Create Shop flow not implemented yet')),
-                          );
+                          AppToast.info(context,
+                            'Create Shop feature coming soon');
+
                        }, 
                        style: ElevatedButton.styleFrom(
                          backgroundColor: AppColors.primary,
@@ -88,7 +90,7 @@ class ShopDashboardPage extends ConsumerWidget {
                      ),
                    ],
                  ),
-               );
+
              }
 
              // Fetch products and orders for stats
@@ -272,7 +274,7 @@ class ShopDashboardPage extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           return _RecentOrderCard(order: recent[index]);
                         },
-                      );
+
                     },
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (e, _) => const SizedBox(),
@@ -280,11 +282,11 @@ class ShopDashboardPage extends ConsumerWidget {
                   const SizedBox(height: 100),
                 ],
               ),
-            );
+
           }
         ),
       ),
-    );
+
   }
 
   Widget _buildQuickReportSection(BuildContext context, AsyncValue<PaginatedResponse<OrderModel>> ordersAsync) {
@@ -416,7 +418,7 @@ class ShopDashboardPage extends ConsumerWidget {
                       ],
                     ),
                   ],
-                );
+
               },
             ),
             const SizedBox(height: 16),
@@ -439,7 +441,7 @@ class ShopDashboardPage extends ConsumerWidget {
           ],
         ),
       ),
-    );
+
   }
 }
 
@@ -472,7 +474,7 @@ class _StatCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+
   }
 }
 
@@ -504,7 +506,7 @@ class _ActionButton extends StatelessWidget {
           ],
         ),
       ),
-    );
+
   }
 }
 
@@ -551,7 +553,7 @@ class _RecentOrderCard extends StatelessWidget {
           ],
         ),
       ),
-    );
+
   }
 }
 
@@ -589,7 +591,7 @@ class _OrderStatusBadge extends StatelessWidget {
         status.toUpperCase(),
         style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
       ),
-    );
+
   }
 }
 

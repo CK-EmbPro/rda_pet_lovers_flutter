@@ -1,0 +1,28 @@
+﻿Analyzing mobile_app...                                         
+
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\storage_service.dart:19:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\portals\pet_owner\widgets\pet_form_sheet.dart:346:9 - use_null_aware_elements
+  error - The element type 'String?' can't be assigned to the list type 'String' - lib\portals\pet_owner\widgets\pet_form_sheet.dart:386:19 - list_element_type_not_assignable
+
+flutter : 3 issues 
+found. (ran in 
+14.3s)
+At line:1 char:1
++ flutter analyze 
+--no-pub 2>&1 | 
+Out-File -FilePath 
+analysis_final.txt 
+...
++ ~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~
+    + CategoryInfo  
+            : NotS  
+  pecified: (3 is   
+ sues found. (ra    
+n in 14.3s):Str    
+ing) [], Remote    
+Exception
+    + FullyQualifie 
+   dErrorId : Nati  
+  veCommandError
+ 

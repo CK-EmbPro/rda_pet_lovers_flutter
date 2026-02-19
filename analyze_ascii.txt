@@ -1,0 +1,9 @@
+Analyzing mobile_app...                                         
+
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\data\services\storage_service.dart:19:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\portals\pet_owner\widgets\pet_form_sheet.dart:346:9 - use_null_aware_elements
+   info - Use the null-aware marker '?' rather than a null check via an 'if' - lib\portals\pet_owner\widgets\pet_form_sheet.dart:386:19 - use_null_aware_elements
+warning - Unnecessary cast - lib\portals\pet_owner\widgets\pet_form_sheet.dart:429:25 - unnecessary_cast
+   info - Unnecessary use of multiple underscores - lib\portals\pet_owner\widgets\pet_form_sheet.dart:1045:44 - unnecessary_underscores
+   info - 'activeColor' is deprecated and shouldn't be used. Use activeThumbColor instead. This feature was deprecated after v3.31.0-2.0.pre - lib\portals\pet_owner\widgets\pet_form_sheet.dart:1247:17 - deprecated_member_use
+

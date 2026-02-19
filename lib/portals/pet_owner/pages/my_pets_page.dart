@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../widgets/pet_form_sheet.dart';
 import '../../../data/providers/pet_providers.dart';
 import '../../../data/models/models.dart';
@@ -227,14 +228,10 @@ class _MyPetsPageState extends ConsumerState<MyPetsPage> {
       final success = await ref.read(petCrudProvider.notifier).deletePet(petId);
       if (mounted) {
         if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pet deleted successfully'), backgroundColor: AppColors.success),
-          );
+          AppToast.success(context, 'Pet deleted successfully');
           ref.invalidate(myPetsProvider);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to delete pet'), backgroundColor: AppColors.error),
-          );
+          AppToast.error(context, 'Failed to delete pet');
         }
       }
     }

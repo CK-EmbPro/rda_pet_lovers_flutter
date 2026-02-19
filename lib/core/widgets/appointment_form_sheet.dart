@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_toast.dart';
 import '../../data/providers/service_providers.dart';
 import '../../data/providers/pet_providers.dart';
 import '../../data/providers/appointment_providers.dart';
@@ -294,15 +295,10 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
       setState(() => _isLoading = false);
       if (result != null) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Appointment booked successfully!'), backgroundColor: AppColors.success),
-        );
-        // Refresh appointments
+        AppToast.success(context, 'Appointment booked successfully!');
         ref.invalidate(myAppointmentsProvider);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-           const SnackBar(content: Text('Failed to book appointment'), backgroundColor: AppColors.error),
-        );
+        AppToast.error(context, 'Failed to book appointment. Please try again.');
       }
     }
   }

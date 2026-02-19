@@ -14,13 +14,14 @@ import '../../pet_owner/widgets/pet_form_sheet.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/category_providers.dart';
 import '../../../data/providers/shop_providers.dart';
-import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/pet_listing_providers.dart';
 import '../../../data/providers/product_providers.dart';
 import '../../../data/providers/service_providers.dart';
 import '../../../data/providers/appointment_providers.dart';
 import '../../../data/providers/order_providers.dart'; 
 import '../../../data/models/models.dart';
 import '../../../data/services/pet_service.dart';
+import '../../../data/services/pet_listing_service.dart';
 import '../user_portal.dart'; // For navigation
 import '../../../core/utils/toast_utils.dart';
 
@@ -75,9 +76,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 5)));
     
     // Filter Products and Services by selected Category
-    final petsAsync = ref.watch(allPetsProvider(const PetQueryParams(limit: 10)));
     final servicesAsync = ref.watch(allServicesProvider(ServiceQueryParams(limit: 5, categoryId: _selectedCategoryId)));
     final productsAsync = ref.watch(allProductsProvider(ProductQueryParams(limit: 10, categoryId: _selectedCategoryId)));
+    
+    // ✅ Real pet listings from dedicated listing endpoints (NOT allPetsProvider)
+    final forSaleAsync = ref.watch(forSaleListingsProvider);
+    final forAdoptionAsync = ref.watch(forAdoptionListingsProvider);
     
     // User-specific data (skip for guests)
     final appointmentsAsync = isGuest 
@@ -243,53 +247,59 @@ class _HomePageState extends ConsumerState<HomePage> {
               ),
               const SizedBox(height: 24),
 
-              // Pets Section (Sale/Donation) using AsyncValue
-              petsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => const SizedBox.shrink(),
-                data: (PaginatedResponse<PetModel> response) {
-                  final List<PetModel> pets = response.data;
-                  final petsForSale = pets.where((p) => p.listingType == 'FOR_SALE').toList();
-                  final petsForDonation = pets.where((p) => p.listingType == 'FOR_DONATION').toList();
-                  
+              // ✅ "Being Sold" Section — from real Pet Listings API
+              forSaleAsync.when(
+                loading: () => const SizedBox(
+                  height: 220,
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (err, _) => const SizedBox.shrink(),
+                data: (listings) {
+                  final filtered = user == null
+                      ? listings
+                      : listings.where((l) => l.ownerId != user.id).toList();
+                  if (filtered.isEmpty) return const SizedBox.shrink();
                   return Column(
                     children: [
-                       // Being Sold Section
-                      if (petsForSale.isNotEmpty) ...[
-                        Container(
-                          key: _soldSectionKey,
-                          child: Column(
-                            children: [
-                              _buildPetsSectionHeader(context, 'Being Sold', () {
-                                final portal = context.findAncestorStateOfType<UserPortalState>();
-                                portal?.navigateToTab(2); 
-                              }),
-                              _buildPetsHorizontalList(context, petsForSale.take(5).toList()),
-                            ],
-                          ),
+                      Container(
+                        key: _soldSectionKey,
+                        child: Column(
+                          children: [
+                            _buildPetsSectionHeader(context, 'Being Sold'),
+                            _buildListingHorizontalList(context, filtered),
+                          ],
                         ),
-                        const SizedBox(height: 24),
-                      ],
-
-                      // Being Donated Section
-                      if (petsForDonation.isNotEmpty) ...[
-                        Container(
-                          key: _donatedSectionKey,
-                          child: Column(
-                            children: [
-                              _buildPetsSectionHeader(context, 'Being Donated', () {
-                                final portal = context.findAncestorStateOfType<UserPortalState>();
-                                portal?.navigateToTab(2); 
-                              }),
-                              _buildPetsHorizontalList(context, petsForDonation.take(5).toList()),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                      ],
+                      ),
+                      const SizedBox(height: 24),
                     ],
                   );
-                }
+                },
+              ),
+
+              // ✅ "Being Donated" Section — from real Pet Listings API
+              forAdoptionAsync.when(
+                loading: () => const SizedBox.shrink(),
+                error: (err, _) => const SizedBox.shrink(),
+                data: (listings) {
+                  final filtered = user == null
+                      ? listings
+                      : listings.where((l) => l.ownerId != user.id).toList();
+                  if (filtered.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    children: [
+                      Container(
+                        key: _donatedSectionKey,
+                        child: Column(
+                          children: [
+                            _buildPetsSectionHeader(context, 'For Adoption'),
+                            _buildListingHorizontalList(context, filtered),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
               ),
 
               // Available Services Section
@@ -793,81 +803,33 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Widget _buildPetsSectionHeader(BuildContext context, String title, VoidCallback onSeeAll) {
+  Widget _buildPetsSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          TextButton(
-            onPressed: onSeeAll,
-            child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
-          ),
-        ],
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       ),
     );
   }
 
-  Widget _buildPetsHorizontalList(BuildContext context, List<PetModel> pets) {
+  Widget _buildListingHorizontalList(BuildContext context, List<PetListingModel> listings) {
     return SizedBox(
-      height: 200, // Increased Height
+      height: 220,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         clipBehavior: Clip.none,
-        itemCount: pets.length,
-        itemBuilder: (context, index) {
-          final pet = pets[index];
-          return GestureDetector(
-            onTap: () => context.push('/pet-details/${pet.id}'),
-            child: Container(
-              width: 200, // Increased Width
-              margin: const EdgeInsets.symmetric(horizontal: 8),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: AppTheme.cardShadow,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      child: pet.images.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: resolveImageUrl(pet.images.first),
-                              width: double.infinity,
-                              fit: BoxFit.cover,
-                            )
-                          : Container(color: AppColors.inputFill),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          pet.name,
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
-                        ),
-                        Text(
-                          '${pet.breed?.name ?? 'Unknown'} • ${pet.ageYears} yrs',
-                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+        itemCount: listings.length,
+        itemBuilder: (context, index) => _PetListingCard(
+          listing: listings[index],
+          onTap: () => context.push('/pet-details/${listings[index].petId}'),
+        ),
       ),
     );
   }
+
+
 
   void _showGuestRestriction(BuildContext context, String action) {
     showDialog(
@@ -1057,4 +1019,126 @@ class _AppointmentCard extends StatelessWidget {
     );
   }
 }
-// Triggering hot reload fix
+// ─── Pet Listing Card ────────────────────────────────────────────────────────
+class _PetListingCard extends StatelessWidget {
+  final PetListingModel listing;
+  final VoidCallback onTap;
+
+  const _PetListingCard({required this.listing, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = listing.petImage;
+    final isForSale = listing.isForSale;
+    final badgeColor = isForSale ? const Color(0xFF10B981) : const Color(0xFF21314C);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 200,
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            Expanded(
+              child: Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(18)),
+                    child: imageUrl != null
+                        ? CachedNetworkImage(
+                            imageUrl: resolveImageUrl(imageUrl),
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorWidget: (ctx, url, err) => _petImagePlaceholder(),
+                          )
+                        : _petImagePlaceholder(),
+                  ),
+                  // Price/Adoption badge
+                  Positioned(
+                    top: 10,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: badgeColor,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        isForSale ? listing.displayPrice : 'Free',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Info
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    listing.petName,
+                    style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (listing.petSpecies.isNotEmpty)
+                    Text(
+                      listing.petSpecies,
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                    ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundColor: AppColors.inputFill,
+                        backgroundImage: listing.ownerAvatar != null
+                            ? CachedNetworkImageProvider(resolveImageUrl(listing.ownerAvatar!))
+                            : null,
+                        child: listing.ownerAvatar == null
+                            ? const Icon(Icons.person, size: 12, color: AppColors.textMuted)
+                            : null,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          listing.ownerName,
+                          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _petImagePlaceholder() {
+    return Container(
+      color: AppColors.inputFill,
+      child: const Center(
+        child: Icon(Icons.pets, color: AppColors.textMuted, size: 40),
+      ),
+    );
+  }
+}
+

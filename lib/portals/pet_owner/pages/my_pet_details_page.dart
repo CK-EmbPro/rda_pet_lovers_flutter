@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../widgets/pet_form_sheet.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/pet_providers.dart';
@@ -180,6 +181,10 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
               _OwnStatCard(icon: Icons.monitor_weight, label: '${pet.weightKg ?? 0} Kg'),
             ],
           ),
+          const SizedBox(height: 24),
+
+          // Listing Status Section
+          _buildListingStatusBanner(pet),
           const SizedBox(height: 24),
 
           // Health Status & Vaccinations
@@ -607,19 +612,76 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
       final success = await ref.read(petCrudProvider.notifier).deletePet(petId);
       if (context.mounted) {
         if (success) {
-          context.pop(); // Go back to My Pets list
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Pet deleted successfully'), backgroundColor: AppColors.success),
-          );
-          // Refresh the list
+          context.pop();
+          AppToast.success(context, 'Pet deleted successfully');
           ref.invalidate(myPetsProvider);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Failed to delete pet'), backgroundColor: AppColors.error),
-          );
+          AppToast.error(context, 'Failed to delete pet');
         }
       }
     }
+  }
+
+  Widget _buildListingStatusBanner(PetModel pet) {
+    String title;
+    String subtitle;
+    IconData icon;
+    Color color;
+
+    if (pet.isForSale) {
+      title = 'Listed for Sale';
+      subtitle = 'Available for purchase at ${pet.price?.toInt() ?? 0} RWF';
+      icon = Icons.sell_outlined;
+      color = AppColors.secondary;
+    } else if (pet.isForDonation) {
+      title = 'Listed for Donation';
+      subtitle = 'Available for free adoption';
+      icon = Icons.volunteer_activism_outlined;
+      color = Colors.green;
+    } else {
+      title = 'Private Listing';
+      subtitle = 'Not visible in the marketplace';
+      icon = Icons.lock_outline;
+      color = const Color(0xFF64748B);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -656,4 +718,6 @@ class _OwnStatCard extends StatelessWidget {
       ),
     );
   }
+
+
 }

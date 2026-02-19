@@ -3,57 +3,83 @@ import '../../core/api/dio_client.dart';
 import '../services/pet_service.dart';
 import 'base_api_service.dart';
 
-/// Pet Listing Model for sale/adoption listings
+/// Pet Listing Model — aligned with backend PetListing entity.
+/// Backend listingType values: SELL | DONATE
+/// Backend status values: PUBLISHED | DRAFT | SOLD | ADOPTED | EXPIRED
 class PetListingModel {
   final String id;
   final String listingCode;
   final String petId;
-  final String listerId;
-  final String listingType; // FOR_SALE, FOR_DONATION
+  final String ownerId; // ✅ backend field is 'ownerId', not 'listerId'
+  final String listingType; // SELL | DONATE
   final double? price;
   final String? currency;
   final String? description;
-  final String status; // ACTIVE, SOLD, ADOPTED, CANCELLED, EXPIRED
+  final String? locationId;
+  final int viewCount;
+  final int inquiryCount;
+  final String status; // PUBLISHED | DRAFT | SOLD | ADOPTED | EXPIRED
+  final DateTime? publishedAt;
+  final DateTime? expiresAt;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
-  // Nested data
+  // Nested relations from backend
   final Map<String, dynamic>? pet;
-  final Map<String, dynamic>? lister;
+  final Map<String, dynamic>? owner;
+  final Map<String, dynamic>? location;
 
   PetListingModel({
     required this.id,
     required this.listingCode,
     required this.petId,
-    required this.listerId,
+    required this.ownerId,
     required this.listingType,
     this.price,
     this.currency,
     this.description,
+    this.locationId,
+    this.viewCount = 0,
+    this.inquiryCount = 0,
     required this.status,
+    this.publishedAt,
+    this.expiresAt,
     required this.createdAt,
     this.updatedAt,
     this.pet,
-    this.lister,
+    this.owner,
+    this.location,
   });
 
   factory PetListingModel.fromJson(Map<String, dynamic> json) {
     return PetListingModel(
-      id: json['id'] as String,
+      id: json['id'] as String? ?? '',
       listingCode: json['listingCode'] as String? ?? '',
-      petId: json['petId'] as String,
-      listerId: json['listerId'] as String,
-      listingType: json['listingType'] as String,
+      petId: json['petId'] as String? ?? '',
+      ownerId: json['ownerId'] as String? ?? '', // ✅ correct field
+      listingType: json['listingType'] as String? ?? 'SELL', // ✅ SELL | DONATE
       price: _parseDouble(json['price']),
       currency: json['currency'] as String?,
       description: json['description'] as String?,
-      status: json['status'] as String? ?? 'ACTIVE',
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      locationId: json['locationId'] as String?,
+      viewCount: (json['viewCount'] as int?) ?? 0,
+      inquiryCount: (json['inquiryCount'] as int?) ?? 0,
+      status: json['status'] as String? ?? 'PUBLISHED', // ✅ PUBLISHED not ACTIVE
+      publishedAt: json['publishedAt'] != null
+          ? DateTime.tryParse(json['publishedAt'] as String)
+          : null,
+      expiresAt: json['expiresAt'] != null
+          ? DateTime.tryParse(json['expiresAt'] as String)
+          : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'] as String) ?? DateTime.now()
+          : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? DateTime.tryParse(json['updatedAt'] as String)
           : null,
       pet: json['pet'] as Map<String, dynamic>?,
-      lister: json['lister'] as Map<String, dynamic>?,
+      owner: json['owner'] as Map<String, dynamic>?,
+      location: json['location'] as Map<String, dynamic>?,
     );
   }
 
@@ -64,14 +90,34 @@ class PetListingModel {
     return null;
   }
 
-  bool get isForSale => listingType == 'FOR_SALE';
-  bool get isForAdoption => listingType == 'FOR_DONATION';
-  bool get isActive => status == 'ACTIVE';
+  // ✅ Correct enum checks matching backend values
+  bool get isForSale => listingType == 'SELL';
+  bool get isForAdoption => listingType == 'DONATE';
+  bool get isPublished => status == 'PUBLISHED';
+  bool get isSold => status == 'SOLD';
+  bool get isAdopted => status == 'ADOPTED';
+
+  // Convenience pet data extractors
+  String get petName => (pet?['name'] as String?) ?? 'Unknown Pet';
+  String? get petImage {
+    final images = pet?['images'] as List?;
+    if (images != null && images.isNotEmpty) return images.first as String?;
+    return null;
+  }
+  String get petSpecies => (pet?['species']?['name'] as String?) ?? '';
+  String get ownerName => (owner?['fullName'] as String?) ?? 'Unknown Owner';
+  String? get ownerAvatar => owner?['avatarUrl'] as String?;
 
   String get displayPrice {
-    if (price == null) return 'Free';
-    return '${currency ?? "RWF"} ${price!.toStringAsFixed(0)}';
+    if (price == null || !isForSale) return 'Free';
+    final formatted = price!.toStringAsFixed(0).replaceAllMapped(
+      RegExp(r'(\d)(?=(\d{3})+(?!\d))'),
+      (m) => '${m[1]},',
+    );
+    return '${currency ?? "RWF"} $formatted';
   }
+
+  String get listingTypeLabel => isForSale ? 'For Sale' : 'For Adoption';
 }
 
 /// Pet Listing API Service — handles selling and adoption.
@@ -201,13 +247,5 @@ class PetListingService extends BaseApiService {
     });
   }
 
-  /// Approve a listing (admin) (protected)
-  Future<dynamic> approve(String listingId) async {
-    return safeApiCall(() async {
-      final response = await dio.post(
-        '${ApiEndpoints.petListings}/$listingId/approve',
-      );
-      return response.data;
-    });
-  }
+
 }

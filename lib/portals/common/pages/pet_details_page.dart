@@ -4,10 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
-
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/pet_listing_providers.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../core/router/app_router.dart';
 
@@ -62,24 +63,25 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                         ),
                       ),
                       actions: [
-                        Container(
-                          margin: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            shape: BoxShape.circle,
-                          ),
-                          child: IconButton(
-                            icon: Icon(
-                              isInCart ? Icons.shopping_cart : Icons.shopping_cart_outlined,
-                              color: isInCart ? AppColors.secondary : Colors.black,
-                              size: 20,
+                        if (!pet.isForDonation)
+                          Container(
+                            margin: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              shape: BoxShape.circle,
                             ),
-                            onPressed: () {
-                              final portalRoute = AppRouter.getPortalRoute(user?.primaryRole ?? 'user');
-                              context.go('$portalRoute?tab=cart');
-                            },
+                            child: IconButton(
+                              icon: Icon(
+                                isInCart ? Icons.shopping_cart : Icons.shopping_cart_outlined,
+                                color: isInCart ? AppColors.secondary : Colors.black,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                final portalRoute = AppRouter.getPortalRoute(user?.primaryRole ?? 'user');
+                                context.go('$portalRoute?tab=cart');
+                              },
+                            ),
                           ),
-                        ),
                       ],
                       flexibleSpace: FlexibleSpaceBar(
                         background: _buildImageSlider(pet),
@@ -187,6 +189,12 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                               ],
                             ),
                             const SizedBox(height: 32),
+
+                            // Listing Status Section (For Owner)
+                            if (isOwner) ...[
+                              _buildListingStatusBanner(pet),
+                              const SizedBox(height: 32),
+                            ],
 
                             // About Section
                             Container(
@@ -413,8 +421,9 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                     IconButton(
                                       icon: const Icon(Icons.message_outlined, color: AppColors.secondary),
                                       onPressed: () {
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Chat feature coming soon')));
+                                        AppToast.info(context, 'Chat feature coming soon 💬');
                                       },
+
                                     ),
                                   ],
                                 ),
@@ -442,48 +451,107 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                       ),
                     ],
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: isInCart
-                              ? () => ref.read(cartProvider.notifier).removeItem(widget.petId, 'PET')
-                              : () => ref.read(cartProvider.notifier).addPet(pet),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            side: BorderSide(color: isInCart ? Colors.red : AppColors.secondary),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                          ),
-                          child: Text(
-                            isInCart ? 'Remove' : 'Add to Cart',
-                            style: TextStyle(
-                              color: isInCart ? Colors.red : AppColors.secondary,
-                              fontWeight: FontWeight.bold,
+                  child: pet.isForDonation
+                      // ── Adoption: single "Adopt Now" button ──
+                      ? SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              final shouldAdopt = await showDialog<bool>(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Confirm Adoption'),
+                                  content: Text('Are you sure you want to adopt ${pet.name}?'),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(false),
+                                      child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.of(context).pop(true),
+                                      child: const Text('Adopt', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    ),
+                                  ],
+                                ),
+                              );
+
+                              if (shouldAdopt != true) return;
+
+                              try {
+                                AppToast.info(context, 'Processing adoption...');
+                                
+                                if (pet.donationListingId == null) {
+                                   AppToast.error(context, 'No active adoption listing found for this pet.');
+                                   return;
+                                }
+                                
+                                await ref.read(petListingServiceProvider).adopt(pet.donationListingId!);
+                                
+                                if (context.mounted) {
+                                  AppToast.success(context, 'Congratulations! 🎉 You have adopted ${pet.name}.');
+                                  context.pop();
+                                  ref.invalidate(forAdoptionListingsProvider);
+                                  ref.invalidate(allPetsProvider);
+                                }
+                              } catch (e) {
+                                if (context.mounted) {
+                                  AppToast.error(context, 'Adoption failed. Please try again.');
+                                }
+                              }
+                            },
+                            icon: const Icon(Icons.volunteer_activism, color: Colors.white),
+                            label: const Text('Adopt Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF21314C),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                              elevation: 0,
                             ),
                           ),
+                        )
+                      // ── For Sale: "Add to Cart" + "Buy Now" ──
+                      : Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: isInCart
+                                    ? () => ref.read(cartProvider.notifier).removeItem(widget.petId, 'PET')
+                                    : () => ref.read(cartProvider.notifier).addPet(pet),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  side: BorderSide(color: isInCart ? Colors.red : const Color(0xFF21314C)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                ),
+                                child: Text(
+                                  isInCart ? 'Remove' : 'Add to Cart',
+                                  style: TextStyle(
+                                    color: isInCart ? Colors.red : const Color(0xFF21314C),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                   if (!isInCart) {
+                                     ref.read(cartProvider.notifier).addPet(pet);
+                                  }
+                                  final portalRoute = AppRouter.getPortalRoute(user?.primaryRole ?? 'user');
+                                  context.go('$portalRoute?tab=cart');
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF21314C),
+                                  padding: const EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  elevation: 0,
+                                ),
+                                child: const Text('Buy Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () {
-                             if (!isInCart) {
-                               ref.read(cartProvider.notifier).addPet(pet);
-                            }
-                            final portalRoute = AppRouter.getPortalRoute(user?.primaryRole ?? 'user');
-                            context.go('$portalRoute?tab=cart');
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.secondary,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                            elevation: 0,
-                          ),
-                          child: const Text('Buy Now', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
             ],
           );
@@ -588,6 +656,68 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
           Text(
             label,
             style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildListingStatusBanner(PetModel pet) {
+    String title;
+    String subtitle;
+    IconData icon;
+    Color color;
+
+    if (pet.isForSale) {
+      title = 'Listed for Sale';
+      subtitle = 'Available for purchase at ${pet.price?.toInt() ?? 0} RWF';
+      icon = Icons.sell_outlined;
+      color = AppColors.secondary;
+    } else if (pet.isForDonation) {
+      title = 'Listed for Donation';
+      subtitle = 'Available for free adoption';
+      icon = Icons.volunteer_activism_outlined;
+      color = Colors.green;
+    } else {
+      title = 'Private Listing';
+      subtitle = 'Not visible in the marketplace';
+      icon = Icons.lock_outline;
+      color = const Color(0xFF64748B);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: color),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(color: Color(0xFF64748B), fontSize: 13),
+                ),
+              ],
+            ),
           ),
         ],
       ),

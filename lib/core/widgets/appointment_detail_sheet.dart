@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/appointment_providers.dart';
 
@@ -192,9 +193,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
                     if (success && context.mounted) {
                       Navigator.pop(context);
                       ref.invalidate(providerAppointmentsProvider);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Appointment accepted'), backgroundColor: AppColors.success),
-                      );
+                      AppToast.success(context, 'Appointment accepted');
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -221,9 +220,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
                 if (success && context.mounted) {
                   Navigator.pop(context);
                   ref.invalidate(providerAppointmentsProvider);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Marked as complete'), backgroundColor: AppColors.success),
-                  );
+                  AppToast.success(context, 'Marked as complete');
                 }
               },
               style: ElevatedButton.styleFrom(
@@ -252,9 +249,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
                     if (success && context.mounted) {
                       Navigator.pop(context);
                       ref.invalidate(myAppointmentsProvider);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Appointment cancelled'), backgroundColor: AppColors.success),
-                      );
+                      AppToast.success(context, 'Appointment cancelled');
                     }
                   },
                   style: OutlinedButton.styleFrom(
@@ -295,9 +290,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
                 if (success && context.mounted) {
                   Navigator.pop(context);
                   ref.invalidate(myAppointmentsProvider);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Appointment cancelled'), backgroundColor: AppColors.success),
-                  );
+                  AppToast.success(context, 'Appointment cancelled');
                 }
               },
               style: OutlinedButton.styleFrom(
@@ -364,10 +357,9 @@ class AppointmentDetailSheet extends ConsumerWidget {
                   Navigator.pop(dialogContext); // Close dialog
                   Navigator.pop(context); // Close detail sheet
                   ref.invalidate(providerAppointmentsProvider);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Appointment rejected'), backgroundColor: AppColors.error),
-                  );
+                  AppToast.error(context, 'Appointment rejected');
                 }
+
               }
             },
             style: ElevatedButton.styleFrom(

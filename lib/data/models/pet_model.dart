@@ -161,26 +161,52 @@ class PetModel {
   String get displayImage => images.isNotEmpty ? images.first : '';
   bool get isForSale => sellingStatus == 'SELLING_PENDING';
   bool get isForDonation => donationStatus == 'DONATION_PENDING';
+  bool get isForMating => metadata?['isForMating'] == true; // Example if needed
+  
+  bool get isListed => isForSale || isForDonation;
   
   /// Computed listing type for UI display
   String get listingType {
-    if (sellingStatus == 'SELLING_PENDING') return 'FOR_SALE';
-    if (donationStatus == 'DONATION_PENDING') return 'FOR_DONATION';
+    if (isForSale) return 'FOR_SALE';
+    if (isForDonation) return 'FOR_DONATION';
     return 'NOT_LISTED';
   }
   
   /// Get actual listing price from listings data
   double? get price {
+    // Only sale listings have a price
     if (!isForSale || listings == null || listings!.isEmpty) return null;
+    
     final activeListing = listings!.firstWhere(
-      (l) => l['listingType'] == 'SELL' && l['status'] == 'PUBLISHED',
+      (l) => l['listingType'] == 'SELL' && l['status'] == 'PUBLISHED' && l['deletedAt'] == null,
       orElse: () => <String, dynamic>{},
     );
+    
     if (activeListing.isEmpty) return null;
     final p = activeListing['price'];
     if (p is num) return p.toDouble();
     if (p is String) return double.tryParse(p);
     return null;
+  }
+
+  /// Get active sale listing ID
+  String? get saleListingId {
+    if (listings == null || listings!.isEmpty) return null;
+    final active = listings!.firstWhere(
+      (l) => l['listingType'] == 'SELL' && l['status'] == 'PUBLISHED' && l['deletedAt'] == null,
+      orElse: () => <String, dynamic>{},
+    );
+    return active.isNotEmpty ? active['id'] as String? : null;
+  }
+
+  /// Get active donation listing ID
+  String? get donationListingId {
+    if (listings == null || listings!.isEmpty) return null;
+    final active = listings!.firstWhere(
+      (l) => l['listingType'] == 'DONATE' && l['status'] == 'PUBLISHED' && l['deletedAt'] == null,
+      orElse: () => <String, dynamic>{},
+    );
+    return active.isNotEmpty ? active['id'] as String? : null;
   }
 }
 

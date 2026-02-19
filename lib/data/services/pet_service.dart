@@ -239,12 +239,20 @@ class PetService extends BaseApiService {
     });
   }
 
-  /// Transfer ownership (protected)
-  Future<dynamic> transferOwnership(String petId, String toUserId) async {
+  /// Transfer pet ownership to a new owner (protected).
+  /// @protected - requires authentication + pets:write permission
+  Future<dynamic> transferOwnership(
+    String petId,
+    String newOwnerId, {
+    String? listingId,
+  }) async {
     return safeApiCall(() async {
       final response = await dio.post(
-        '${ApiEndpoints.pets}/$petId/transfer-ownership',
-        data: {'toUserId': toUserId},
+        '${ApiEndpoints.pets}/$petId/transfer',
+        data: {
+          'newOwnerId': newOwnerId,
+          if (listingId != null) 'listingId': listingId,
+        },
       );
       return response.data;
     });
