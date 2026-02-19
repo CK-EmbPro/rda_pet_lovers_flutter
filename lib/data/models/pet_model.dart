@@ -30,6 +30,7 @@ class PetModel {
   final BreedModel? breed;
   final UserBasicModel? owner;
   final LocationModel? location;
+  final List<Map<String, dynamic>>? listings;
 
   PetModel({
     required this.id,
@@ -60,6 +61,7 @@ class PetModel {
     this.breed,
     this.owner,
     this.location,
+    this.listings,
   });
 
   factory PetModel.fromJson(Map<String, dynamic> json) {
@@ -114,6 +116,9 @@ class PetModel {
       location: json['location'] != null
           ? LocationModel.fromJson(json['location'] as Map<String, dynamic>)
           : null,
+      listings: (json['listings'] as List<dynamic>?)
+          ?.map((e) => e as Map<String, dynamic>)
+          .toList(),
     );
   }
 
@@ -164,8 +169,19 @@ class PetModel {
     return 'NOT_LISTED';
   }
   
-  /// Computed price (mock for now, can be extended)
-  double? get price => isForSale ? 50000.0 : null;
+  /// Get actual listing price from listings data
+  double? get price {
+    if (!isForSale || listings == null || listings!.isEmpty) return null;
+    final activeListing = listings!.firstWhere(
+      (l) => l['listingType'] == 'SELL' && l['status'] == 'PUBLISHED',
+      orElse: () => <String, dynamic>{},
+    );
+    if (activeListing.isEmpty) return null;
+    final p = activeListing['price'];
+    if (p is num) return p.toDouble();
+    if (p is String) return double.tryParse(p);
+    return null;
+  }
 }
 
 /// Species Model

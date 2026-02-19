@@ -353,6 +353,13 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         if (_grandFatherController.text.isNotEmpty) 'grandfatherPetCode': _grandFatherController.text.trim(),
       };
 
+      // Clean vaccinations: strip `name` (display-only) before sending to API
+      final cleanedVaccinations = _addedVaccinations.map((vac) => {
+        'vaccinationId': vac['vaccinationId'],
+        'administeredAt': vac['administeredAt'],
+        if (vac['notes'] != null) 'notes': vac['notes'],
+      }).toList();
+
       // 3. Create or Update Pet
       PetModel? result;
       
@@ -380,11 +387,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
              ..._existingGalleryUrls,
              ...galleryUrls,
            ],
-          if (_addedVaccinations.isNotEmpty) 'vaccinations': _addedVaccinations,
+          if (cleanedVaccinations.isNotEmpty) 'vaccinations': cleanedVaccinations,
         };
-
-        // Handle Images for Update
-        // final existingImages = widget.pet!.images; // Unused for now
         
         result = await ref.read(petCrudProvider.notifier).updatePet(widget.pet!.id, updates);
         
@@ -410,24 +414,31 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
               ? _descController.text.trim()
               : null,
           metadata: metadata.isNotEmpty ? metadata : null,
-          vaccinations: _addedVaccinations.isNotEmpty ? _addedVaccinations : null,
+          vaccinations: cleanedVaccinations.isNotEmpty ? cleanedVaccinations : null,
         );
       }
 
       // Check for failure (null result)
       if (result == null) {
-         // Check for actual error in provider state if needed, or just show generic error
-         // Ideally we should extract the error message from the provider state
-         // final errorState = ref.read(petCrudProvider);
-         // String errorMessage = 'Failed to save pet. Please try again.';
-         // if (errorState is AsyncError) {
-         //   errorMessage = errorState.error.toString();
-         // }
+         // Extract user-friendly error message from provider state
+         final errorState = ref.read(petCrudProvider);
+         String errorMessage = 'Failed to save pet. Please try again.';
+         if (errorState is AsyncError) {
+           final err = (errorState as AsyncError).error.toString();
+           // Parse API error messages for user-friendly display
+           if (err.contains('pet code') && err.contains('not found')) {
+             errorMessage = 'One or more ancestry pet codes are invalid. Please check and try again.';
+           } else if (err.contains('Bad Request')) {
+             errorMessage = err.replaceAll('Exception: ', '').replaceAll('BadRequestException: ', '');
+           } else {
+             errorMessage = 'Something went wrong. Please try again.';
+           }
+         }
 
          if (mounted) {
            ScaffoldMessenger.of(context).showSnackBar(
-             const SnackBar(
-               content: Text('Failed to save pet. Please try again.'),
+             SnackBar(
+               content: Text(errorMessage),
                backgroundColor: AppColors.error,
              ),
            );
@@ -435,13 +446,19 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
          return;
       }
 
-      // 4. List for Sale if selected (Only for Create or if toggled? update logic for sale is separate)
-      if (_isForSale) {
+      // 4. Handle listing changes
+      if (widget.pet != null && widget.pet!.isForSale && !_isForSale) {
+        // Pet WAS listed but user toggled sale OFF → cancel the listing
+        await ref.read(petCrudProvider.notifier).cancelListing(result.id);
+      } else if (_isForSale) {
+        // User wants to list (or update listing price)
         final price = double.tryParse(_priceController.text) ?? 0.0;
-        await ref.read(petCrudProvider.notifier).listForSale(
-          result.id,
-          price: price,
-        );
+        if (price > 0) {
+          await ref.read(petCrudProvider.notifier).listForSale(
+            result.id,
+            price: price,
+          );
+        }
       }
 
       if (mounted) {
@@ -455,9 +472,18 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
       }
     } catch (e) {
       if (mounted) {
+        // Parse user-friendly error message
+        String errorMsg = e.toString();
+        if (errorMsg.contains('pet code') && errorMsg.contains('not found')) {
+          errorMsg = 'One or more ancestry pet codes are invalid. Please check and try again.';
+        } else if (errorMsg.contains('400')) {
+          errorMsg = 'Please check your input and try again.';
+        } else {
+          errorMsg = 'Something went wrong. Please try again.';
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to register pet: $e'),
+            content: Text(errorMsg),
             backgroundColor: AppColors.error,
           ),
         );
