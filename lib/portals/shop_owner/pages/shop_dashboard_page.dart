@@ -72,9 +72,7 @@ class ShopDashboardPage extends ConsumerWidget {
                      ElevatedButton(
                        onPressed: () {
                           // TODO: Implement Create Shop Flow
-                          AppToast.info(context,
-                            'Create Shop feature coming soon');
-
+                          AppToast.info(context, 'Create Shop feature coming soon');
                        }, 
                        style: ElevatedButton.styleFrom(
                          backgroundColor: AppColors.primary,
@@ -90,7 +88,7 @@ class ShopDashboardPage extends ConsumerWidget {
                      ),
                    ],
                  ),
-
+               );
              }
 
              // Fetch products and orders for stats
@@ -274,7 +272,7 @@ class ShopDashboardPage extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           return _RecentOrderCard(order: recent[index]);
                         },
-
+                       );
                     },
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (e, _) => const SizedBox(),
@@ -282,11 +280,11 @@ class ShopDashboardPage extends ConsumerWidget {
                   const SizedBox(height: 100),
                 ],
               ),
-
+            );
           }
         ),
       ),
-
+    );
   }
 
   Widget _buildQuickReportSection(BuildContext context, AsyncValue<PaginatedResponse<OrderModel>> ordersAsync) {
@@ -418,7 +416,7 @@ class ShopDashboardPage extends ConsumerWidget {
                       ],
                     ),
                   ],
-
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -441,7 +439,7 @@ class ShopDashboardPage extends ConsumerWidget {
           ],
         ),
       ),
-
+    );
   }
 }
 
@@ -474,7 +472,7 @@ class _StatCard extends StatelessWidget {
           ],
         ),
       ),
-
+    );
   }
 }
 
@@ -506,7 +504,7 @@ class _ActionButton extends StatelessWidget {
           ],
         ),
       ),
-
+    );
   }
 }
 
@@ -553,7 +551,7 @@ class _RecentOrderCard extends StatelessWidget {
           ],
         ),
       ),
-
+    );
   }
 }
 
@@ -591,7 +589,7 @@ class _OrderStatusBadge extends StatelessWidget {
         status.toUpperCase(),
         style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.w600),
       ),
-
+    );
   }
 }
 
