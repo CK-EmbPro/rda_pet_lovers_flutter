@@ -9,6 +9,7 @@ import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/species_provider.dart';
 import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/pet_listing_providers.dart';
 import '../../../data/providers/location_providers.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/services/storage_service.dart';
@@ -449,42 +450,71 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
       }
 
       // 4. Handle listing changes (Sale)
+      bool listingFailed = false;
+      String? listingError;
+
       if (widget.pet != null && widget.pet!.isForSale && !_isForSale) {
         // Pet WAS listed but user toggled sale OFF → cancel the listing
-        await ref.read(petCrudProvider.notifier).cancelListing(result.id);
+        final ok = await ref.read(petCrudProvider.notifier).cancelListing(result.id);
+        if (!ok) {
+          listingFailed = true;
+          listingError = _extractProviderError(ref);
+        }
       } else if (_isForSale) {
         // User wants to list (or update listing price)
         final price = double.tryParse(_priceController.text) ?? 0.0;
         if (price > 0) {
-          await ref.read(petCrudProvider.notifier).listForSale(
+          final ok = await ref.read(petCrudProvider.notifier).listForSale(
             result.id,
             price: price,
           );
+          if (!ok) {
+            listingFailed = true;
+            listingError = _extractProviderError(ref);
+          }
         }
       }
 
       // 5. Handle listing changes (Donation)
-      if (widget.pet != null && widget.pet!.isForDonation && !_isForDonation) {
-        // Pet WAS listed for donation but user toggled it OFF → cancel listing
-        await ref.read(petCrudProvider.notifier).cancelListing(result.id);
-      } else if (_isForDonation) {
-        // User wants to list for donation
-        await ref.read(petCrudProvider.notifier).listForDonation(result.id);
+      if (!listingFailed) {
+        if (widget.pet != null && widget.pet!.isForDonation && !_isForDonation) {
+          // Pet WAS listed for donation but user toggled it OFF → cancel listing
+          final ok = await ref.read(petCrudProvider.notifier).cancelListing(result.id);
+          if (!ok) {
+            listingFailed = true;
+            listingError = _extractProviderError(ref);
+          }
+        } else if (_isForDonation) {
+          // User wants to list for donation
+          final ok = await ref.read(petCrudProvider.notifier).listForDonation(result.id);
+          if (!ok) {
+            listingFailed = true;
+            listingError = _extractProviderError(ref);
+          }
+        }
       }
 
       if (mounted) {
         Navigator.pop(context);
-        String successMsg;
-        if (widget.pet == null) {
-          successMsg = '🎉 Pet registered! You are now a Pet Owner.';
-        } else if (_isForDonation && !(widget.pet!.isForDonation)) {
-          successMsg = '🐾 Pet listed for donation!';
-        } else if (_isForSale && !(widget.pet!.isForSale)) {
-          successMsg = '🏷️ Pet listed for sale!';
+        if (listingFailed) {
+          // Pet was saved but listing action failed — show the backend error
+          AppToast.error(context, listingError ?? 'Failed to update listing. Please try again.');
         } else {
-          successMsg = 'Pet updated successfully!';
+          // Invalidate listing caches so other users see the new listing
+          if (_isForDonation) ref.invalidate(forAdoptionListingsProvider);
+          if (_isForSale) ref.invalidate(forSaleListingsProvider);
+          String successMsg;
+          if (widget.pet == null) {
+            successMsg = '🎉 Pet registered! You are now a Pet Owner.';
+          } else if (_isForDonation && !(widget.pet!.isForDonation)) {
+            successMsg = '🐾 Pet listed for donation!';
+          } else if (_isForSale && !(widget.pet!.isForSale)) {
+            successMsg = '🏷️ Pet listed for sale!';
+          } else {
+            successMsg = 'Pet updated successfully!';
+          }
+          AppToast.success(context, successMsg);
         }
-        AppToast.success(context, successMsg);
       }
     } catch (e) {
       if (mounted) {
@@ -502,6 +532,20 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  /// Extract user-friendly error message from petCrudProvider error state
+  String _extractProviderError(WidgetRef ref) {
+    final errorState = ref.read(petCrudProvider);
+    if (errorState is AsyncError) {
+      final err = (errorState as AsyncError<Object?>).error.toString();
+      // BaseApiService.handleError already provides user-friendly messages
+      // Just clean up any wrapper prefixes
+      return err
+          .replaceAll('Exception: ', '')
+          .replaceAll('BadRequestException: ', '');
+    }
+    return 'Something went wrong. Please try again.';
   }
 
   // ─── Build ────────────────────────────────────

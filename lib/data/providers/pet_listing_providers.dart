@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
+import '../providers/auth_providers.dart';
 import '../services/pet_listing_service.dart';
 
 
@@ -11,6 +12,9 @@ final petListingServiceProvider = Provider<PetListingService>((ref) {
 /// For-sale pet listings (public)
 final forSaleListingsProvider =
     FutureProvider.autoDispose<List<PetListingModel>>((ref) async {
+  // Watch current user so we re-fetch when login state changes (for own-pet exclusion)
+  ref.watch(currentUserProvider);
+  
   final service = ref.read(petListingServiceProvider);
   final result = await service.getForSale(limit: 50);
   return result.data;
@@ -19,6 +23,9 @@ final forSaleListingsProvider =
 /// For-adoption pet listings (public)
 final forAdoptionListingsProvider =
     FutureProvider.autoDispose<List<PetListingModel>>((ref) async {
+  // Watch current user so we re-fetch when login state changes (for own-pet exclusion)
+  ref.watch(currentUserProvider);
+  
   final service = ref.read(petListingServiceProvider);
   final result = await service.getForAdoption(limit: 50);
   return result.data;

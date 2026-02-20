@@ -17,11 +17,12 @@ import '../../../data/providers/category_providers.dart';
 import '../../../data/providers/service_providers.dart';
 import '../../../data/providers/appointment_providers.dart';
 import '../../../data/providers/shop_providers.dart';
-import '../../../data/providers/pet_providers.dart';
+import '../../../data/providers/pet_listing_providers.dart';
 import '../../../data/providers/product_providers.dart';
 import '../../../data/providers/order_providers.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/services/pet_service.dart';
+import '../../../data/services/pet_listing_service.dart';
 
 import '../../../data/models/models.dart';
 import '../pet_owner_portal.dart';
@@ -69,7 +70,8 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
         ? const AsyncValue<PaginatedResponse<AppointmentModel>>.data(PaginatedResponse(data: [], page: 1, limit: 5, total: 0, totalPages: 0))
         : ref.watch(myAppointmentsProvider(null));
     final shopsAsync = ref.watch(allShopsProvider(const ShopQueryParams(limit: 5)));
-    final petsAsync = ref.watch(allPetsProvider(const PetQueryParams(limit: 10)));
+    final saleListingsAsync = ref.watch(forSaleListingsProvider);
+    final donationListingsAsync = ref.watch(forAdoptionListingsProvider);
     final productsAsync = ref.watch(allProductsProvider(const ProductQueryParams(limit: 10)));
     final ordersAsync = isGuest 
         ? const AsyncValue<List<OrderModel>>.data([]) 
@@ -256,51 +258,52 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
               ),
               const SizedBox(height: 24),
 
-              // Pets Section (Sale/Donation)
-              petsAsync.when(
+              // Being Sold Section
+              saleListingsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => const SizedBox.shrink(),
-                data: (PaginatedResponse<PetModel> response) {
-                   final List<PetModel> browsablePets = response.data;
-                   final petsForSale = browsablePets.where((p) => p.listingType == 'FOR_SALE').toList();
-                   final petsForDonation = browsablePets.where((p) => p.listingType == 'FOR_DONATION').toList();
-                   
-                   return Column(
-                     children: [
-                       // Being Sold Section
-                        if (petsForSale.isNotEmpty)
-                          Container(
-                            key: _soldSectionKey,
-                            child: Column(
-                              children: [
-                                _buildPetsSectionHeader(context, 'Being Sold', () {
-                                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                                  portal?.navigateToTab(2);
-                                }),
-                                _buildPetsHorizontalList(petsForSale.take(5).toList()),
-                                const SizedBox(height: 24),
-                              ],
-                            ),
-                          ),
-        
-                        // Being Donated Section
-                        if (petsForDonation.isNotEmpty)
-                          Container(
-                            key: _donatedSectionKey,
-                            child: Column(
-                              children: [
-                                _buildPetsSectionHeader(context, 'Being Donated', () {
-                                  final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
-                                  portal?.navigateToTab(2);
-                                }),
-                                _buildPetsHorizontalList(petsForDonation.take(5).toList()),
-                                const SizedBox(height: 24),
-                              ],
-                            ),
-                          ),
-                     ],
-                   );
-                }
+                data: (listings) {
+                  final user = ref.watch(currentUserProvider);
+                  final filtered = user == null 
+                      ? listings 
+                      : listings.where((l) => l.ownerId != user.id).toList();
+                      
+                  if (filtered.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    children: [
+                      _buildPetsSectionHeader(context, 'Being Sold', () {
+                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                        portal?.navigateToTab(2);
+                      }),
+                      _buildPetListingsHorizontalList(filtered.take(5).toList()),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
+              ),
+
+              // Being Donated Section
+              donationListingsAsync.when(
+                loading: () => const Center(child: CircularProgressIndicator()),
+                error: (err, stack) => const SizedBox.shrink(),
+                data: (listings) {
+                  final user = ref.watch(currentUserProvider);
+                  final filtered = user == null 
+                      ? listings 
+                      : listings.where((l) => l.ownerId != user.id).toList();
+
+                  if (filtered.isEmpty) return const SizedBox.shrink();
+                  return Column(
+                    children: [
+                      _buildPetsSectionHeader(context, 'Being Donated', () {
+                        final portal = context.findAncestorStateOfType<PetOwnerPortalState>();
+                        portal?.navigateToTab(2);
+                      }),
+                      _buildPetListingsHorizontalList(filtered.take(5).toList()),
+                      const SizedBox(height: 24),
+                    ],
+                  );
+                },
               ),
 
               // Available Services Section
@@ -806,17 +809,17 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
     );
   }
 
-  Widget _buildPetsHorizontalList(List<PetModel> pets) {
+  Widget _buildPetListingsHorizontalList(List<PetListingModel> listings) {
     return SizedBox(
       height: 200,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: pets.length,
+        itemCount: listings.length,
         itemBuilder: (context, index) {
-          final pet = pets[index];
+          final listing = listings[index];
           return GestureDetector(
-            onTap: () => context.push('/pet-details/${pet.id}'),
+            onTap: () => context.push('/pet-details/${listing.petId}'),
             child: Container(
               width: 200,
               margin: const EdgeInsets.symmetric(horizontal: 4),
@@ -831,9 +834,9 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                   Expanded(
                     child: ClipRRect(
                       borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-                      child: pet.images.isNotEmpty
+                      child: listing.petImage != null
                           ? CachedNetworkImage(
-                              imageUrl: resolveImageUrl(pet.images.first),
+                              imageUrl: resolveImageUrl(listing.petImage!),
                               width: double.infinity,
                               fit: BoxFit.fill,
                             )
@@ -846,11 +849,11 @@ class _DashboardPageState extends ConsumerState<DashboardPage> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          pet.name,
+                          listing.petName,
                           style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
                         ),
                         Text(
-                          '${pet.breed?.name ?? 'Unknown'} • ${pet.ageYears} yrs',
+                          '${listing.petSpecies} • ${listing.listingTypeLabel}',
                           style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                         ),
                       ],
