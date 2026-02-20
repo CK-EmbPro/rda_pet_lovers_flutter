@@ -326,13 +326,13 @@ class _ServiceCardView extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final success = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
+              final result = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
               if (context.mounted) {
-                if (success) {
-                  AppToast.success(context, '"${service.name}" has been deleted');
+                if (result.success) {
+                  AppToast.success(context, result.message);
                   ref.invalidate(myServicesProvider);
                 } else {
-                  AppToast.error(context, 'Failed to delete the service. Please try again.');
+                  AppToast.error(context, result.message);
                 }
               }
             },
@@ -457,13 +457,13 @@ class _ServiceListView extends ConsumerWidget {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              final success = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
+              final result = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
               if (context.mounted) {
-                if (success) {
-                  AppToast.success(context, '"${service.name}" has been deleted');
+                if (result.success) {
+                  AppToast.success(context, result.message);
                   ref.invalidate(myServicesProvider);
                 } else {
-                  AppToast.error(context, 'Failed to delete the service. Please try again.');
+                  AppToast.error(context, result.message);
                 }
               }
             },

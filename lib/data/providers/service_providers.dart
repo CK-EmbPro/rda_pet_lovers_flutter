@@ -49,7 +49,7 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
 
   ServiceCrudNotifier(this._service) : super(const AsyncValue.data(null));
 
-  Future<ServiceModel?> createService({
+  Future<ActionResponse<ServiceModel>> createService({
     required String name,
     required double basePrice,
     String? description,
@@ -75,11 +75,11 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
       return result;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      return null;
+      return ActionResponse.error(e.toString());
     }
   }
 
-  Future<ServiceModel?> updateService(
+  Future<ActionResponse<ServiceModel>> updateService(
       String id, Map<String, dynamic> updates) async {
     state = const AsyncValue.loading();
     try {
@@ -88,23 +88,23 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
       return result;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      return null;
+      return ActionResponse.error(e.toString());
     }
   }
 
-  Future<bool> deleteService(String id) async {
+  Future<ActionResponse<void>> deleteService(String id) async {
     state = const AsyncValue.loading();
     try {
-      await _service.delete(id);
+      final result = await _service.delete(id);
       state = const AsyncValue.data(null);
-      return true;
+      return result;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      return false;
+      return ActionResponse.error(e.toString());
     }
   }
 
-  Future<ServiceModel?> toggleAvailability(String id) async {
+  Future<ActionResponse<ServiceModel>> toggleAvailability(String id) async {
     state = const AsyncValue.loading();
     try {
       final result = await _service.toggleAvailability(id);
@@ -112,7 +112,7 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
       return result;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      return null;
+      return ActionResponse.error(e.toString());
     }
   }
 }

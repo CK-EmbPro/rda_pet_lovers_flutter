@@ -26,22 +26,33 @@ abstract class BaseApiService {
     // Server response errors
     final data = e.response?.data;
     final statusCode = e.response?.statusCode;
+    
+    // Debug log for production-grade troubleshooting
+    print('API Error: Status=$statusCode, Body=$data');
 
     if (data is Map<String, dynamic>) {
       // NestJS sends { message: string | string[], error?: string, statusCode: int }
-      final message = data['message'];
-      if (message is List) {
-        return message.map((m) => m.toString()).join('\n');
+      final dynamic rawMessage = data['message'];
+      
+      if (rawMessage is List) {
+        return rawMessage.map((m) => m.toString()).join('\n');
       }
-      if (message is String && message.isNotEmpty) {
-        return message;
+      
+      if (rawMessage != null && rawMessage.toString().isNotEmpty) {
+        return rawMessage.toString();
+      }
+
+      // Sometimes NestJS wraps in 'error' instead if message is missing
+      final dynamic rawError = data['error'];
+      if (rawError != null && rawError.toString().isNotEmpty) {
+        return rawError.toString();
       }
     }
 
     // Fallback by status code
     switch (statusCode) {
       case 400:
-        return 'Invalid request. Please check your input.';
+        return 'The data submitted is invalid. Please check your input.';
       case 401:
         return 'Session expired. Please log in again.';
       case 403:
@@ -57,7 +68,9 @@ abstract class BaseApiService {
       case 500:
         return 'Server error. Please try again later.';
       default:
-        return e.message ?? 'Something went wrong. Please try again.';
+        final dioMessage = e.message;
+        if (dioMessage != null && dioMessage.isNotEmpty) return dioMessage;
+        return 'Something went wrong. Please try again.';
     }
   }
 

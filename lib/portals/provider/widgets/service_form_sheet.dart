@@ -31,7 +31,7 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
   final _durationController = TextEditingController();
   final _descController = TextEditingController();
   
-  String _paymentMethod = 'PAY_BEFORE'; // Default
+  String _paymentMethod = 'PAY_UPFRONT'; // Default
   String _serviceType = 'GROOMING'; // Default
   bool _isLoading = false;
 
@@ -68,9 +68,10 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
       final duration = int.tryParse(_durationController.text) ?? 60;
       final description = _descController.text;
 
+      ActionResponse<ServiceModel> result;
       if (widget.service == null) {
         // Create
-        await ref.read(serviceCrudProvider.notifier).createService(
+        result = await ref.read(serviceCrudProvider.notifier).createService(
           name: name,
           basePrice: fee,
           description: description,
@@ -79,17 +80,35 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
         );
       } else {
         // Update
-        // await ref.read(serviceCrudProvider.notifier).updateService(...)
-        AppToast.info(context, 'Service update coming soon');
+        result = await ref.read(serviceCrudProvider.notifier).updateService(
+          widget.service!.id,
+          {
+            'name': name,
+            'basePrice': fee,
+            'description': description,
+            'durationMinutes': duration,
+            'paymentMethod': _paymentMethod,
+            'serviceType': _serviceType,
+          },
+        );
       }
 
+      // Add debug logging to trace exact backend message
+      debugPrint('Service Operation Result: success=${result.success}, message="${result.message}"');
+
       if (mounted) {
-        Navigator.pop(context);
-        AppToast.success(context, widget.service == null ? 'Service created!' : 'Service updated!');
+        if (result.success) {
+          Navigator.pop(context);
+          AppToast.success(context, result.message);
+          ref.invalidate(myServicesProvider);
+        } else {
+          AppToast.error(context, result.message);
+        }
       }
     } catch (e) {
+      debugPrint('Unexpected error in ServiceFormSheet: $e');
       if (mounted) {
-        AppToast.error(context, 'Failed to save service. Please try again.');
+        AppToast.error(context, 'An unexpected error occurred. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -192,8 +211,8 @@ class _ServiceFormSheetState extends ConsumerState<ServiceFormSheet> {
                       children: [
                         Expanded(
                           child: RadioListTile<String>(
-                            title: const Text('Pay Before', style: TextStyle(fontSize: 12)),
-                            value: 'PAY_BEFORE',
+                            title: const Text('Pay Upfront', style: TextStyle(fontSize: 12)),
+                            value: 'PAY_UPFRONT',
                             // ignore: deprecated_member_use
                             groupValue: _paymentMethod,
                             // ignore: deprecated_member_use

@@ -67,7 +67,7 @@ class ServiceApiService extends BaseApiService {
   }
 
   /// Create a new service (protected)
-  Future<ServiceModel> create({
+  Future<ActionResponse<ServiceModel>> create({
     required String name,
     required double basePrice,
     String? description,
@@ -92,35 +92,45 @@ class ServiceApiService extends BaseApiService {
       };
 
       final response = await dio.post(ApiEndpoints.services, data: data);
-      return ServiceModel.fromJson(response.data);
+      return ActionResponse.fromJson(
+        response.data,
+        (json) => ServiceModel.fromJson(json),
+      );
     });
   }
 
   /// Update a service (protected)
-  Future<ServiceModel> update(String id, Map<String, dynamic> updates) async {
+  Future<ActionResponse<ServiceModel>> update(String id, Map<String, dynamic> updates) async {
     return safeApiCall(() async {
-      final response = await dio.patch(
+      final response = await dio.put(
         '${ApiEndpoints.services}/$id',
         data: updates,
       );
-      return ServiceModel.fromJson(response.data);
+      return ActionResponse.fromJson(
+        response.data,
+        (json) => ServiceModel.fromJson(json),
+      );
     });
   }
 
   /// Delete a service (protected)
-  Future<void> delete(String id) async {
+  Future<ActionResponse<void>> delete(String id) async {
     return safeApiCall(() async {
-      await dio.delete('${ApiEndpoints.services}/$id');
+      final response = await dio.delete('${ApiEndpoints.services}/$id');
+      return ActionResponse.fromJson(response.data, (_) => null);
     });
   }
 
   /// Toggle service availability (protected)
-  Future<ServiceModel> toggleAvailability(String id) async {
+  Future<ActionResponse<ServiceModel>> toggleAvailability(String id) async {
     return safeApiCall(() async {
       final response = await dio.patch(
         '${ApiEndpoints.services}/$id/toggle-availability',
       );
-      return ServiceModel.fromJson(response.data);
+      return ActionResponse.fromJson(
+        response.data,
+        (json) => ServiceModel.fromJson(json),
+      );
     });
   }
 
