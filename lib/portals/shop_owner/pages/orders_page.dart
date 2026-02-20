@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/order_providers.dart';
 import '../../../data/models/models.dart';
 import '../../../data/models/shop_model.dart';
@@ -142,9 +143,40 @@ class _OrderList extends ConsumerWidget {
   }
 }
 
-class _OrderCard extends StatelessWidget {
+class _OrderCard extends ConsumerStatefulWidget {
   final OrderModel order;
   const _OrderCard({required this.order});
+
+  @override
+  ConsumerState<_OrderCard> createState() => _OrderCardState();
+}
+
+class _OrderCardState extends ConsumerState<_OrderCard> {
+  bool _isUpdating = false;
+
+  Future<void> _updateStatus(String newStatus) async {
+    setState(() => _isUpdating = true);
+    final success = await ref.read(orderActionProvider.notifier).updateStatus(widget.order.id, newStatus);
+    if (!mounted) return;
+    setState(() => _isUpdating = false);
+    if (success) {
+      AppToast.success(context, _getStatusSuccessMessage(newStatus));
+      // Invalidate all seller orders tabs to reflect the change
+      ref.invalidate(sellerOrdersProvider);
+    } else {
+      AppToast.error(context, 'Failed to update order status. Please try again.');
+    }
+  }
+
+  String _getStatusSuccessMessage(String status) {
+    switch (status) {
+      case 'PROCESSING': return 'Order is now being processed! 🎉';
+      case 'SHIPPED': return 'Order marked as shipped! 📦';
+      default: return 'Order status updated successfully';
+    }
+  }
+
+  OrderModel get order => widget.order;
 
   @override
   Widget build(BuildContext context) {
@@ -239,23 +271,27 @@ class _OrderCard extends StatelessWidget {
     
     if (status == 'pending') {
       return ElevatedButton(
-        onPressed: () {},
+        onPressed: _isUpdating ? null : () => _updateStatus('PROCESSING'),
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 44),
           backgroundColor: AppColors.success,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text('Process Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        child: _isUpdating
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text('Process Order', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       );
     } else if (status == 'processing') {
       return ElevatedButton(
-        onPressed: () {},
+        onPressed: _isUpdating ? null : () => _updateStatus('SHIPPED'),
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 44),
           backgroundColor: AppColors.secondary,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
-        child: const Text('Mark as Shipped', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        child: _isUpdating
+            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : const Text('Mark as Shipped', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       );
     }
     

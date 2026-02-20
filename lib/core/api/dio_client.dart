@@ -50,7 +50,7 @@ class DioClient {
 
 /// API Endpoints configuration — all backend routes
 class ApiEndpoints {
-  static const String baseUrl = 'http://192.168.10.92:3001/api/v1';
+  static const String baseUrl = 'http://192.168.2.59:3001/api/v1';
 
   // ── Auth ──────────────────────────────────────
   static const String login = '/auth/login';

@@ -23,11 +23,17 @@ final allServicesProvider = FutureProvider.autoDispose
   );
 });
 
-/// Services by provider
+/// Services by provider (public — used for viewing another provider's services)
 final providerServicesProvider = FutureProvider.autoDispose
     .family<List<ServiceModel>, String>((ref, providerId) async {
   final service = ref.read(serviceApiServiceProvider);
   return service.getByProvider(providerId);
+});
+
+/// My own services as a provider (authenticated — uses /services/my-services)
+final myServicesProvider = FutureProvider.autoDispose<List<ServiceModel>>((ref) async {
+  final service = ref.read(serviceApiServiceProvider);
+  return service.getMyServices();
 });
 
 /// Single service detail

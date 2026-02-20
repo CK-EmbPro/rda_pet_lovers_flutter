@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_detail_sheet.dart';
-// import '../../../data/providers/mock_data_provider.dart'; // Removing
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/appointment_providers.dart';
 
@@ -375,10 +375,79 @@ class _AppointmentCardView extends StatelessWidget {
 }
 
 // Appointment List View
-class _AppointmentListView extends StatelessWidget {
+class _AppointmentListView extends ConsumerStatefulWidget {
   final AppointmentModel appointment;
 
   const _AppointmentListView({required this.appointment});
+
+  @override
+  ConsumerState<_AppointmentListView> createState() => _AppointmentListViewState();
+}
+
+class _AppointmentListViewState extends ConsumerState<_AppointmentListView> {
+  bool _isActing = false;
+
+  Future<void> _performAction(String action, {String? reason}) async {
+    setState(() => _isActing = true);
+    final notifier = ref.read(appointmentActionProvider.notifier);
+    bool success = false;
+    String successMsg = '';
+
+    switch (action) {
+      case 'accept':
+        success = await notifier.accept(widget.appointment.id);
+        successMsg = 'Appointment accepted! ✅';
+        break;
+      case 'reject':
+        success = await notifier.reject(widget.appointment.id, reason: reason ?? 'Not available');
+        successMsg = 'Appointment rejected';
+        break;
+      case 'complete':
+        success = await notifier.complete(widget.appointment.id);
+        successMsg = 'Appointment marked as completed! 🎉';
+        break;
+    }
+
+    if (!mounted) return;
+    setState(() => _isActing = false);
+    if (success) {
+      AppToast.success(context, successMsg);
+      ref.invalidate(providerAppointmentsProvider);
+    } else {
+      AppToast.error(context, 'Action failed. Please try again.');
+    }
+  }
+
+  void _showRejectDialog() {
+    final reasonCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Reject Appointment'),
+        content: TextField(
+          controller: reasonCtrl,
+          decoration: const InputDecoration(
+            labelText: 'Reason (optional)',
+            hintText: 'e.g. Not available that day',
+          ),
+          maxLines: 2,
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _performAction('reject', reason: reasonCtrl.text);
+            },
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: const Text('Reject'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  AppointmentModel get appointment => widget.appointment;
 
   @override
   Widget build(BuildContext context) {
@@ -476,6 +545,59 @@ class _AppointmentListView extends StatelessWidget {
                 ],
               ),
             ),
+            // Action buttons for PENDING and CONFIRMED appointments
+            if (status == 'PENDING') ...
+              [
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _isActing ? null : _showRejectDialog,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                          side: const BorderSide(color: AppColors.error),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: const Text('Reject', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _isActing ? null : () => _performAction('accept'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.success,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        child: _isActing
+                            ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                            : const Text('Accept', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            if (status == 'CONFIRMED') ...
+              [
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isActing ? null : () => _performAction('complete'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: _isActing
+                        ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text('Mark as Completed', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+                  ),
+                ),
+              ],
           ],
         ),
       ),
@@ -509,3 +631,4 @@ class _AppointmentListView extends StatelessWidget {
     return '$hour:${date.minute.toString().padLeft(2, '0')} $period';
   }
 }
+

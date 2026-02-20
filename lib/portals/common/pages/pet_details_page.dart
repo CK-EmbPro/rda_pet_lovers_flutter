@@ -488,11 +488,50 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                 await ref.read(petListingServiceProvider).adopt(pet.donationListingId!);
                                 
                                 if (context.mounted) {
-                                  AppToast.success(context, 'Congratulations! 🎉 You have adopted ${pet.name}.');
-                                  context.pop();
+                                  // Invalidate listing caches immediately
                                   ref.invalidate(forAdoptionListingsProvider);
                                   ref.invalidate(allPetsProvider);
+
+                                  // Show congratulations dialog explaining re-login
+                                  await showDialog(
+                                    context: context,
+                                    barrierDismissible: false,
+                                    builder: (ctx) => AlertDialog(
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                                      title: const Row(
+                                        children: [
+                                          Text('🎉 ', style: TextStyle(fontSize: 28)),
+                                          SizedBox(width: 4),
+                                          Expanded(child: Text('Adoption Successful!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                                        ],
+                                      ),
+                                      content: Text(
+                                        '${pet.name} is now yours! 🐾\n\n'
+                                        'Your account has been upgraded to Pet Owner. '
+                                        'Please log in again to access your new Pet Owner features.',
+                                        style: const TextStyle(height: 1.5),
+                                      ),
+                                      actions: [
+                                        ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFF21314C),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                          ),
+                                          onPressed: () => Navigator.of(ctx).pop(),
+                                          child: const Text('Log In Now'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+
+                                  // Force logout and redirect to login
+                                  if (context.mounted) {
+                                    await ref.read(authStateProvider.notifier).logout();
+                                    if (context.mounted) context.go('/login');
+                                  }
                                 }
+
                               } catch (e) {
                                 if (context.mounted) {
                                   AppToast.error(context, 'Adoption failed. Please try again.');

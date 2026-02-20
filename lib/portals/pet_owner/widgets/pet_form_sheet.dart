@@ -474,7 +474,17 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
 
       if (mounted) {
         Navigator.pop(context);
-        AppToast.success(context, widget.pet != null ? 'Pet updated successfully!' : '🎉 Pet registered! You are now a Pet Owner.');
+        String successMsg;
+        if (widget.pet == null) {
+          successMsg = '🎉 Pet registered! You are now a Pet Owner.';
+        } else if (_isForDonation && !(widget.pet!.isForDonation)) {
+          successMsg = '🐾 Pet listed for donation!';
+        } else if (_isForSale && !(widget.pet!.isForSale)) {
+          successMsg = '🏷️ Pet listed for sale!';
+        } else {
+          successMsg = 'Pet updated successfully!';
+        }
+        AppToast.success(context, successMsg);
       }
     } catch (e) {
       if (mounted) {
@@ -556,16 +566,19 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                       children: [
                         Expanded(
                           child: speciesAsync.when(
-                            data: (species) => _buildDropdown(
-                              'Species', 'Select species',
-                              species.map<DropdownMenuItem<String>>((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
-                              _selectedSpeciesId,
-                              (v) => setState(() {
-                                _selectedSpeciesId = v;
-                                _selectedBreedId = null;
-                                // clear vaccinations if species changes? maybe better to keep until logic is firm
-                              }),
-                            ),
+                            data: (species) {
+                              final seenS = <String>{};
+                              final uniqueSpecies = species.where((s) => seenS.add(s.id)).toList();
+                              return _buildDropdown(
+                                'Species', 'Select species',
+                                uniqueSpecies.map<DropdownMenuItem<String>>((s) => DropdownMenuItem(value: s.id, child: Text(s.name))).toList(),
+                                uniqueSpecies.any((s) => s.id == _selectedSpeciesId) ? _selectedSpeciesId : null,
+                                (v) => setState(() {
+                                  _selectedSpeciesId = v;
+                                  _selectedBreedId = null;
+                                }),
+                              );
+                            },
                             loading: () => _buildDropdown('Species', 'Loading...', [], null, null),
                             error: (e, s) => _buildDropdown('Species', 'Error', [], null, null),
                           ),
@@ -573,18 +586,23 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                         const SizedBox(width: 16),
                         Expanded(
                           child: breedsAsync.when(
-                            data: (breeds) => _buildDropdown(
-                              'Breed', 'Select breed',
-                              breeds.map<DropdownMenuItem<String>>((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
-                              _selectedBreedId,
-                              (v) => setState(() => _selectedBreedId = v),
-                            ),
+                            data: (breeds) {
+                              final seenB = <String>{};
+                              final uniqueBreeds = breeds.where((b) => seenB.add(b.id)).toList();
+                              return _buildDropdown(
+                                'Breed', 'Select breed',
+                                uniqueBreeds.map<DropdownMenuItem<String>>((b) => DropdownMenuItem(value: b.id, child: Text(b.name))).toList(),
+                                uniqueBreeds.any((b) => b.id == _selectedBreedId) ? _selectedBreedId : null,
+                                (v) => setState(() => _selectedBreedId = v),
+                              );
+                            },
                             loading: () => _buildDropdown('Breed', 'Loading...', [], null, null),
                             error: (e, s) => _buildDropdown('Breed', 'Error', [], null, null),
                           ),
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 16),
 
                     // ── Gender & Age ──
@@ -639,17 +657,32 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
 
                     // ── Location ──
                     locationsAsync.when(
-                      data: (locations) => _buildDropdown(
-                        'Location / District', 'Select district',
-                        locations.map<DropdownMenuItem<String>>((l) =>
-                          DropdownMenuItem(value: l.id, child: Text(l.name))
-                        ).toList(),
-                        _selectedLocationId,
-                        (v) => setState(() => _selectedLocationId = v),
-                      ),
+                      data: (locations) {
+                        // Deduplicate by ID in case API returns duplicates
+                        final seen = <String>{};
+                        final uniqueLocations = locations.where((l) => seen.add(l.id)).toList();
+                        // Guard: if current value isn't in list, clear it
+                        if (_selectedLocationId != null &&
+                            !uniqueLocations.any((l) => l.id == _selectedLocationId)) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            if (mounted) setState(() => _selectedLocationId = null);
+                          });
+                        }
+                        return _buildDropdown(
+                          'Location / District', 'Select district',
+                          uniqueLocations.map<DropdownMenuItem<String>>((l) =>
+                            DropdownMenuItem(value: l.id, child: Text(l.name))
+                          ).toList(),
+                          uniqueLocations.any((l) => l.id == _selectedLocationId)
+                              ? _selectedLocationId
+                              : null,
+                          (v) => setState(() => _selectedLocationId = v),
+                        );
+                      },
                       loading: () => _buildDropdown('Location / District', 'Loading...', [], null, null),
                       error: (_, __) => _buildDropdown('Location / District', 'Failed to load', [], null, null),
                     ),
+
                     const SizedBox(height: 16),
 
                     // ── Birth Date ──

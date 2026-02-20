@@ -118,9 +118,21 @@ class ServiceApiService extends BaseApiService {
   Future<ServiceModel> toggleAvailability(String id) async {
     return safeApiCall(() async {
       final response = await dio.patch(
-        '${ApiEndpoints.services}/$id/availability',
+        '${ApiEndpoints.services}/$id/toggle-availability',
       );
       return ServiceModel.fromJson(response.data);
+    });
+  }
+
+  /// Get my services (protected — uses authenticated provider identity)
+  // @protected — requires SERVICES.READ permission
+  Future<List<ServiceModel>> getMyServices() async {
+    return safeApiCall(() async {
+      final response = await dio.get('${ApiEndpoints.services}/my-services');
+      final List<dynamic> data = response.data is List
+          ? response.data
+          : (response.data['data'] ?? []);
+      return data.map((json) => ServiceModel.fromJson(json)).toList();
     });
   }
 }

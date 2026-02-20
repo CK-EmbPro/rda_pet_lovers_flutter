@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/service_providers.dart';
-import '../../../data/providers/auth_providers.dart';
 import '../../../data/models/models.dart';
 import '../widgets/service_form_sheet.dart';
 
@@ -15,8 +15,7 @@ class MyServicesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
-    final servicesAsync = ref.watch(providerServicesProvider(user?.id ?? ''));
+    final servicesAsync = ref.watch(myServicesProvider);
     final isCardView = ref.watch(servicesViewModeProvider);
 
     return Scaffold(
@@ -57,7 +56,7 @@ class MyServicesPage extends ConsumerWidget {
                 Text('Failed to load services', style: AppTypography.body),
                 const SizedBox(height: 8),
                 TextButton(
-                  onPressed: () => ref.invalidate(providerServicesProvider(user?.id ?? '')),
+                  onPressed: () => ref.invalidate(myServicesProvider),
                   child: const Text('Retry'),
                 ),
               ],
@@ -187,13 +186,13 @@ class _ViewToggleButton extends StatelessWidget {
 }
 
 // Service Card View (Grid)
-class _ServiceCardView extends StatelessWidget {
+class _ServiceCardView extends ConsumerWidget {
   final ServiceModel service;
 
   const _ServiceCardView({required this.service});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -246,7 +245,7 @@ class _ServiceCardView extends StatelessWidget {
                 ),
                 onSelected: (value) {
                   if (value == 'delete') {
-                    _showDeleteConfirmation(context);
+                    _showDeleteConfirmation(context, ref);
                   } else if (value == 'edit') {
                     MyServicesPage.showEditServiceSheet(context, service);
                   }
@@ -313,7 +312,7 @@ class _ServiceCardView extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -325,7 +324,18 @@ class _ServiceCardView extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
+              if (context.mounted) {
+                if (success) {
+                  AppToast.success(context, '"${service.name}" has been deleted');
+                  ref.invalidate(myServicesProvider);
+                } else {
+                  AppToast.error(context, 'Failed to delete the service. Please try again.');
+                }
+              }
+            },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
@@ -336,13 +346,13 @@ class _ServiceCardView extends StatelessWidget {
 }
 
 // Service List View
-class _ServiceListView extends StatelessWidget {
+class _ServiceListView extends ConsumerWidget {
   final ServiceModel service;
 
   const _ServiceListView({required this.service});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -421,7 +431,7 @@ class _ServiceListView extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               IconButton(
-                onPressed: () => _showDeleteConfirmation(context),
+                onPressed: () => _showDeleteConfirmation(context, ref),
                 icon: const Icon(Icons.delete_outline, color: AppColors.error),
                 iconSize: 20,
                 style: IconButton.styleFrom(backgroundColor: AppColors.error.withValues(alpha: 0.1)),
@@ -433,7 +443,7 @@ class _ServiceListView extends StatelessWidget {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context) {
+  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -445,7 +455,18 @@ class _ServiceListView extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
+              if (context.mounted) {
+                if (success) {
+                  AppToast.success(context, '"${service.name}" has been deleted');
+                  ref.invalidate(myServicesProvider);
+                } else {
+                  AppToast.error(context, 'Failed to delete the service. Please try again.');
+                }
+              }
+            },
             style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('Delete'),
           ),
