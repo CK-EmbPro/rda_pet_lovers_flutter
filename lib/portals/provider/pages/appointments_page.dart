@@ -159,7 +159,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   List<AppointmentModel> _getFilteredAppointments(List<AppointmentModel> appointments) {
     switch (_selectedFilter) {
       case 0: // Upcoming
-        return appointments.where((a) => a.status == 'CONFIRMED').toList();
+        return appointments.where((a) => a.status == 'ACCEPTED').toList();
       case 1: // Completed
         return appointments.where((a) => a.status == 'COMPLETED').toList();
       case 2: // Pending
@@ -348,7 +348,7 @@ class _AppointmentCardView extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case 'CONFIRMED':
+      case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
         return Colors.orange;
@@ -545,7 +545,7 @@ class _AppointmentListViewState extends ConsumerState<_AppointmentListView> {
                 ],
               ),
             ),
-            // Action buttons for PENDING and CONFIRMED appointments
+            // Action buttons for PENDING and ACCEPTED appointments
             if (status == 'PENDING') ...
               [
                 const SizedBox(height: 12),
@@ -580,7 +580,7 @@ class _AppointmentListViewState extends ConsumerState<_AppointmentListView> {
                   ],
                 ),
               ],
-            if (status == 'CONFIRMED') ...
+            if (status == 'ACCEPTED') ...
               [
                 const SizedBox(height: 12),
                 SizedBox(
@@ -606,7 +606,7 @@ class _AppointmentListViewState extends ConsumerState<_AppointmentListView> {
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case 'CONFIRMED':
+      case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
         return Colors.orange;

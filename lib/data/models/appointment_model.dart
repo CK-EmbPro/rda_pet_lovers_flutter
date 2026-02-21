@@ -10,7 +10,7 @@ class AppointmentModel {
   final DateTime scheduledAt;
   final String? scheduledTime; // Backend sends separate time string
   final int durationMinutes;
-  final String status; // PENDING, CONFIRMED, CANCELLED, COMPLETED, NO_SHOW
+  final String status; // PENDING, ACCEPTED, CANCELLED, COMPLETED, NO_SHOW
   final String? notes;
   final String? customerNotes;
   final String? providerNotes;
@@ -52,28 +52,28 @@ class AppointmentModel {
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
     return AppointmentModel(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      providerId: json['providerId'] as String,
-      serviceId: json['serviceId'] as String,
-      petId: json['petId'] as String?,
+      id: json['id']?.toString() ?? '',
+      userId: (json['userId'] ?? json['petOwnerId'])?.toString() ?? '',
+      providerId: json['providerId']?.toString() ?? '',
+      serviceId: json['serviceId']?.toString() ?? '',
+      petId: json['petId']?.toString(),
       scheduledAt: json['scheduledAt'] != null
-          ? DateTime.parse(json['scheduledAt'] as String)
+          ? DateTime.parse(json['scheduledAt']?.toString() ?? DateTime.now().toIso8601String())
           : (json['scheduledDate'] != null
-              ? _parseDateTime(json['scheduledDate'] as String, json['scheduledTime'] as String?)
+              ? _parseDateTime(json['scheduledDate']?.toString() ?? '', json['scheduledTime']?.toString())
               : DateTime.now()),
-      scheduledTime: json['scheduledTime'] as String?,
+      scheduledTime: json['scheduledTime']?.toString(),
       durationMinutes: json['durationMinutes'] as int? ?? 60,
-      status: json['status'] as String,
-      notes: json['notes'] as String?,
-      customerNotes: json['customerNotes'] as String?,
-      providerNotes: json['providerNotes'] as String?,
-      cancellationReason: json['cancellationReason'] as String?,
+      status: json['status']?.toString().toUpperCase() ?? 'PENDING',
+      notes: json['notes']?.toString(),
+      customerNotes: json['customerNotes']?.toString(),
+      providerNotes: json['providerNotes']?.toString(),
+      cancellationReason: json['cancellationReason']?.toString(),
       totalAmount: _parseDouble(json['totalAmount']),
       servicePrice: _parseDouble(json['servicePrice']),
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: json['createdAt'] != null ? DateTime.parse(json['createdAt'].toString()) : DateTime.now(),
       updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
+          ? DateTime.parse(json['updatedAt'].toString())
           : null,
       service: json['service'] != null
           ? ServiceModel.fromJson(json['service'] as Map<String, dynamic>)
@@ -98,7 +98,7 @@ class AppointmentModel {
   }
 
   bool get isPending => status == 'PENDING';
-  bool get isConfirmed => status == 'CONFIRMED';
+  bool get isAccepted => status == 'ACCEPTED';
   bool get isCancelled => status == 'CANCELLED';
   bool get isCompleted => status == 'COMPLETED';
 
@@ -106,7 +106,7 @@ class AppointmentModel {
     switch (status) {
       case 'PENDING':
         return 'Pending';
-      case 'CONFIRMED':
+      case 'ACCEPTED':
         return 'Confirmed';
       case 'CANCELLED':
         return 'Cancelled';
@@ -160,9 +160,9 @@ class PetBasicInfo {
 
   factory PetBasicInfo.fromJson(Map<String, dynamic> json) {
     return PetBasicInfo(
-      id: json['id'] as String,
-      petCode: json['petCode'] as String,
-      name: json['name'] as String,
+      id: json['id']?.toString() ?? '',
+      petCode: json['petCode']?.toString() ?? 'Unknown',
+      name: json['name']?.toString() ?? 'Unknown',
       breed: json['breed']?['name'] as String? ?? json['breed'] as String?,
       imageUrl: (json['images'] as List?)?.firstOrNull as String?,
     );
@@ -185,10 +185,10 @@ class ProviderBasicInfo {
 
   factory ProviderBasicInfo.fromJson(Map<String, dynamic> json) {
     return ProviderBasicInfo(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      businessName: json['businessName'] as String?,
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? 'Provider',
+      avatarUrl: json['avatarUrl']?.toString(),
+      businessName: json['businessName']?.toString(),
     );
   }
 }
@@ -209,10 +209,10 @@ class UserBasicInfo {
 
   factory UserBasicInfo.fromJson(Map<String, dynamic> json) {
     return UserBasicInfo(
-      id: json['id'] as String,
-      fullName: json['fullName'] as String,
-      avatarUrl: json['avatarUrl'] as String?,
-      phone: json['phone'] as String?,
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? 'User',
+      avatarUrl: json['avatarUrl']?.toString(),
+      phone: json['phone']?.toString(),
     );
   }
 }

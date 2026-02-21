@@ -4,6 +4,7 @@ class UserModel {
   final String? userCode;
   final String email;
   final String fullName;
+  final String? businessName;
   final String? phone;
   final String? avatarUrl;
   final String? bio;
@@ -20,6 +21,7 @@ class UserModel {
     this.userCode,
     required this.email,
     required this.fullName,
+    this.businessName,
     this.phone,
     this.avatarUrl,
     this.bio,
@@ -65,6 +67,7 @@ class UserModel {
       userCode: json['userCode']?.toString(),
       email: json['email']?.toString() ?? '',
       fullName: json['fullName']?.toString() ?? '',
+      businessName: json['businessName']?.toString(),
       phone: json['phone']?.toString(),
       avatarUrl: json['avatarUrl']?.toString(),
       bio: json['bio']?.toString(),
@@ -88,6 +91,7 @@ class UserModel {
       'userCode': userCode,
       'email': email,
       'fullName': fullName,
+      'businessName': businessName,
       'phone': phone,
       'avatarUrl': avatarUrl,
       'bio': bio,
@@ -116,6 +120,7 @@ class UserModel {
     String? userCode,
     String? email,
     String? fullName,
+    String? businessName,
     String? phone,
     String? avatarUrl,
     String? bio,
@@ -132,6 +137,7 @@ class UserModel {
       userCode: userCode ?? this.userCode,
       email: email ?? this.email,
       fullName: fullName ?? this.fullName,
+      businessName: businessName ?? this.businessName,
       phone: phone ?? this.phone,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bio: bio ?? this.bio,

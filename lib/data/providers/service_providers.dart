@@ -1,75 +1,97 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
 import '../models/models.dart';
-import '../services/pet_service.dart';
+import '../services/pet_service.dart' show PaginatedResponse;
 import '../services/service_api_service.dart';
 
-/// Singleton ServiceApiService provider
+/// Singleton provider for the ServiceApiService
 final serviceApiServiceProvider = Provider<ServiceApiService>((ref) {
   return ServiceApiService(DioClient());
 });
 
-/// All services (public, paginated)
+// ---------------------------------------------------------------------------
+// Public providers
+// ---------------------------------------------------------------------------
+
+/// All available services (public, paginated)
 final allServicesProvider = FutureProvider.autoDispose
     .family<PaginatedResponse<ServiceModel>, ServiceQueryParams>(
         (ref, params) async {
-  final service = ref.read(serviceApiServiceProvider);
-  return service.getAll(
+  final api = ref.read(serviceApiServiceProvider);
+  return api.getAll(
     page: params.page,
     limit: params.limit,
     categoryId: params.categoryId,
-    serviceType: params.serviceType,
+    paymentType: params.paymentType,
     search: params.search,
   );
 });
 
-/// Services by provider (public — used for viewing another provider's services)
+/// Services by a given provider ID (public — for viewing another provider)
 final providerServicesProvider = FutureProvider.autoDispose
     .family<List<ServiceModel>, String>((ref, providerId) async {
-  final service = ref.read(serviceApiServiceProvider);
-  return service.getByProvider(providerId);
+  final api = ref.read(serviceApiServiceProvider);
+  return api.getByProvider(providerId);
 });
 
-/// My own services as a provider (authenticated — uses /services/my-services)
-final myServicesProvider = FutureProvider.autoDispose<List<ServiceModel>>((ref) async {
-  final service = ref.read(serviceApiServiceProvider);
-  return service.getMyServices();
+/// All service categories from the services API (public — used in create/edit form picker)
+/// Returns List<ServiceCategory> from the services module backend endpoint.
+final serviceApiCategoriesProvider =
+    FutureProvider.autoDispose<List<ServiceCategory>>((ref) async {
+  final api = ref.read(serviceApiServiceProvider);
+  return api.getCategories();
 });
 
-/// Single service detail
+/// Single service detail (public)
 final serviceDetailProvider =
     FutureProvider.autoDispose.family<ServiceModel, String>((ref, id) async {
-  final service = ref.read(serviceApiServiceProvider);
-  return service.getById(id);
+  final api = ref.read(serviceApiServiceProvider);
+  return api.getById(id);
 });
 
-/// Service CRUD notifier
-class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
-  final ServiceApiService _service;
+// ---------------------------------------------------------------------------
+// Protected providers (require auth)
+// ---------------------------------------------------------------------------
 
-  ServiceCrudNotifier(this._service) : super(const AsyncValue.data(null));
+/// The authenticated provider's own services
+final myServicesProvider =
+    FutureProvider.autoDispose<List<ServiceModel>>((ref) async {
+  final api = ref.read(serviceApiServiceProvider);
+  return api.getMyServices();
+});
+
+// ---------------------------------------------------------------------------
+// CRUD state notifier
+// ---------------------------------------------------------------------------
+
+class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
+  final ServiceApiService _api;
+
+  ServiceCrudNotifier(this._api) : super(const AsyncValue.data(null));
 
   Future<ActionResponse<ServiceModel>> createService({
     required String name,
     required double basePrice,
     String? description,
+    String paymentType = 'PAY_UPFRONT',
     double? priceYoungPet,
     double? priceOldPet,
     int? durationMinutes,
     String? categoryId,
-    String? paymentType,
+    bool requiresSubscription = false,
   }) async {
     state = const AsyncValue.loading();
     try {
-      final result = await _service.create(
+      final result = await _api.create(
         name: name,
         basePrice: basePrice,
         description: description,
+        paymentType: paymentType,
         priceYoungPet: priceYoungPet,
         priceOldPet: priceOldPet,
         durationMinutes: durationMinutes,
         categoryId: categoryId,
-        paymentType: paymentType,
+        requiresSubscription: requiresSubscription,
       );
       state = const AsyncValue.data(null);
       return result;
@@ -79,11 +101,12 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
+  /// [updates] must contain only valid backend DTO keys (e.g. paymentType, basePrice).
   Future<ActionResponse<ServiceModel>> updateService(
       String id, Map<String, dynamic> updates) async {
     state = const AsyncValue.loading();
     try {
-      final result = await _service.update(id, updates);
+      final result = await _api.update(id, updates);
       state = const AsyncValue.data(null);
       return result;
     } catch (e, st) {
@@ -95,7 +118,7 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
   Future<ActionResponse<void>> deleteService(String id) async {
     state = const AsyncValue.loading();
     try {
-      final result = await _service.delete(id);
+      final result = await _api.delete(id);
       state = const AsyncValue.data(null);
       return result;
     } catch (e, st) {
@@ -107,7 +130,7 @@ class ServiceCrudNotifier extends StateNotifier<AsyncValue<void>> {
   Future<ActionResponse<ServiceModel>> toggleAvailability(String id) async {
     state = const AsyncValue.loading();
     try {
-      final result = await _service.toggleAvailability(id);
+      final result = await _api.toggleAvailability(id);
       state = const AsyncValue.data(null);
       return result;
     } catch (e, st) {
@@ -122,19 +145,22 @@ final serviceCrudProvider =
   return ServiceCrudNotifier(ref.read(serviceApiServiceProvider));
 });
 
-/// Query parameters for service listing
+// ---------------------------------------------------------------------------
+// Query params helper
+// ---------------------------------------------------------------------------
+
 class ServiceQueryParams {
   final int page;
   final int limit;
   final String? categoryId;
-  final String? serviceType;
+  final String? paymentType;
   final String? search;
 
   const ServiceQueryParams({
     this.page = 1,
     this.limit = 10,
     this.categoryId,
-    this.serviceType,
+    this.paymentType,
     this.search,
   });
 
@@ -145,10 +171,10 @@ class ServiceQueryParams {
           page == other.page &&
           limit == other.limit &&
           categoryId == other.categoryId &&
-          serviceType == other.serviceType &&
+          paymentType == other.paymentType &&
           search == other.search;
 
   @override
   int get hashCode =>
-      Object.hash(page, limit, categoryId, serviceType, search);
+      Object.hash(page, limit, categoryId, paymentType, search);
 }

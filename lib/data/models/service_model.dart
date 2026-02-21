@@ -1,74 +1,105 @@
-/// Service Model matching backend PetService entity
-class ServiceModel {
+/// Service Category Model — matches backend ServiceCategory entity
+class ServiceCategory {
   final String id;
-  final String providerId;
-  final String serviceType; // WALKING, GROOMING, TRAINING, VETERINARY
   final String name;
   final String? description;
-  final double fee; // Maps to backend 'basePrice'
-  final double? priceYoungPet;
-  final double? priceOldPet;
-  final int? durationMinutes;
-  final String? categoryId;
-  final String paymentMethod; // PAY_BEFORE, PAY_AFTER
-  final String? paymentType; // Backend enum
-  final bool? requiresSubscription;
+  final String? icon;
   final bool isActive;
-  final DateTime createdAt;
 
-  // Nested data
-  final ProviderInfo? provider;
-
-  ServiceModel({
+  const ServiceCategory({
     required this.id,
-    required this.providerId,
-    required this.serviceType,
     required this.name,
     this.description,
-    required this.fee,
-    this.priceYoungPet,
-    this.priceOldPet,
-    this.durationMinutes,
-    this.categoryId,
-    required this.paymentMethod,
-    this.paymentType,
-    this.requiresSubscription,
+    this.icon,
     this.isActive = true,
-    required this.createdAt,
-    this.provider,
   });
 
-  factory ServiceModel.empty() {
-    return ServiceModel(
-      id: '',
-      providerId: '',
-      serviceType: '',
-      name: '',
-      fee: 0,
-      paymentMethod: 'PAY_BEFORE',
-      createdAt: DateTime.now(),
+  factory ServiceCategory.fromJson(Map<String, dynamic> json) {
+    return ServiceCategory(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Unknown',
+      description: json['description']?.toString(),
+      icon: json['icon']?.toString(),
+      isActive: json['isActive'] as bool? ?? true,
     );
   }
 
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'name': name,
+        'description': description,
+        'icon': icon,
+        'isActive': isActive,
+      };
+}
+
+/// Service Model — mirrors backend `Service` entity exactly.
+/// Backend field names are used as the canonical source of truth.
+class ServiceModel {
+  final String id;
+  final String serviceCode;
+  final String providerId;
+  final String? categoryId;
+  final String name;
+  final String? description;
+  final double basePrice;
+  final String currency;
+  final String paymentType; // PAY_UPFRONT | PAY_AFTER | SUBSCRIPTION
+  final double? priceYoungPet;
+  final double? priceOldPet;
+  final int? durationMinutes;
+  final bool isAvailable;
+  final bool requiresSubscription;
+  final DateTime createdAt;
+
+  // Nested (optional — depends on which endpoint is called)
+  final ServiceCategory? category;
+  final ProviderInfo? provider;
+
+  const ServiceModel({
+    required this.id,
+    required this.serviceCode,
+    required this.providerId,
+    this.categoryId,
+    required this.name,
+    this.description,
+    required this.basePrice,
+    this.currency = 'RWF',
+    this.paymentType = 'PAY_UPFRONT',
+    this.priceYoungPet,
+    this.priceOldPet,
+    this.durationMinutes,
+    this.isAvailable = true,
+    this.requiresSubscription = false,
+    required this.createdAt,
+    this.category,
+    this.provider,
+  });
+
   factory ServiceModel.fromJson(Map<String, dynamic> json) {
     return ServiceModel(
-      id: _extractString(json['id'], key: 'id') ?? '',
-      providerId: _extractString(json['providerId'], key: 'id') ?? '',
-      serviceType: _extractString(json['serviceType']) ?? _extractString(json['category'], key: 'name') ?? 'OTHER',
-      name: _extractString(json['name']) ?? 'Unknown Service',
-      description: _extractString(json['description']),
-      fee: _parseDouble(json['basePrice']) ?? _parseDouble(json['fee']) ?? 0,
+      id: json['id']?.toString() ?? '',
+      serviceCode: json['serviceCode']?.toString() ?? '',
+      providerId: json['providerId']?.toString() ?? '',
+      categoryId: json['categoryId']?.toString(),
+      name: json['name']?.toString() ?? 'Unknown Service',
+      description: json['description']?.toString(),
+      basePrice: _parseDouble(json['basePrice']) ?? 0.0,
+      currency: json['currency']?.toString() ?? 'RWF',
+      paymentType: json['paymentType']?.toString() ?? 'PAY_UPFRONT',
       priceYoungPet: _parseDouble(json['priceYoungPet']),
       priceOldPet: _parseDouble(json['priceOldPet']),
-      durationMinutes: json['durationMinutes'] as int?,
-      categoryId: _extractString(json['categoryId'], key: 'id'),
-      paymentMethod: _extractString(json['paymentMethod']) ?? _extractString(json['paymentType']) ?? 'PAY_BEFORE',
-      paymentType: _extractString(json['paymentType']),
-      requiresSubscription: json['requiresSubscription'] as bool?,
-      isActive: json['isActive'] as bool? ?? true,
+      durationMinutes: json['durationMinutes'] is int
+          ? json['durationMinutes'] as int
+          : int.tryParse(json['durationMinutes']?.toString() ?? ''),
+      isAvailable: json['isAvailable'] as bool? ?? true,
+      requiresSubscription: json['requiresSubscription'] as bool? ?? false,
       createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toString())
+          ? DateTime.tryParse(json['createdAt'].toString()) ?? DateTime.now()
           : DateTime.now(),
+      category: json['category'] != null
+          ? ServiceCategory.fromJson(json['category'] as Map<String, dynamic>)
+          : null,
       provider: json['provider'] != null
           ? ProviderInfo.fromJson(json['provider'] as Map<String, dynamic>)
           : null,
@@ -82,115 +113,101 @@ class ServiceModel {
     return null;
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'providerId': providerId,
-      'serviceType': serviceType,
-      'name': name,
-      'description': description,
-      'basePrice': fee,
-      'priceYoungPet': priceYoungPet,
-      'priceOldPet': priceOldPet,
-      'durationMinutes': durationMinutes,
-      'categoryId': categoryId,
-      'paymentType': paymentType ?? paymentMethod,
-      'requiresSubscription': requiresSubscription,
-      'isActive': isActive,
-      'createdAt': createdAt.toIso8601String(),
-    };
-  }
-
-  /// Create DTO for submission to backend
-  Map<String, dynamic> toCreateJson() {
+  /// Build the correct payload for creating or updating a service.
+  /// Only includes non-null optional fields.
+  Map<String, dynamic> toCreateDto() {
     return {
       'name': name,
-      'basePrice': fee,
-      if (description != null) 'description': description,
+      'basePrice': basePrice,
+      if (description != null && description!.isNotEmpty) 'description': description,
+      'paymentType': paymentType,
       if (priceYoungPet != null) 'priceYoungPet': priceYoungPet,
       if (priceOldPet != null) 'priceOldPet': priceOldPet,
       if (durationMinutes != null) 'durationMinutes': durationMinutes,
       if (categoryId != null) 'categoryId': categoryId,
-      if (paymentType != null) 'paymentType': paymentType,
-      if (requiresSubscription != null) 'requiresSubscription': requiresSubscription,
+      if (requiresSubscription) 'requiresSubscription': requiresSubscription,
     };
   }
 
-  String get displayServiceType {
-    switch (serviceType) {
-      case 'WALKING':
-        return 'Pet Walking';
-      case 'GROOMING':
-        return 'Pet Grooming';
-      case 'TRAINING':
-        return 'Pet Training';
-      case 'VETERINARY':
-        return 'Veterinary';
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'serviceCode': serviceCode,
+      'providerId': providerId,
+      'categoryId': categoryId,
+      'name': name,
+      'description': description,
+      'basePrice': basePrice,
+      'currency': currency,
+      'paymentType': paymentType,
+      'priceYoungPet': priceYoungPet,
+      'priceOldPet': priceOldPet,
+      'durationMinutes': durationMinutes,
+      'isAvailable': isAvailable,
+      'requiresSubscription': requiresSubscription,
+      'createdAt': createdAt.toIso8601String(),
+    };
+  }
+
+  /// Human-readable payment type label
+  String get paymentTypeLabel {
+    switch (paymentType) {
+      case 'PAY_UPFRONT':
+        return 'Pay Upfront';
+      case 'PAY_AFTER':
+        return 'Pay After';
+      case 'SUBSCRIPTION':
+        return 'Subscription';
       default:
-        return serviceType;
+        return paymentType;
     }
   }
 
-  String get iconName {
-    switch (serviceType) {
-      case 'WALKING':
-        return 'footprints';
-      case 'GROOMING':
-        return 'scissors';
-      case 'TRAINING':
-        return 'coach';
-      case 'VETERINARY':
-        return 'medical';
-      default:
-        return 'services';
-    }
+  /// Duration formatted for display
+  String get durationLabel {
+    if (durationMinutes == null) return 'N/A';
+    if (durationMinutes! < 60) return '${durationMinutes} min';
+    final h = durationMinutes! ~/ 60;
+    final m = durationMinutes! % 60;
+    return m > 0 ? '${h}h ${m}min' : '${h}h';
   }
 }
 
-/// Safely extract a String from a value that might be a String, Map, or null.
-/// If it's a Map, extracts [key] (default 'name') from it.
-String? _extractString(dynamic value, {String key = 'name'}) {
-  if (value == null) return null;
-  if (value is String) return value;
-  if (value is Map) return value[key]?.toString();
-  return value.toString();
-}
-
-/// Provider Info (for service cards)
+/// Provider Info — nested inside service responses
 class ProviderInfo {
   final String id;
   final String fullName;
   final String? avatarUrl;
   final String? phone;
   final String? email;
-  final String? specialty;
-  final String? businessName;
+  final String? title;
+  final String? titleDescription;
+  final double? rating;
   final String? workingHours;
-  final bool isAvailable;
 
-  ProviderInfo({
+  const ProviderInfo({
     required this.id,
     required this.fullName,
     this.avatarUrl,
     this.phone,
     this.email,
-    this.specialty,
-    this.businessName,
+    this.title,
+    this.titleDescription,
+    this.rating,
     this.workingHours,
-    this.isAvailable = true,
   });
 
   factory ProviderInfo.fromJson(Map<String, dynamic> json) {
     return ProviderInfo(
-      id: _extractString(json['id'], key: 'id') ?? '',
-      fullName: _extractString(json['fullName'], key: 'fullName') ?? _extractString(json['user'], key: 'firstName') ?? 'Provider',
-      avatarUrl: _extractString(json['avatarUrl']),
-      phone: _extractString(json['phone']),
-      email: _extractString(json['email']),
-      specialty: _extractString(json['specialty']),
-      businessName: _extractString(json['businessName']),
-      workingHours: _extractString(json['workingHours']),
-      isAvailable: json['isAvailable'] as bool? ?? true,
+      id: json['id']?.toString() ?? '',
+      fullName: json['fullName']?.toString() ?? 'Provider',
+      avatarUrl: json['avatarUrl']?.toString(),
+      phone: json['phone']?.toString(),
+      email: json['email']?.toString(),
+      title: json['title']?.toString(),
+      titleDescription: json['titleDescription']?.toString(),
+      rating: ServiceModel._parseDouble(json['rating']),
+      workingHours: json['workingHours']?.toString(),
     );
   }
 }

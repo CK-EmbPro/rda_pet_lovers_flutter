@@ -30,7 +30,7 @@ class AllAppointmentsSheet extends ConsumerWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case 'CONFIRMED':
+      case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
         return Colors.orange;

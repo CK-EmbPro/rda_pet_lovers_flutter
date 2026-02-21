@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../portals/user/user_portal.dart';
 import '../../portals/pet_owner/pet_owner_portal.dart';
 import '../../portals/pet_owner/pages/my_pet_details_page.dart';
+import '../../portals/pet_owner/pages/pet_owner_appointments_page.dart';
 import '../../portals/shop_owner/shop_owner_portal.dart';
 import '../../portals/provider/provider_portal.dart';
 
@@ -106,6 +107,10 @@ class AppRouter {
       GoRoute(
         path: '/cart',
         builder: (context, state) => const CartPage(),
+      ),
+      GoRoute(
+        path: '/appointments',
+        builder: (context, state) => const PetOwnerAppointmentsPage(),
       ),
       GoRoute(
         path: '/checkout',

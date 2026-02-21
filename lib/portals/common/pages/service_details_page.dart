@@ -105,7 +105,8 @@ class ServiceDetailsPage extends ConsumerWidget {
                      border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
                   ),
                   child: Icon(
-                    _getIconForType(service.serviceType),
+                    _getIconForType(service.category?.name ?? ''),
+                    
                     size: 48,
                     color: Colors.white,
                   ),
@@ -129,7 +130,7 @@ class ServiceDetailsPage extends ConsumerWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    service.displayServiceType,
+                    service.category?.name ?? service.paymentTypeLabel,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -150,23 +151,22 @@ class ServiceDetailsPage extends ConsumerWidget {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(child: _StatCard(
-            label: 'Fee', 
-            // Formatted fee
-            value: '${service.fee.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => "${m[1]}, ")} RWF', 
-            icon: Icons.payments_outlined
+            label: 'Price',
+            value: '${service.basePrice.toInt()} ${service.currency}',
+            icon: Icons.payments_outlined,
         )),
         const SizedBox(width: 12),
         Expanded(child: _StatCard(
-            label: 'Payment', 
-            value: service.paymentMethod == 'PAY_BEFORE' ? 'Pre-paid' : 'Post-paid', 
-            icon: Icons.history
+            label: 'Payment',
+            value: service.paymentTypeLabel,
+            icon: Icons.history,
         )),
         const SizedBox(width: 12),
         Expanded(child: _StatCard(
-            label: 'Status', 
-            value: service.isActive ? 'Active' : 'Inactive', 
+            label: 'Status',
+            value: service.isAvailable ? 'Active' : 'Inactive',
             icon: Icons.check_circle_outline,
-            valueColor: service.isActive ? AppColors.success : AppColors.textSecondary,
+            valueColor: service.isAvailable ? AppColors.success : AppColors.textSecondary,
         )),
       ],
     );
@@ -232,9 +232,9 @@ class ServiceDetailsPage extends ConsumerWidget {
                       provider.fullName,
                       style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
                     ),
-                    if (provider.businessName != null)
+                    if (provider.title != null)
                       Text(
-                        provider.businessName!,
+                        provider.title!,
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
                       ),
                   ],
@@ -276,6 +276,7 @@ class ServiceDetailsPage extends ConsumerWidget {
 
   Widget _buildDescription(String? description) {
     return Container(
+       width: double.infinity,
        padding: const EdgeInsets.all(24),
        decoration: BoxDecoration(
          color: Colors.white,
@@ -319,19 +320,14 @@ class ServiceDetailsPage extends ConsumerWidget {
     );
   }
 
-  IconData _getIconForType(String type) {
-    switch (type) {
-      case 'WALKING':
-        return Icons.pets;
-      case 'GROOMING':
-        return Icons.content_cut;
-      case 'TRAINING':
-        return Icons.school;
-      case 'VETERINARY':
-        return Icons.medical_services;
-      default:
-        return Icons.miscellaneous_services;
-    }
+  IconData _getIconForType(String categoryName) {
+    final lower = categoryName.toLowerCase();
+    if (lower.contains('walk')) return Icons.pets;
+    if (lower.contains('groom')) return Icons.content_cut;
+    if (lower.contains('train')) return Icons.school;
+    if (lower.contains('vet') || lower.contains('medical')) return Icons.medical_services;
+    if (lower.contains('sit') || lower.contains('daycare')) return Icons.home_outlined;
+    return Icons.design_services;
   }
 }
 
@@ -399,9 +395,13 @@ class _ProviderDetailItem extends StatelessWidget {
             '$label: ',
             style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
           ),
-          Text(
-            value,
-            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
         ],
       ),

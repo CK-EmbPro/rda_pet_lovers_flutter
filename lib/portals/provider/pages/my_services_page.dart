@@ -7,8 +7,7 @@ import '../../../data/providers/service_providers.dart';
 import '../../../data/models/models.dart';
 import '../widgets/service_form_sheet.dart';
 
-// Provider for services listing mode
-final servicesViewModeProvider = StateProvider<bool>((ref) => true); // true = card, false = list
+final _servicesViewModeProvider = StateProvider<bool>((ref) => true); // true = grid
 
 class MyServicesPage extends ConsumerWidget {
   const MyServicesPage({super.key});
@@ -16,62 +15,69 @@ class MyServicesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final servicesAsync = ref.watch(myServicesProvider);
-    final isCardView = ref.watch(servicesViewModeProvider);
+    final isCardView = ref.watch(_servicesViewModeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: NestedScrollView(
-        headerSliverBuilder: (context, innerBoxIsScrolled) => [
+        headerSliverBuilder: (context, _) => [
           SliverAppBar(
-            expandedHeight: 120,
+            expandedHeight: 110,
             floating: true,
             pinned: true,
             backgroundColor: AppColors.primary,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: BoxDecoration(
-                  gradient: AppTheme.primaryGradient,
-                ),
+                decoration: BoxDecoration(gradient: AppTheme.primaryGradient),
               ),
-              title: const Text('My Services', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              title: const Text(
+                'My Services',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              ),
               centerTitle: false,
               titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
             ),
             actions: [
               IconButton(
-                icon: const Icon(Icons.add_circle_outline, color: Colors.white),
-                onPressed: () => _showAddServiceSheet(context),
+                icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 26),
+                tooltip: 'Create Service',
+                onPressed: () => ServiceFormSheet.show(context),
               ),
+              const SizedBox(width: 4),
             ],
           ),
         ],
         body: servicesAsync.when(
-          loading: () => Center(child: CircularProgressIndicator()),
+          loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                 const SizedBox(height: 16),
-                Text('Failed to load services', style: AppTypography.body),
+                const Text(
+                  'Failed to load services',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
-                TextButton(
+                TextButton.icon(
                   onPressed: () => ref.invalidate(myServicesProvider),
-                  child: const Text('Retry'),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Retry'),
                 ),
               ],
             ),
           ),
           data: (services) => Column(
             children: [
-              // View Toggle Header
+              // ── Header bar ─────────────────────────────────────────────
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '${services.length} Services',
+                      '${services.length} ${services.length == 1 ? "Service" : "Services"}',
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -80,33 +86,35 @@ class MyServicesPage extends ConsumerWidget {
                     ),
                     Row(
                       children: [
-                        _ViewToggleButton(
+                        _ViewToggle(
                           icon: Icons.grid_view_rounded,
                           isSelected: isCardView,
-                          onTap: () => ref.read(servicesViewModeProvider.notifier).state = true,
+                          onTap: () =>
+                              ref.read(_servicesViewModeProvider.notifier).state = true,
                         ),
                         const SizedBox(width: 8),
-                        _ViewToggleButton(
+                        _ViewToggle(
                           icon: Icons.view_list_rounded,
                           isSelected: !isCardView,
-                          onTap: () => ref.read(servicesViewModeProvider.notifier).state = false,
+                          onTap: () =>
+                              ref.read(_servicesViewModeProvider.notifier).state = false,
                         ),
                       ],
                     ),
                   ],
                 ),
               ),
-              // Services List
+              // ── Content ────────────────────────────────────────────────
               Expanded(
                 child: services.isEmpty
                     ? const EmptyState(
-                        icon: Icons.design_services,
-                        title: 'No Services',
-                        subtitle: 'Create your first service to see it here!',
+                        icon: Icons.design_services_outlined,
+                        title: 'No Services Yet',
+                        subtitle: 'Tap + above to create your first service',
                       )
                     : isCardView
-                        ? _buildCardView(context, services)
-                        : _buildListView(context, services),
+                        ? _buildGrid(context, services)
+                        : _buildList(context, services),
               ),
             ],
           ),
@@ -115,48 +123,46 @@ class MyServicesPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildCardView(BuildContext context, List<ServiceModel> services) {
+  Widget _buildGrid(BuildContext context, List<ServiceModel> services) {
     return GridView.builder(
-        padding: const EdgeInsets.all(16),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 0.75,
-        ),
-        itemCount: services.length,
-        itemBuilder: (context, index) {
-            return _ServiceCardView(service: services[index]);
-        },
+      padding: const EdgeInsets.all(16),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 0.72,
+      ),
+      itemCount: services.length,
+      itemBuilder: (_, i) => _ServiceCard(service: services[i]),
     );
   }
 
-  Widget _buildListView(BuildContext context, List<ServiceModel> services) {
+  Widget _buildList(BuildContext context, List<ServiceModel> services) {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: services.length,
-      itemBuilder: (context, index) {
-        return _ServiceListView(service: services[index]);
-      },
+      itemBuilder: (_, i) => _ServiceListTile(service: services[i]),
     );
   }
 
-  void _showAddServiceSheet(BuildContext context) {
-    ServiceFormSheet.show(context);
+  static void showEdit(BuildContext context, ServiceModel service) {
+    ServiceFormSheet.show(context, service: service);
   }
 
+  // Keep backward-compatible alias
   static void showEditServiceSheet(BuildContext context, ServiceModel service) {
     ServiceFormSheet.show(context, service: service);
   }
 }
 
-// View Toggle Button
-class _ViewToggleButton extends StatelessWidget {
+// ─── View Toggle ─────────────────────────────────────────────────────────────
+
+class _ViewToggle extends StatelessWidget {
   final IconData icon;
   final bool isSelected;
   final VoidCallback onTap;
 
-  const _ViewToggleButton({
+  const _ViewToggle({
     required this.icon,
     required this.isSelected,
     required this.onTap,
@@ -173,7 +179,15 @@ class _ViewToggleButton extends StatelessWidget {
           color: isSelected ? AppColors.secondary : Colors.white,
           borderRadius: BorderRadius.circular(8),
           border: isSelected ? null : Border.all(color: AppColors.border),
-          boxShadow: isSelected ? [BoxShadow(color: AppColors.secondary.withValues(alpha: 0.3), blurRadius: 4, offset: const Offset(0, 2))] : null,
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.secondary.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  )
+                ]
+              : null,
         ),
         child: Icon(
           icon,
@@ -185,177 +199,127 @@ class _ViewToggleButton extends StatelessWidget {
   }
 }
 
-// Service Card View (Grid)
-class _ServiceCardView extends ConsumerWidget {
+// ─── Service Card (Grid) ──────────────────────────────────────────────────────
+
+class _ServiceCard extends ConsumerWidget {
   final ServiceModel service;
 
-  const _ServiceCardView({required this.service});
+  const _ServiceCard({required this.service});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: AppTheme.cardShadow,
-        border: Border.all(color: Colors.transparent),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with status and options
+          // ── Header: status + 3-dot menu ──────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: service.isActive ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      service.isActive ? Icons.check_circle : Icons.cancel,
-                      size: 12,
-                      color: service.isActive ? AppColors.success : AppColors.error,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      service.isActive ? 'Active' : 'Inactive',
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: service.isActive ? AppColors.success : AppColors.error,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: BoxDecoration(
-                    color: AppColors.textSecondary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(Icons.more_horiz, size: 16, color: AppColors.textSecondary),
-                ),
-                onSelected: (value) {
-                  if (value == 'delete') {
-                    _showDeleteConfirmation(context, ref);
-                  } else if (value == 'edit') {
-                    MyServicesPage.showEditServiceSheet(context, service);
-                  }
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: 'edit', child: Row(children: [Icon(Icons.edit, size: 18), SizedBox(width: 8), Text('Edit')])),
-                  const PopupMenuItem(value: 'delete', child: Row(children: [Icon(Icons.delete, color: AppColors.error, size: 18), SizedBox(width: 8), Text('Delete', style: TextStyle(color: AppColors.error))])),
-                ],
+              _AvailabilityBadge(isAvailable: service.isAvailable),
+              _ServicePopupMenu(
+                service: service,
+                onDelete: () => _confirmDelete(context, ref),
               ),
             ],
           ),
           const Spacer(),
-          // Service Name
+          // ── Service icon ────────────────────────────────────────────
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.secondary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.design_services, color: AppColors.secondary, size: 22),
+          ),
+          const SizedBox(height: 10),
+          // ── Name ────────────────────────────────────────────────────
           Text(
             service.name,
-            style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: Color(0xFF1E293B)),
+            style: const TextStyle(
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
+              color: Color(0xFF1E293B),
+            ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 8),
-          // Details
+          const SizedBox(height: 6),
+          // ── Category ────────────────────────────────────────────────
+          if (service.category != null) ...[
+            Text(
+              service.category!.name,
+              style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            const SizedBox(height: 4),
+          ],
+          // ── Price ───────────────────────────────────────────────────
           Row(
             children: [
-               Icon(Icons.payments_outlined, size: 14, color: AppColors.textSecondary),
-               const SizedBox(width: 4),
-               Text(
-                 '${service.fee.toInt()} RWF',
-                 style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.secondary),
-               ),
+              const Icon(Icons.payments_outlined, size: 13, color: AppColors.secondary),
+              const SizedBox(width: 4),
+              Text(
+                '${service.basePrice.toInt()} ${service.currency}',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.secondary,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 4),
-          Row(
-            children: [
-               Icon(Icons.info_outline, size: 14, color: AppColors.textSecondary),
-               const SizedBox(width: 4),
-               Expanded(
-                 child: Text(
-                   service.paymentMethod == 'PAY_BEFORE' ? 'Pay Before' : 'Pay After',
-                   style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                   overflow: TextOverflow.ellipsis,
-                 ),
-               ),
-            ],
+          // ── Payment type ─────────────────────────────────────────────
+          Text(
+            service.paymentTypeLabel,
+            style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
           ),
-          const SizedBox(height: 12),
-          // Edit Button
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => MyServicesPage.showEditServiceSheet(context, service),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.secondary,
-                side: const BorderSide(color: AppColors.secondary),
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                minimumSize: const Size(0, 36),
-              ),
-              child: const Text('Edit Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+          // ── Duration ─────────────────────────────────────────────────
+          if (service.durationMinutes != null) ...[
+            const SizedBox(height: 2),
+            Row(
+              children: [
+                const Icon(Icons.timer_outlined, size: 12, color: AppColors.textMuted),
+                const SizedBox(width: 3),
+                Text(
+                  service.durationLabel,
+                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                ),
+              ],
             ),
-          ),
+          ],
         ],
       ),
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Service'),
-        content: Text('Are you sure you want to delete "${service.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final result = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
-              if (context.mounted) {
-                if (result.success) {
-                  AppToast.success(context, result.message);
-                  ref.invalidate(myServicesProvider);
-                } else {
-                  AppToast.error(context, result.message);
-                }
-              }
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    _showDeleteDialog(context, ref, service);
   }
 }
 
-// Service List View
-class _ServiceListView extends ConsumerWidget {
+// ─── Service List Tile ────────────────────────────────────────────────────────
+
+class _ServiceListTile extends ConsumerWidget {
   final ServiceModel service;
 
-  const _ServiceListView({required this.service});
+  const _ServiceListTile({required this.service});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
@@ -363,115 +327,276 @@ class _ServiceListView extends ConsumerWidget {
       ),
       child: Row(
         children: [
-          // Icon
+          // ── Icon ──────────────────────────────────────────────────────
           Container(
-            width: 56,
-            height: 56,
+            width: 52,
+            height: 52,
             decoration: BoxDecoration(
-              color: service.isActive ? AppColors.secondary.withValues(alpha: 0.1) : AppColors.inputFill,
-              borderRadius: BorderRadius.circular(16),
+              color: service.isAvailable
+                  ? AppColors.secondary.withValues(alpha: 0.1)
+                  : AppColors.inputFill,
+              borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               Icons.design_services,
-              color: service.isActive ? AppColors.secondary : AppColors.textMuted,
+              color: service.isAvailable ? AppColors.secondary : AppColors.textMuted,
+              size: 24,
             ),
           ),
-          const SizedBox(width: 16),
-          // Details
+          const SizedBox(width: 14),
+          // ── Details ───────────────────────────────────────────────────
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
-                   children: [
-                     Expanded(
-                       child: Text(
-                         service.name,
-                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
-                         maxLines: 1,
-                         overflow: TextOverflow.ellipsis,
-                       ),
-                     ),
-                     if (!service.isActive)
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: AppColors.error.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(4)),
-                          child: const Text('INACTIVE', style: TextStyle(fontSize: 9, color: AppColors.error, fontWeight: FontWeight.bold)),
+                  children: [
+                    Expanded(
+                      child: Text(
+                        service.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: Color(0xFF1E293B),
                         ),
-                   ],
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    _AvailabilityBadge(isAvailable: service.isAvailable, compact: true),
+                  ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
+                if (service.category != null) ...[
+                  Text(
+                    service.category!.name,
+                    style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                  ),
+                  const SizedBox(height: 2),
+                ],
                 Row(
                   children: [
                     Text(
-                      '${service.fee.toInt()} RWF',
-                      style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 13),
+                      '${service.basePrice.toInt()} ${service.currency}',
+                      style: const TextStyle(
+                        color: AppColors.secondary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 13,
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    Container(width: 4, height: 4, decoration: const BoxDecoration(color: AppColors.textMuted, shape: BoxShape.circle)),
+                    const _Dot(),
                     const SizedBox(width: 8),
                     Text(
-                      service.paymentMethod == 'PAY_BEFORE' ? 'Pay Before' : 'Pay After',
+                      service.paymentTypeLabel,
                       style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
                     ),
+                    if (service.durationMinutes != null) ...[
+                      const SizedBox(width: 8),
+                      const _Dot(),
+                      const SizedBox(width: 8),
+                      Text(
+                        service.durationLabel,
+                        style:
+                            const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                      ),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
-          // Actions
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                onPressed: () => MyServicesPage.showEditServiceSheet(context, service),
-                icon: const Icon(Icons.edit_outlined, color: AppColors.textSecondary),
-                iconSize: 20,
-                style: IconButton.styleFrom(backgroundColor: AppColors.inputFill),
-              ),
-              const SizedBox(width: 8),
-              IconButton(
-                onPressed: () => _showDeleteConfirmation(context, ref),
-                icon: const Icon(Icons.delete_outline, color: AppColors.error),
-                iconSize: 20,
-                style: IconButton.styleFrom(backgroundColor: AppColors.error.withValues(alpha: 0.1)),
-              ),
-            ],
+          // ── 3-dot menu ────────────────────────────────────────────────
+          _ServicePopupMenu(
+            service: service,
+            onDelete: () => _showDeleteDialog(context, ref, service),
           ),
         ],
       ),
     );
   }
+}
 
-  void _showDeleteConfirmation(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Service'),
-        content: Text('Are you sure you want to delete "${service.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+// ─── Shared sub-widgets ───────────────────────────────────────────────────────
+
+class _AvailabilityBadge extends StatelessWidget {
+  final bool isAvailable;
+  final bool compact;
+
+  const _AvailabilityBadge({required this.isAvailable, this.compact = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isAvailable ? AppColors.success : AppColors.error;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 6 : 8,
+        vertical: compact ? 2 : 4,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            isAvailable ? Icons.check_circle : Icons.cancel,
+            size: 10,
+            color: color,
           ),
-          TextButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              final result = await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
-              if (context.mounted) {
-                if (result.success) {
-                  AppToast.success(context, result.message);
-                  ref.invalidate(myServicesProvider);
-                } else {
-                  AppToast.error(context, result.message);
-                }
+          if (!compact) ...[
+            const SizedBox(width: 4),
+            Text(
+              isAvailable ? 'Active' : 'Inactive',
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  const _Dot();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 4,
+      height: 4,
+      decoration: const BoxDecoration(
+        color: AppColors.textMuted,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
+
+/// 3-dot popup menu used in both card and list views.
+/// Styled to match the My Pets page action menu pattern.
+class _ServicePopupMenu extends ConsumerWidget {
+  final ServiceModel service;
+  final VoidCallback onDelete;
+
+  const _ServicePopupMenu({required this.service, required this.onDelete});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
+      child: PopupMenuButton<String>(
+        icon: const Icon(Icons.more_horiz, color: Colors.white, size: 20),
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        onSelected: (value) async {
+          if (value == 'edit') {
+            MyServicesPage.showEdit(context, service);
+          } else if (value == 'toggle') {
+            final result = await ref
+                .read(serviceCrudProvider.notifier)
+                .toggleAvailability(service.id);
+            if (context.mounted) {
+              if (result.success) {
+                AppToast.success(context, result.message);
+                ref.invalidate(myServicesProvider);
+              } else {
+                AppToast.error(context, result.message);
               }
-            },
-            style: TextButton.styleFrom(foregroundColor: AppColors.error),
-            child: const Text('Delete'),
+            }
+          } else if (value == 'delete') {
+            onDelete();
+          }
+        },
+        itemBuilder: (_) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit, size: 18, color: AppColors.textPrimary),
+                SizedBox(width: 8),
+                Text('Edit'),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'toggle',
+            child: Row(
+              children: [
+                Icon(
+                  service.isAvailable ? Icons.visibility_off : Icons.visibility,
+                  size: 18,
+                  color: service.isAvailable ? AppColors.warning : AppColors.success,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  service.isAvailable ? 'Deactivate' : 'Activate',
+                  style: TextStyle(
+                    color: service.isAvailable ? AppColors.warning : AppColors.success,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete, size: 18, color: AppColors.error),
+                SizedBox(width: 8),
+                Text('Delete', style: TextStyle(color: AppColors.error)),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+}
+
+// ─── Delete dialog ────────────────────────────────────────────────────────────
+
+void _showDeleteDialog(BuildContext context, WidgetRef ref, ServiceModel service) {
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('Delete Service'),
+      content: Text('Are you sure you want to delete "${service.name}"? This cannot be undone.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () async {
+            Navigator.pop(ctx);
+            final result =
+                await ref.read(serviceCrudProvider.notifier).deleteService(service.id);
+            if (context.mounted) {
+              if (result.success) {
+                AppToast.success(context, result.message);
+                ref.invalidate(myServicesProvider);
+              } else {
+                AppToast.error(context, result.message);
+              }
+            }
+          },
+          style: TextButton.styleFrom(foregroundColor: AppColors.error),
+          child: const Text('Delete'),
+        ),
+      ],
+    ),
+  );
 }

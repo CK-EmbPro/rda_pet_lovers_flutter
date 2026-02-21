@@ -11,14 +11,16 @@ import '../../data/models/models.dart';
 class AppointmentFormSheet extends ConsumerStatefulWidget {
   final String? preselectedServiceId;
   final String? preselectedProviderId;
+  final String? preselectedPetId;
 
   const AppointmentFormSheet({
     super.key,
     this.preselectedServiceId,
     this.preselectedProviderId,
+    this.preselectedPetId,
   });
 
-  static void show(BuildContext context, {String? serviceId, String? providerId}) {
+  static void show(BuildContext context, {String? serviceId, String? providerId, String? petId}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -26,6 +28,7 @@ class AppointmentFormSheet extends ConsumerStatefulWidget {
       builder: (context) => AppointmentFormSheet(
         preselectedServiceId: serviceId,
         preselectedProviderId: providerId,
+        preselectedPetId: petId,
       ),
     );
   }
@@ -46,6 +49,7 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
   void initState() {
     super.initState();
     selectedServiceId = widget.preselectedServiceId;
+    selectedPetId = widget.preselectedPetId;
   }
 
   @override
@@ -266,24 +270,20 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
     // Assuming ServiceModel has ownerId or similar.
     // Let's check ServiceModel in memory.
     final services = ref.read(allServicesProvider(const ServiceQueryParams())).value?.data ?? [];
-    final service = services.firstWhere((s) => s.id == selectedServiceId, orElse: () => ServiceModel.empty());
+    final service = services.cast<ServiceModel?>().firstWhere(
+      (s) => s?.id == selectedServiceId,
+      orElse: () => null,
+    );
     
-    // If providerId is passed in widget, use it. Else use service owner.
-    // ServiceModel has `providerId` or `owner`? 
-    // Checking ServiceModel... it likely has `service.provider.id` or `service.providerId`.
-    // If not, we can't book.
-    
-    // NOTE: We need to ensure we have a valid provider ID.
-    // Assuming service.provider.id exists based on typical structure, or use widget.preselectedProviderId.
-    
-    final providerId = widget.preselectedProviderId ?? service.providerId; // Assuming providerId exists on ServiceModel based on plan or update.
+    // If providerId is passed in widget, use it. Else use service's providerId.
+    final providerId = widget.preselectedProviderId ?? service?.providerId ?? '';
     
     // Format Time: 09:00
     final hour = selectedTime!.hour.toString().padLeft(2, '0');
     final minute = selectedTime!.minute.toString().padLeft(2, '0');
     final timeString = '$hour:$minute';
     
-    final result = await ref.read(appointmentActionProvider.notifier).bookAppointment(
+    final resultPair = await ref.read(appointmentActionProvider.notifier).bookAppointment(
       serviceId: selectedServiceId!,
       providerId: providerId, // Fallback might fail validation
       scheduledDate: DateTime(selectedMonth.year, selectedMonth.month, selectedDay!),
@@ -293,12 +293,15 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
 
     if (mounted) {
       setState(() => _isLoading = false);
-      if (result != null) {
+      final appointment = resultPair.$1;
+      final errorMsg = resultPair.$2;
+
+      if (appointment != null) {
         Navigator.pop(context);
         AppToast.success(context, 'Appointment booked successfully!');
         ref.invalidate(myAppointmentsProvider);
       } else {
-        AppToast.error(context, 'Failed to book appointment. Please try again.');
+        AppToast.error(context, errorMsg ?? 'Failed to book appointment. Please try again.');
       }
     }
   }

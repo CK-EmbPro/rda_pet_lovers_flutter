@@ -154,7 +154,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
           child: PrimaryButton(
             label: 'Schedule appointment',
             icon: Icons.north_east,
-            onPressed: () => AppointmentFormSheet.show(context),
+            onPressed: () => AppointmentFormSheet.show(context, petId: widget.petId),
           ),
         ),
       ),
@@ -554,7 +554,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
                        Container(
                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                          decoration: BoxDecoration(
-                           color: apt.status == 'CONFIRMED' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
+                           color: apt.status == 'ACCEPTED' ? const Color(0xFFDCFCE7) : const Color(0xFFF1F5F9),
                            borderRadius: BorderRadius.circular(20),
                          ),
                          child: Text(
@@ -562,7 +562,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
                            style: TextStyle(
                              fontSize: 12, 
                              fontWeight: FontWeight.bold,
-                             color: apt.status == 'CONFIRMED' ? const Color(0xFF166534) : const Color(0xFF475569),
+                             color: apt.status == 'ACCEPTED' ? const Color(0xFF166534) : const Color(0xFF475569),
                            ),
                          ),
                        ),

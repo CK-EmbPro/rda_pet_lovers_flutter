@@ -7,6 +7,7 @@ import '../../../core/utils/toast_service.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/product_providers.dart';
+import '../../../data/providers/category_providers.dart';
 import '../../../data/providers/shop_providers.dart';
 
 class ProductFormSheet extends ConsumerStatefulWidget {
@@ -38,9 +39,13 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   late TextEditingController _descController;
+  late TextEditingController _skuController;
+  late TextEditingController _discountController;
   String? _selectedCategory;
   String? _imagePath;
   bool _isLoading = false;
+  bool _isActive = true;
+  bool _isFeatured = false;
 
   bool get isEdit => widget.product != null;
 
@@ -51,9 +56,11 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
     _priceController = TextEditingController(text: widget.product?.price.toString() ?? '');
     _stockController = TextEditingController(text: widget.product?.stockQuantity.toString() ?? '');
     _descController = TextEditingController(text: widget.product?.description ?? '');
-    _selectedCategory = widget.product?.categoryId; 
-    // Note: Category matching might need real category IDs. Using basic list for now or match ID if possible.
-    // Ideally fetch categories from categoryProvider.
+    _skuController = TextEditingController(text: widget.product?.sku ?? '');
+    _discountController = TextEditingController(text: widget.product?.discountPercentage?.toString() ?? '');
+    _selectedCategory = widget.product?.categoryId;
+    _isActive = widget.product?.isActive ?? true;
+    _isFeatured = widget.product?.isFeatured ?? false; 
   }
 
   @override
@@ -62,6 +69,8 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
     _priceController.dispose();
     _stockController.dispose();
     _descController.dispose();
+    _skuController.dispose();
+    _discountController.dispose();
     super.dispose();
   }
 
@@ -80,18 +89,22 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
     try {
       final notifier = ref.read(productCrudProvider.notifier);
       final price = double.tryParse(_priceController.text) ?? 0;
-      final stock = int.tryParse(_stockController.text) ?? 0;
+      final stockQuantity = int.tryParse(_stockController.text) ?? 0;
+      final discountPercentage = double.tryParse(_discountController.text);
 
       if (isEdit) {
         // Update
         final success = await notifier.updateProduct(widget.product!.id, {
           'name': _nameController.text,
           'price': price,
-          'stock': stock, // API expects 'stock' but model has 'stockQuantity', verify update param mapping
+          'stockQuantity': stockQuantity,
           'description': _descController.text,
           'categoryId': _selectedCategory,
-          // 'images': _imagePath != null ? [_imagePath] : null // Logic for image upload needed (upload then get URL)
-          // For now assuming image upload is separate or handled base64 in mock/future
+          'sku': _skuController.text.isNotEmpty ? _skuController.text : null,
+          'discountPercentage': discountPercentage,
+          'isActive': _isActive,
+          'isFeatured': _isFeatured,
+          // 'images': _imagePath != null ? [_imagePath] : null
         });
         
         if (success != null && mounted) {
@@ -110,9 +123,13 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
           shopId: shop.id,
           name: _nameController.text,
           price: price,
-          stock: stock,
+          stockQuantity: stockQuantity,
           description: _descController.text,
           categoryId: _selectedCategory,
+          discountPercentage: discountPercentage,
+          sku: _skuController.text.isNotEmpty ? _skuController.text : null,
+          isActive: _isActive,
+          isFeatured: _isFeatured,
           images: [], // Placeholder for image
         );
 
@@ -133,10 +150,7 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
 
   @override
   Widget build(BuildContext context) {
-    // Categories should come from provider
-    // final categories = ref.watch(productCategoriesProvider); 
-    // For now hardcoded common ones or IDs
-    final categories = ['Dog Food', 'Cat Food', 'Toys', 'Accessories', 'Grooming']; 
+    final categoriesAsync = ref.watch(productCategoriesProvider);
 
     return Container(
       decoration: const BoxDecoration(
@@ -234,14 +248,18 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        value: _selectedCategory,
-                        isExpanded: true,
-                        hint: const Text('Select category'),
-                        items: categories
-                            .map((c) => DropdownMenuItem(value: c, child: Text(c)))
-                            .toList(),
-                        onChanged: (v) => setState(() => _selectedCategory = v),
+                      child: categoriesAsync.when(
+                        loading: () => const Center(child: CircularProgressIndicator()),
+                        error: (err, _) => const Text('Error loading categories'),
+                        data: (categories) => DropdownButton<String>(
+                          value: _selectedCategory,
+                          isExpanded: true,
+                          hint: const Text('Select category'),
+                          items: categories
+                              .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
+                              .toList(),
+                          onChanged: (v) => setState(() => _selectedCategory = v),
+                        ),
                       ),
                     ),
                   ),
@@ -249,6 +267,30 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
               ),
               const SizedBox(height: 16),
   
+              Row(
+                children: [
+                   Expanded(
+                    child: AppTextField(
+                      label: 'SKU (Optional)',
+                      hint: 'PROD-1234',
+                      prefixIcon: Icons.qr_code,
+                      controller: _skuController,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                   Expanded(
+                    child: AppTextField(
+                      label: 'Discount (%)',
+                      hint: '10',
+                      prefixIcon: Icons.percent,
+                      controller: _discountController,
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+
               Row(
                 children: [
                   Expanded(
@@ -282,6 +324,25 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
                 prefixIcon: Icons.description,
                 controller: _descController,
                 maxLines: 3,
+              ),
+              const SizedBox(height: 16),
+
+              // Status Toggles
+              SwitchListTile(
+                title: const Text('Active Product', style: TextStyle(fontWeight: FontWeight.w500)),
+                subtitle: const Text('Show this product in your shop', style: TextStyle(fontSize: 12)),
+                value: _isActive,
+                activeColor: AppColors.primary,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) => setState(() => _isActive = v),
+              ),
+              SwitchListTile(
+                title: const Text('Featured Product', style: TextStyle(fontWeight: FontWeight.w500)),
+                subtitle: const Text('Highlight this on your shop frontpage', style: TextStyle(fontSize: 12)),
+                value: _isFeatured,
+                activeColor: AppColors.secondary,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (v) => setState(() => _isFeatured = v),
               ),
               const SizedBox(height: 24),
   

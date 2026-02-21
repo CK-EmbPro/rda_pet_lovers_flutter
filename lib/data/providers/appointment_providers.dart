@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
 import '../models/models.dart';
 import '../services/appointment_service.dart';
+import 'package:dio/dio.dart';
 import '../services/pet_service.dart';
 
 /// Singleton AppointmentService provider
@@ -39,7 +40,7 @@ class AppointmentActionNotifier extends StateNotifier<AsyncValue<void>> {
   AppointmentActionNotifier(this._service)
       : super(const AsyncValue.data(null));
 
-  Future<AppointmentModel?> bookAppointment({
+  Future<(AppointmentModel?, String?)> bookAppointment({
     required String serviceId,
     required String providerId,
     required DateTime scheduledDate,
@@ -58,10 +59,15 @@ class AppointmentActionNotifier extends StateNotifier<AsyncValue<void>> {
         customerNotes: customerNotes,
       );
       state = const AsyncValue.data(null);
-      return appointment;
+      return (appointment, null);
+    } on DioException catch (e, st) {
+      state = AsyncValue.error(e, st);
+      final dynamic msg = e.response?.data?['message'];
+      final errorMsg = msg is String ? msg : (msg is List ? msg.join(', ') : 'Failed to book appointment');
+      return (null, errorMsg);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
-      return null;
+      return (null, 'Unexpected error occurred');
     }
   }
 

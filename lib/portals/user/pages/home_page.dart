@@ -197,18 +197,19 @@ class _HomePageState extends ConsumerState<HomePage> {
               const SizedBox(height: 24),
 
               // Upcoming Appointments
-              if (!isGuest)
                 appointmentsAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => const SizedBox.shrink(),
                   data: (PaginatedResponse<AppointmentModel> response) {
                     final List<AppointmentModel> appointments = response.data;
-                    if (appointments.isEmpty) return const SizedBox.shrink();
+                    final upcomingAppointments = appointments.where((a) => a.status == 'PENDING' || a.status == 'ACCEPTED' || a.status == 'RESCHEDULED').toList();
+                    if (upcomingAppointments.isEmpty) return const SizedBox.shrink();
+                    
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         _buildUpcomingAppointmentsHeader(context),
-                        ...appointments.take(2).map<Widget>((apt) => _AppointmentCard(appointment: apt)),
+                        ...upcomingAppointments.take(2).map<Widget>((apt) => _AppointmentCard(appointment: apt)),
                         const SizedBox(height: 24),
                       ],
                     );
@@ -462,7 +463,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         children: [
           const Text('Upcoming Appointments', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           TextButton(
-            onPressed: () => AllAppointmentsSheet.show(context),
+            onPressed: () => context.push('/appointments'),
             child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
           ),
         ],
@@ -750,7 +751,7 @@ class _HomePageState extends ConsumerState<HomePage> {
           ),
         ),
         SizedBox(
-          height: 110,
+          height: 220,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -763,7 +764,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 child: Container(
                   width: 200,
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -773,24 +773,66 @@ class _HomePageState extends ConsumerState<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        height: 100,
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          color: AppColors.secondary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFF475569).withValues(alpha: 0.1),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                         ),
-                        child: const Icon(Icons.medical_services, color: AppColors.secondary, size: 20),
+                        child: const Center(
+                          child: Icon(Icons.medical_services, color: Color(0xFF475569), size: 40),
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        service.name,
-                        style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${service.fee.toInt()} RWF',
-                        style: const TextStyle(fontSize: 11, color: AppColors.secondary),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                service.name,
+                                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 6),
+                              Row(
+                                children: [
+                                  const Icon(Icons.access_time, size: 12, color: AppColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      service.durationLabel,
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  const Icon(Icons.storefront_outlined, size: 12, color: AppColors.textSecondary),
+                                  const SizedBox(width: 4),
+                                  Expanded(
+                                    child: Text(
+                                      service.provider?.fullName ?? 'Independent',
+                                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${service.basePrice.toInt()} ${service.currency}',
+                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.secondary),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -970,6 +1012,7 @@ class _AppointmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const Color brandColor = Color(0xFF475569);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       padding: const EdgeInsets.all(16),
@@ -977,21 +1020,22 @@ class _AppointmentCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: AppTheme.cardShadow,
-        border: Border(left: BorderSide(color: AppColors.secondary, width: 4)),
+        border: const Border(left: BorderSide(color: brandColor, width: 4)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
              decoration: BoxDecoration(
-               color: AppColors.secondary.withValues(alpha: 0.1),
+               color: brandColor.withValues(alpha: 0.1),
                borderRadius: BorderRadius.circular(12),
              ),
              child: Column(
                children: [
-                 Text('${appointment.scheduledAt.month}', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary)),
-                 Text('${appointment.scheduledAt.day}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.secondary)),
+                 Text(_getMonthAbbreviation(appointment.scheduledAt.month), style: const TextStyle(fontWeight: FontWeight.bold, color: brandColor, fontSize: 12)),
+                 const SizedBox(height: 4),
+                 Text('${appointment.scheduledAt.day}', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 20, color: brandColor)),
                ],
              ),
           ),
@@ -1000,15 +1044,79 @@ class _AppointmentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(appointment.service?.name ?? 'Service', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                const SizedBox(height: 4),
-                Text('At ${appointment.provider?.fullName ?? 'Provider'}', style: const TextStyle(color: AppColors.textSecondary)),
-                const SizedBox(height: 4),
-                 Row(
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.access_time, size: 14, color: AppColors.textMuted),
-                    const SizedBox(width: 4),
-                    Text(appointment.scheduledTime ?? '', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                    Expanded(
+                      child: Text(
+                        appointment.service?.name ?? 'Service', 
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Color(0xFF1E293B)),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getStatusColor(appointment.status).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        appointment.displayStatus,
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: _getStatusColor(appointment.status)),
+                      ),
+                    ),
+                  ],
+                ),
+                if (appointment.pet != null) ...[
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Icon(Icons.pets, size: 14, color: AppColors.textSecondary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          '${appointment.pet!.name} ${appointment.pet!.petCode.isNotEmpty ? '(${appointment.pet!.petCode})' : ''}',
+                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        appointment.provider?.fullName ?? 'Provider', 
+                        style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    const Icon(Icons.access_time, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      appointment.scheduledTime ?? '${appointment.scheduledAt.hour}:${appointment.scheduledAt.minute.toString().padLeft(2, '0')}', 
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 12),
+                    const Icon(Icons.hourglass_bottom, size: 14, color: AppColors.textSecondary),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${appointment.durationMinutes} min', 
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                    ),
                   ],
                 ),
               ],
@@ -1017,6 +1125,21 @@ class _AppointmentCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _getMonthAbbreviation(int month) {
+    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    return month >= 1 && month <= 12 ? months[month - 1] : '';
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'PENDING': return Colors.orange;
+      case 'ACCEPTED': return const Color(0xFF10B981);
+      case 'COMPLETED': return Colors.blue;
+      case 'CANCELLED': return Colors.red;
+      default: return const Color(0xFF64748B);
+    }
   }
 }
 // ─── Pet Listing Card ────────────────────────────────────────────────────────

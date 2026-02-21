@@ -85,9 +85,13 @@ class ProductService extends BaseApiService {
     required String shopId,
     required String name,
     required double price,
-    required int stock,
+    required int stockQuantity,
     String? description,
     String? categoryId,
+    double? discountPercentage,
+    String? sku,
+    bool? isActive,
+    bool? isFeatured,
     List<String>? images,
   }) async {
     return safeApiCall(() async {
@@ -95,9 +99,13 @@ class ProductService extends BaseApiService {
         'shopId': shopId,
         'name': name,
         'price': price,
-        'stock': stock,
+        'stockQuantity': stockQuantity,
         if (description != null) 'description': description,
         if (categoryId != null) 'categoryId': categoryId,
+        if (discountPercentage != null) 'discountPercentage': discountPercentage,
+        if (sku != null) 'sku': sku,
+        if (isActive != null) 'isActive': isActive,
+        if (isFeatured != null) 'isFeatured': isFeatured,
         if (images != null) 'images': images,
       };
 

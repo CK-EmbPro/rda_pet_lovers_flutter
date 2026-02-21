@@ -34,18 +34,31 @@ abstract class BaseApiService {
       // NestJS sends { message: string | string[], error?: string, statusCode: int }
       final dynamic rawMessage = data['message'];
       
+      String extractedMessage = '';
       if (rawMessage is List) {
-        return rawMessage.map((m) => m.toString()).join('\n');
-      }
-      
-      if (rawMessage != null && rawMessage.toString().isNotEmpty) {
-        return rawMessage.toString();
+        extractedMessage = rawMessage.map((m) => m.toString()).join('\n');
+      } else if (rawMessage != null && rawMessage.toString().isNotEmpty) {
+        extractedMessage = rawMessage.toString();
+      } else {
+        // Sometimes NestJS wraps in 'error' instead if message is missing
+        final dynamic rawError = data['error'];
+        if (rawError != null && rawError.toString().isNotEmpty) {
+          extractedMessage = rawError.toString();
+        }
       }
 
-      // Sometimes NestJS wraps in 'error' instead if message is missing
-      final dynamic rawError = data['error'];
-      if (rawError != null && rawError.toString().isNotEmpty) {
-        return rawError.toString();
+      // Convert common technical validators into user-friendly messages
+      if (extractedMessage.isNotEmpty) {
+        if (extractedMessage.contains('must be a UUID')) {
+          return 'Please select a valid option from the dropdown list.';
+        }
+        if (extractedMessage.contains('should not be empty')) {
+          return 'Please fill in all required fields marked with an asterisk.';
+        }
+        if (extractedMessage.contains('must be a number conforming to the specified constraints')) {
+          return 'Please enter a valid numeric value for price and stock.';
+        }
+        return extractedMessage;
       }
     }
 

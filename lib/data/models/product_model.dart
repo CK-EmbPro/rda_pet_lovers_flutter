@@ -5,7 +5,7 @@ class ProductModel {
   final String name;
   final String? description;
   final double price;
-  final double? discountPrice;
+  final double? discountPercentage;
   final int stockQuantity;
   final String? sku;
   final bool isActive;
@@ -26,7 +26,7 @@ class ProductModel {
     required this.name,
     this.description,
     required this.price,
-    this.discountPrice,
+    this.discountPercentage,
     this.stockQuantity = 0,
     this.sku,
     this.isActive = true,
@@ -47,7 +47,7 @@ class ProductModel {
       name: json['name'] as String,
       description: json['description'] as String?,
       price: _parseDouble(json['price']) ?? 0,
-      discountPrice: _parseDouble(json['discountPrice']),
+      discountPercentage: _parseDouble(json['discountPercentage']),
       stockQuantity: json['stockQuantity'] as int? ?? 0,
       sku: json['sku'] as String?,
       isActive: json['isActive'] as bool? ?? true,
@@ -73,10 +73,15 @@ class ProductModel {
   }
 
   /// Get the effective price (discounted or regular)
-  double get effectivePrice => discountPrice ?? price;
+  double get effectivePrice {
+    if (discountPercentage != null && discountPercentage! > 0) {
+      return price - (price * (discountPercentage! / 100));
+    }
+    return price;
+  }
 
   /// Check if product is on sale
-  bool get isOnSale => discountPrice != null && discountPrice! < price;
+  bool get isOnSale => discountPercentage != null && discountPercentage! > 0;
 
   /// Check if product is in stock
   bool get inStock => stockQuantity > 0;

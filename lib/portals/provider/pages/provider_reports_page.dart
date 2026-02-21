@@ -41,7 +41,7 @@ class _ProviderReportsPageState extends ConsumerState<ProviderReportsPage> {
                 for (var apt in completed) {
                    // If service is embedded
                    if (apt.service != null) {
-                     totalEarnings += apt.service!.fee;
+                     totalEarnings += apt.service!.basePrice;
                    }
                 }
 
@@ -163,7 +163,7 @@ class _ProviderReportsPageState extends ConsumerState<ProviderReportsPage> {
                                     ),
                                   ),
                                   Text(
-                                    '+${NumberFormat.decimalPattern().format(apt.service?.fee ?? 0)} RWF',
+                                    '+${NumberFormat.decimalPattern().format(apt.service?.basePrice ?? 0)} RWF',
                                     style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.success),
                                   ),
                                 ],

@@ -48,9 +48,13 @@ class ProductCrudNotifier extends StateNotifier<AsyncValue<void>> {
     required String shopId,
     required String name,
     required double price,
-    required int stock,
+    required int stockQuantity,
     String? description,
     String? categoryId,
+    double? discountPercentage,
+    String? sku,
+    bool? isActive,
+    bool? isFeatured,
     List<String>? images,
   }) async {
     state = const AsyncValue.loading();
@@ -59,9 +63,13 @@ class ProductCrudNotifier extends StateNotifier<AsyncValue<void>> {
         shopId: shopId,
         name: name,
         price: price,
-        stock: stock,
+        stockQuantity: stockQuantity,
         description: description,
         categoryId: categoryId,
+        discountPercentage: discountPercentage,
+        sku: sku,
+        isActive: isActive,
+        isFeatured: isFeatured,
         images: images,
       );
       state = const AsyncValue.data(null);

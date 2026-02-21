@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/notifications_sheet.dart';
 import '../../../core/widgets/appointment_detail_sheet.dart';
 // import '../../../data/providers/mock_data_provider.dart'; // Removing
@@ -10,6 +9,7 @@ import '../../../data/models/models.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/appointment_providers.dart';
 import '../provider_portal.dart';
+import '../widgets/service_form_sheet.dart';
 // import 'my_services_page.dart'; // Not used directly in build
 
 class ProviderDashboardPage extends ConsumerStatefulWidget {
@@ -57,13 +57,13 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                     return a.scheduledAt.year == today.year &&
                            a.scheduledAt.month == today.month &&
                            a.scheduledAt.day == today.day &&
-                           (a.status == 'CONFIRMED' || a.status == 'PENDING');
+                           (a.status == 'ACCEPTED' || a.status == 'PENDING');
                   }).toList();
                   
                   final thisMonthAccepted = appointments.where((a) {
                     return a.scheduledAt.month == today.month &&
                            a.scheduledAt.year == today.year &&
-                           (a.status == 'CONFIRMED' || a.status == 'COMPLETED');
+                           (a.status == 'ACCEPTED' || a.status == 'COMPLETED');
                   }).toList();
 
                   final thisWeekCount = appointments.where((a) {
@@ -77,7 +77,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                     final isSameWeek = date.isAfter(startOfWeek.subtract(const Duration(seconds: 1))) && 
                                        date.isBefore(endOfWeek.add(const Duration(days: 1)));
                                        
-                    return isSameWeek && (a.status == 'CONFIRMED' || a.status == 'COMPLETED');
+                    return isSameWeek && (a.status == 'ACCEPTED' || a.status == 'COMPLETED');
                   }).length;
 
                   return _buildStatsRow(todaysAppointments.length, thisWeekCount, thisMonthAccepted.length);
@@ -105,7 +105,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                     return a.scheduledAt.year == today.year &&
                            a.scheduledAt.month == today.month &&
                            a.scheduledAt.day == today.day &&
-                           (a.status == 'CONFIRMED' || a.status == 'PENDING');
+                           (a.status == 'ACCEPTED' || a.status == 'PENDING');
                   }).toList();
 
                   var pendingRequests = appointments.where((a) => a.status == 'PENDING').toList();
@@ -249,7 +249,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
                 icon: Icons.add_circle_outline,
                 label: 'Create Service',
                 color: AppColors.secondary,
-                onTap: () => _showAddServiceSheet(context),
+                onTap: () => ServiceFormSheet.show(context),
               ),
               _QuickActionButton(
                 icon: Icons.event_available,
@@ -273,51 +273,6 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           ),
         ),
       ],
-    );
-  }
-
-  void _showAddServiceSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      builder: (context) => Padding(
-        padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: AppColors.inputFill,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const Text('Create New Service', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 20),
-            const AppTextField(label: 'Service Name', hint: 'e.g: Pet Grooming', prefixIcon: Icons.design_services),
-            const SizedBox(height: 16),
-            Row(
-              children: const [
-                Expanded(child: AppTextField(label: 'Price (RWF)', hint: '25000', prefixIcon: Icons.monetization_on)),
-                SizedBox(width: 12),
-                Expanded(child: AppTextField(label: 'Duration', hint: '1 hour', prefixIcon: Icons.timer)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            const AppTextField(label: 'Description', hint: 'Describe your service...', prefixIcon: Icons.description),
-            const SizedBox(height: 24),
-            PrimaryButton(label: 'Create Service', onPressed: () => Navigator.pop(context)),
-          ],
-        ),
-      ),
     );
   }
 

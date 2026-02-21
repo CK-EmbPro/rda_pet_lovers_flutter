@@ -53,7 +53,6 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
   @override
   Widget build(BuildContext context) {
     final servicesAsync = ref.watch(allServicesProvider(ServiceQueryParams(
-      serviceType: _selectedCategory == 'All' ? null : _selectedCategory,
       search: _searchTerm.isEmpty ? null : _searchTerm,
     )));
 
@@ -285,7 +284,7 @@ class _ProviderCard extends ConsumerWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        service.provider?.specialty ?? service.displayServiceType,
+                        service.provider?.title ?? service.category?.name ?? service.paymentTypeLabel,
                         style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                       const SizedBox(height: 6),
@@ -321,7 +320,7 @@ class _ProviderCard extends ConsumerWidget {
                   ],
                 ),
                 Text(
-                  '${service.fee.toInt()} RWF',
+                  '${service.basePrice.toInt()} ${service.currency}',
                   style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],

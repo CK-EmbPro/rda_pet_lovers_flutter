@@ -209,7 +209,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
             ],
           ),
         );
-      } else if (appointment.status == 'CONFIRMED') {
+      } else if (appointment.status == 'ACCEPTED') {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SizedBox(
@@ -279,7 +279,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
             ],
           ),
         );
-      } else if (appointment.status == 'CONFIRMED') {
+      } else if (appointment.status == 'ACCEPTED') {
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: SizedBox(
@@ -414,7 +414,7 @@ class AppointmentDetailSheet extends ConsumerWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case 'CONFIRMED':
+      case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
         return Colors.orange;

@@ -1,21 +1,29 @@
-import '../../core/api/dio_client.dart';
 // ignore_for_file: use_null_aware_elements
+import '../../core/api/dio_client.dart';
 import '../models/models.dart';
-import '../services/pet_service.dart';
+import '../services/pet_service.dart' show PaginatedResponse;
 import 'base_api_service.dart';
 
-/// Pet Service API Service — handles pet service-related API calls (walking, grooming, etc.).
-/// Public endpoints: getAll, getById
-/// Protected endpoints: create, update, delete, toggleAvailability, getMyServices
+/// ServiceApiService — handles all `/services` API calls.
+///
+/// PUBLIC endpoints (no auth required):
+///   - getAll, getById, getByProvider, getCategories
+///
+/// PROTECTED endpoints (require auth token):
+///   - getMyServices, create, update, delete, toggleAvailability
 class ServiceApiService extends BaseApiService {
   ServiceApiService(super.client);
 
-  /// Get all services (public) — paginated
+  // ---------------------------------------------------------------------------
+  // PUBLIC ENDPOINTS
+  // ---------------------------------------------------------------------------
+
+  /// Get all available services (public) — paginated.
   Future<PaginatedResponse<ServiceModel>> getAll({
     int page = 1,
     int limit = 10,
     String? categoryId,
-    String? serviceType,
+    String? paymentType,
     String? search,
   }) async {
     return safeApiCall(() async {
@@ -23,7 +31,7 @@ class ServiceApiService extends BaseApiService {
         'page': page,
         'limit': limit,
         if (categoryId != null) 'categoryId': categoryId,
-        if (serviceType != null) 'serviceType': serviceType,
+        if (paymentType != null) 'paymentType': paymentType,
         if (search != null && search.isNotEmpty) 'search': search,
       };
 
@@ -45,104 +53,146 @@ class ServiceApiService extends BaseApiService {
     });
   }
 
-  /// Get service by ID (public)
+  /// Get a single service by ID (public).
   Future<ServiceModel> getById(String id) async {
     return safeApiCall(() async {
       final response = await dio.get('${ApiEndpoints.services}/$id');
-      return ServiceModel.fromJson(response.data);
+      return ServiceModel.fromJson(response.data as Map<String, dynamic>);
     });
   }
 
-  /// Get services by provider (public)
-  Future<List<ServiceModel>> getByProvider(String providerId) async {
+  /// Get services by a specific provider ID (public).
+  Future<List<ServiceModel>> getByProvider(String providerId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
     return safeApiCall(() async {
       final response = await dio.get(
         '${ApiEndpoints.services}/provider/$providerId',
+        queryParameters: {'page': page, 'limit': limit},
       );
+      // May return { data, meta } or plain list
       final List<dynamic> data = response.data is List
-          ? response.data
-          : (response.data['data'] ?? []);
-      return data.map((json) => ServiceModel.fromJson(json)).toList();
+          ? response.data as List
+          : (response.data['data'] ?? []) as List;
+      return data.map((json) => ServiceModel.fromJson(json as Map<String, dynamic>)).toList();
     });
   }
 
-  /// Create a new service (protected)
+  /// Get all service categories (public).
+  Future<List<ServiceCategory>> getCategories() async {
+    return safeApiCall(() async {
+      final response = await dio.get('${ApiEndpoints.services}/categories');
+      final List<dynamic> data = response.data is List
+          ? response.data as List
+          : (response.data['data'] ?? []) as List;
+      return data
+          .map((json) => ServiceCategory.fromJson(json as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // PROTECTED ENDPOINTS
+  // ---------------------------------------------------------------------------
+
+  /// Get the authenticated provider's own services.
+  /// Returns paginated `{ data, meta }` wrapper from backend.
+  Future<List<ServiceModel>> getMyServices({
+    int page = 1,
+    int limit = 50,
+  }) async {
+    return safeApiCall(() async {
+      final response = await dio.get(
+        '${ApiEndpoints.services}/my-services',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+
+      // Backend returns { data: [...], meta: {...} }
+      final List<dynamic> data = response.data is List
+          ? response.data as List
+          : (response.data['data'] ?? []) as List;
+
+      return data
+          .map((json) => ServiceModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    });
+  }
+
+  /// Create a new service (protected — requires SERVICES.WRITE permission).
   Future<ActionResponse<ServiceModel>> create({
     required String name,
     required double basePrice,
     String? description,
+    String paymentType = 'PAY_UPFRONT',
     double? priceYoungPet,
     double? priceOldPet,
     int? durationMinutes,
     String? categoryId,
-    String? paymentType,
-    bool? requiresSubscription,
+    bool requiresSubscription = false,
   }) async {
     return safeApiCall(() async {
-      final data = <String, dynamic>{
+      final body = <String, dynamic>{
         'name': name,
         'basePrice': basePrice,
-        if (description != null) 'description': description,
+        'paymentType': paymentType,
+        if (description != null && description.isNotEmpty) 'description': description,
         if (priceYoungPet != null) 'priceYoungPet': priceYoungPet,
         if (priceOldPet != null) 'priceOldPet': priceOldPet,
         if (durationMinutes != null) 'durationMinutes': durationMinutes,
         if (categoryId != null) 'categoryId': categoryId,
-        if (paymentType != null) 'paymentType': paymentType,
-        if (requiresSubscription != null) 'requiresSubscription': requiresSubscription,
+        if (requiresSubscription) 'requiresSubscription': requiresSubscription,
       };
 
-      final response = await dio.post(ApiEndpoints.services, data: data);
+      final response = await dio.post(ApiEndpoints.services, data: body);
       return ActionResponse.fromJson(
-        response.data,
-        (json) => ServiceModel.fromJson(json),
+        response.data as Map<String, dynamic>,
+        (json) => ServiceModel.fromJson(json as Map<String, dynamic>),
       );
     });
   }
 
-  /// Update a service (protected)
-  Future<ActionResponse<ServiceModel>> update(String id, Map<String, dynamic> updates) async {
+  /// Update an existing service (protected — requires SERVICES.WRITE permission).
+  /// [updates] should only contain the fields you want to change (partial update).
+  Future<ActionResponse<ServiceModel>> update(
+    String id,
+    Map<String, dynamic> updates,
+  ) async {
     return safeApiCall(() async {
       final response = await dio.put(
         '${ApiEndpoints.services}/$id',
         data: updates,
       );
       return ActionResponse.fromJson(
-        response.data,
-        (json) => ServiceModel.fromJson(json),
+        response.data as Map<String, dynamic>,
+        (json) => ServiceModel.fromJson(json as Map<String, dynamic>),
       );
     });
   }
 
-  /// Delete a service (protected)
+  /// Soft-delete a service (protected — requires SERVICES.DELETE permission).
   Future<ActionResponse<void>> delete(String id) async {
     return safeApiCall(() async {
       final response = await dio.delete('${ApiEndpoints.services}/$id');
-      return ActionResponse.fromJson(response.data, (_) => null);
+      return ActionResponse.fromJson(
+        response.data is Map<String, dynamic>
+            ? response.data as Map<String, dynamic>
+            : {'message': 'Service deleted successfully'},
+        (_) => null,
+      );
     });
   }
 
-  /// Toggle service availability (protected)
+  /// Toggle a service's `isAvailable` flag (protected — requires SERVICES.WRITE).
   Future<ActionResponse<ServiceModel>> toggleAvailability(String id) async {
     return safeApiCall(() async {
       final response = await dio.patch(
         '${ApiEndpoints.services}/$id/toggle-availability',
       );
       return ActionResponse.fromJson(
-        response.data,
-        (json) => ServiceModel.fromJson(json),
+        response.data as Map<String, dynamic>,
+        (json) => ServiceModel.fromJson(json as Map<String, dynamic>),
       );
-    });
-  }
-
-  /// Get my services (protected — uses authenticated provider identity)
-  // @protected — requires SERVICES.READ permission
-  Future<List<ServiceModel>> getMyServices() async {
-    return safeApiCall(() async {
-      final response = await dio.get('${ApiEndpoints.services}/my-services');
-      final List<dynamic> data = response.data is List
-          ? response.data
-          : (response.data['data'] ?? []);
-      return data.map((json) => ServiceModel.fromJson(json)).toList();
     });
   }
 }
