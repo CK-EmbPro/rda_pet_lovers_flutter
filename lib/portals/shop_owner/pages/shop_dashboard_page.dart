@@ -529,7 +529,7 @@ class _RecentOrderCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Use customer ID or placeholder until name is available
-                  Text('Customer #${order.userId.substring(0, 4)}...', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('Customer #${order.buyerId.substring(0, 4)}...', style: const TextStyle(fontWeight: FontWeight.bold)),
                   Text('${order.items.length} items • ${order.totalAmount.toInt()} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
                 ],
               ),

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/toast_service.dart';
 import '../../../core/widgets/common_widgets.dart';
-import '../../../core/widgets/payment_status_modal.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/providers/order_providers.dart';
@@ -68,15 +67,15 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.yellow.shade700, Colors.amber.shade600],
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF21314C), Color(0xFF2D4A7A)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.amber.withOpacity(0.3),
+                    color: const Color(0xFF21314C).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 6),
                   ),
@@ -87,7 +86,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.25),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(Icons.account_balance_wallet,
@@ -143,11 +142,23 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
                     ],
                   ),
                 ),
+                suffixIcon: const Icon(Icons.edit_outlined,
+                    color: AppColors.secondary, size: 20),
                 filled: true,
                 fillColor: Colors.white,
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: BorderSide(
+                        color: AppColors.secondary.withValues(alpha: 0.4),
+                        width: 1.5)),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    borderSide: const BorderSide(
+                        color: AppColors.secondary, width: 2)),
                 border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
-                    borderSide: BorderSide.none),
+                    borderSide: BorderSide(
+                        color: AppColors.secondary.withValues(alpha: 0.4))),
                 contentPadding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
@@ -190,21 +201,21 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
               width: double.infinity,
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.amber.shade50,
+                color: AppColors.secondary.withValues(alpha: 0.06),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade200),
+                border: Border.all(color: AppColors.secondary.withValues(alpha: 0.15)),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.info_outline,
-                      color: Colors.amber.shade700, size: 20),
+                      color: AppColors.secondary, size: 20),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'You will receive an MTN MoMo USSD prompt on your phone to confirm the payment.',
                       style: TextStyle(
-                          color: Colors.amber.shade900, fontSize: 13),
+                          color: AppColors.primary, fontSize: 13),
                     ),
                   ),
                 ],
@@ -278,7 +289,9 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
     final momoNotifier = ref.read(momoPaymentProvider.notifier);
     bool allSuccess = true;
     final List<String> errors = [];
-    final List<String> createdOrderIds = [];
+
+    // Track orderId → per-shop amount
+    final List<MapEntry<String, double>> orderPayments = [];
 
     // 2. Create orders first (they start as PENDING)
     for (final shopId in itemsByShop.keys) {
@@ -287,10 +300,14 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
           .map((item) => ({
                 'productId': item.id,
                 'quantity': item.quantity,
-                'price': item.price,
-                'type': item.type,
               }))
           .toList();
+
+      // Calculate per-shop subtotal (not total cart!)
+      final shopSubtotal = items.fold<double>(
+        0,
+        (sum, item) => sum + (item.price * item.quantity),
+      );
 
       final order = await notifier.createOrder(
         shopId: shopId,
@@ -299,14 +316,14 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
       );
 
       if (order != null) {
-        createdOrderIds.add(order.id);
+        orderPayments.add(MapEntry(order.id, shopSubtotal));
       } else {
         allSuccess = false;
         errors.add('Failed to create order for shop $shopId');
       }
     }
 
-    if (!allSuccess || createdOrderIds.isEmpty) {
+    if (!allSuccess || orderPayments.isEmpty) {
       if (mounted) {
         setState(() => _isProcessing = false);
         ToastService.error(
@@ -315,21 +332,14 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
       return;
     }
 
-    // 3. Initiate MoMo payment for each order
-    //    For simplicity, process orders sequentially
-    //    Each order triggers a separate USSD push
-    for (final orderId in createdOrderIds) {
-      // Calculate the order total from cart items
-      final orderShop = itemsByShop.entries
-          .firstWhere((e) => true); // will iterate through all
-      
-      await momoNotifier.payForOrder(
-        orderId: orderId,
-        amount: cartItems.fold<double>(
-            0, (sum, item) => sum + (item.price * item.quantity)),
-        phoneNumber: phone,
-      );
-    }
+    // 3. Initiate MoMo payment(s) using the payment queue.
+    //    Each order gets its own USSD push with the correct per-shop amount.
+    //    The notifier processes them one at a time and polls until
+    //    each completes before starting the next.
+    await momoNotifier.payForOrderQueue(
+      orderPayments: orderPayments,
+      phoneNumber: phone,
+    );
 
     if (mounted) {
       setState(() => _isProcessing = false);
@@ -414,6 +424,9 @@ class _MomoPaymentStatusDialog extends ConsumerWidget {
               onPressed: () {
                 ref.read(cartProvider.notifier).clear();
                 ref.read(momoPaymentProvider.notifier).reset();
+                // Invalidate order caches so lists show updated status
+                ref.invalidate(myOrdersProvider);
+                ref.invalidate(sellerOrdersProvider);
                 Navigator.of(context).pop();
                 context.go('/user');
               },
@@ -433,6 +446,7 @@ class _MomoPaymentStatusDialog extends ConsumerWidget {
                 TextButton(
                   onPressed: () {
                     ref.read(momoPaymentProvider.notifier).reset();
+                    ref.invalidate(myOrdersProvider);
                     Navigator.of(context).pop();
                     context.go('/user');
                   },
@@ -464,13 +478,13 @@ class _MomoPaymentStatusDialog extends ConsumerWidget {
           width: 80,
           height: 80,
           decoration: BoxDecoration(
-            color: Colors.amber.shade50,
+            color: AppColors.secondary.withValues(alpha: 0.08),
             shape: BoxShape.circle,
           ),
-          child: Stack(
+          child: const Stack(
             alignment: Alignment.center,
             children: [
-              Icon(Icons.phone_android, size: 40, color: Colors.amber.shade700),
+              Icon(Icons.phone_android, size: 40, color: AppColors.secondary),
               Positioned(
                 bottom: 8,
                 right: 8,
@@ -480,7 +494,7 @@ class _MomoPaymentStatusDialog extends ConsumerWidget {
                   child: CircularProgressIndicator(
                     strokeWidth: 2,
                     valueColor: AlwaysStoppedAnimation<Color>(
-                        Colors.amber.shade700),
+                        AppColors.secondary),
                   ),
                 ),
               ),

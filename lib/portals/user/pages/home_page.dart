@@ -8,7 +8,7 @@ import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/notification_bell.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../core/widgets/all_appointments_sheet.dart';
-import '../../../core/widgets/all_orders_sheet.dart';
+
 import '../../../core/widgets/filter_sheet.dart';
 import '../../pet_owner/widgets/pet_form_sheet.dart';
 import '../../../data/providers/auth_providers.dart';
@@ -456,7 +456,7 @@ class _HomePageState extends ConsumerState<HomePage> {
             children: [
               const Text('Recent Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
               TextButton(
-                onPressed: () => AllOrdersSheet.show(context),
+                onPressed: () => context.push('/user/orders'),
                 child: const Text('See all', style: TextStyle(color: AppColors.secondary)),
               ),
             ],

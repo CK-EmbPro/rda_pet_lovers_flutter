@@ -1,24 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
-import '../../data/models/shop_model.dart'; // Import OrderModel
- // Import formatters if needed, or implement locally
+import '../../core/widgets/app_toast.dart';
+import '../../data/models/shop_model.dart';
+import '../../data/providers/order_providers.dart';
 
-/// A modal sheet that shows order details when an order card is clicked
-class OrderDetailSheet extends StatelessWidget {
+/// A modal sheet that shows order details when an order card is clicked.
+/// Supports cancel action for PENDING orders (buyer).
+class OrderDetailSheet extends ConsumerStatefulWidget {
   final OrderModel order;
 
   const OrderDetailSheet({super.key, required this.order});
 
   static void show(BuildContext context, dynamic orderData) {
-    // Support both Model and Map for backward compatibility during migration if needed,
-    // but preferably enforce Model.
-    // If orderData is Map, we might need to parse it or throw.
-    // Given we control the calls, let's enforce Model.
-    // However, if we must support legacy Maps from other parts... 
-    // For now, let's assume strict Model usage as we are refactoring.
-    final OrderModel orderModel = orderData is OrderModel 
-        ? orderData 
-        : OrderModel.fromJson(orderData); // Fallback if Map passed (assuming JSON structure matches)
+    final OrderModel orderModel = orderData is OrderModel
+        ? orderData
+        : OrderModel.fromJson(orderData);
 
     showModalBottomSheet(
       context: context,
@@ -28,9 +25,82 @@ class OrderDetailSheet extends StatelessWidget {
         initialChildSize: 0.65,
         maxChildSize: 0.9,
         minChildSize: 0.4,
-        builder: (context, scrollController) => OrderDetailSheet(order: orderModel),
+        builder: (context, scrollController) =>
+            OrderDetailSheet(order: orderModel),
       ),
     );
+  }
+
+  @override
+  ConsumerState<OrderDetailSheet> createState() => _OrderDetailSheetState();
+}
+
+class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
+  bool _isCancelling = false;
+
+  OrderModel get order => widget.order;
+
+  Future<void> _cancelOrder() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Cancel Order?'),
+        content: Text(
+          'Are you sure you want to cancel order #${order.orderCode}? This action cannot be undone.',
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, false),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Keep Order'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.error,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Cancel Order',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isCancelling = true);
+    final success =
+        await ref.read(orderActionProvider.notifier).cancelOrder(order.id);
+    if (!mounted) return;
+    setState(() => _isCancelling = false);
+
+    if (success) {
+      AppToast.success(context, 'Order cancelled successfully');
+      ref.invalidate(myOrdersProvider);
+      ref.invalidate(sellerOrdersProvider);
+      if (mounted) Navigator.pop(context);
+    } else {
+      AppToast.error(context, 'Failed to cancel order. Please try again.');
+    }
   }
 
   @override
@@ -115,7 +185,7 @@ class OrderDetailSheet extends StatelessWidget {
                 children: [
                   // TODO: Fetch user name if not in OrderModel. OrderModel has userId.
                   // For now showing ID or "Customer".
-                  _buildInfoRow('Customer ID', order.userId),
+                  _buildInfoRow('Customer ID', order.buyerId),
                 ],
               ),
             ),
@@ -130,15 +200,41 @@ class OrderDetailSheet extends StatelessWidget {
                 children: [
                   _buildInfoRow('Total Amount', '${order.totalAmount.toInt()} RWF'),
                   // Assuming paid if order exists or checking status
-                  _buildInfoRow('Payment Status', order.paymentStatus ?? 'Pending'),
+                  _buildInfoRow('Payment Status', order.paymentId != null ? 'Paid' : 'Pending'),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Actions based on status
-            _buildActionButtons(context, status),
-            
+
+            // Cancel button for PENDING orders
+            if (order.status.toUpperCase() == 'PENDING')
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: _isCancelling ? null : _cancelOrder,
+                    icon: _isCancelling
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: AppColors.error),
+                          )
+                        : const Icon(Icons.cancel_outlined, size: 18),
+                    label: Text(
+                        _isCancelling ? 'Cancelling...' : 'Cancel Order'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: const BorderSide(color: AppColors.error),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ),
+
             const SizedBox(height: 30),
           ],
         ),
@@ -146,63 +242,21 @@ class OrderDetailSheet extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButtons(BuildContext context, String status) {
-    status = status.toLowerCase();
-    if (status == 'pending') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => Navigator.pop(context), // TODO: Implement Cancel via provider
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  side: const BorderSide(color: AppColors.error),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Cancel Order', style: TextStyle(color: AppColors.error)),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context), // TODO: Implement Process via provider
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text('Process Order', style: TextStyle(color: Colors.white)),
-              ),
-            ),
-          ],
-        ),
-      );
-    } else if (status == 'processing') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.success,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Mark as Completed', style: TextStyle(color: Colors.white)),
-          ),
-        ),
-      );
+  Color _getStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return Colors.orange;
+      case 'confirmed':
+        return Colors.purple;
+      case 'processing':
+        return AppColors.secondary;
+      case 'completed':
+        return AppColors.success;
+      case 'cancelled':
+        return AppColors.error;
+      default:
+        return AppColors.textSecondary;
     }
-    return const SizedBox.shrink();
   }
 
   Widget _buildSection({required IconData icon, required String title, required Widget content}) {
@@ -242,21 +296,6 @@ class OrderDetailSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'pending':
-        return Colors.orange;
-      case 'processing':
-        return AppColors.secondary;
-      case 'completed':
-        return AppColors.success;
-      case 'cancelled':
-        return AppColors.error;
-      default:
-        return AppColors.textSecondary;
-    }
   }
 
   String _formatDate(DateTime date) {

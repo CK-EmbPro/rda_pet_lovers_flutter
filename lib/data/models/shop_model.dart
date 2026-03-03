@@ -155,46 +155,61 @@ class CartItemModel {
 class OrderModel {
   final String id;
   final String orderCode;
-  final String userId;
-  final String shopId;
+  final String buyerId;
+  final String? sellerId;
+  final String? shopId;
   final List<OrderItemModel> items;
   final double subtotal;
   final double? discount;
   final double totalAmount;
+  final String currency;
   final String status; // PENDING, CONFIRMED, PROCESSING, COMPLETED, CANCELLED
-  final String? paymentStatus;
+  final String? paymentId;
+  final bool isPetOrder;
+  final bool isProductOrder;
+  final String? notes;
   final DateTime createdAt;
 
   OrderModel({
     required this.id,
     required this.orderCode,
-    required this.userId,
-    required this.shopId,
+    required this.buyerId,
+    this.sellerId,
+    this.shopId,
     required this.items,
     required this.subtotal,
     this.discount,
     required this.totalAmount,
+    this.currency = 'RWF',
     required this.status,
-    this.paymentStatus,
+    this.paymentId,
+    this.isPetOrder = false,
+    this.isProductOrder = true,
+    this.notes,
     required this.createdAt,
   });
 
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
-      id: json['id'] as String,
-      orderCode: json['orderCode'] as String,
-      userId: json['userId'] as String,
-      shopId: json['shopId'] as String,
+      id: json['id'] as String? ?? '',
+      orderCode: json['orderCode'] as String? ?? '',
+      buyerId: (json['buyerId'] ?? json['userId'] ?? '') as String,
+      sellerId: json['sellerId'] as String?,
+      shopId: json['shopId'] as String?,
       items: (json['items'] as List<dynamic>?)
               ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
       subtotal: ShopModel._parseDouble(json['subtotal']) ?? 0,
-      discount: ShopModel._parseDouble(json['discount']),
+      discount: ShopModel._parseDouble(json['discountAmount'] ?? json['discount']),
       totalAmount: ShopModel._parseDouble(json['totalAmount']) ?? 0,
-      status: json['status'] as String,
-      paymentStatus: json['paymentStatus'] as String?,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      currency: json['currency'] as String? ?? 'RWF',
+      status: json['status'] as String? ?? 'PENDING',
+      paymentId: json['paymentId'] as String?,
+      isPetOrder: json['isPetOrder'] as bool? ?? false,
+      isProductOrder: json['isProductOrder'] as bool? ?? true,
+      notes: json['notes'] as String?,
+      createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
   }
 

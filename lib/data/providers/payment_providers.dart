@@ -24,6 +24,10 @@ class MomoPaymentState {
   final String? message;
   final String? errorMessage;
   final int pollAttempts;
+  /// For multi-order queues: how many orders total
+  final int totalOrders;
+  /// For multi-order queues: index of the order currently being paid (1-based)
+  final int currentOrderIndex;
 
   const MomoPaymentState({
     this.phase = MomoPaymentPhase.idle,
@@ -31,6 +35,8 @@ class MomoPaymentState {
     this.message,
     this.errorMessage,
     this.pollAttempts = 0,
+    this.totalOrders = 1,
+    this.currentOrderIndex = 1,
   });
 
   MomoPaymentState copyWith({
@@ -39,6 +45,8 @@ class MomoPaymentState {
     String? message,
     String? errorMessage,
     int? pollAttempts,
+    int? totalOrders,
+    int? currentOrderIndex,
   }) {
     return MomoPaymentState(
       phase: phase ?? this.phase,
@@ -46,6 +54,8 @@ class MomoPaymentState {
       message: message ?? this.message,
       errorMessage: errorMessage ?? this.errorMessage,
       pollAttempts: pollAttempts ?? this.pollAttempts,
+      totalOrders: totalOrders ?? this.totalOrders,
+      currentOrderIndex: currentOrderIndex ?? this.currentOrderIndex,
     );
   }
 
@@ -53,6 +63,8 @@ class MomoPaymentState {
       phase == MomoPaymentPhase.initiating ||
       phase == MomoPaymentPhase.waitingForUser ||
       phase == MomoPaymentPhase.polling;
+
+  bool get isMultiOrder => totalOrders > 1;
 }
 
 /// Notifier that manages the full MoMo payment lifecycle:
@@ -83,6 +95,89 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
       amount: amount,
       phoneNumber: phoneNumber,
       orderId: orderId,
+    );
+  }
+
+  /// Pay for multiple orders sequentially.
+  /// Each order gets its own USSD push and is polled until complete
+  /// before the next one starts. The state reflects overall progress.
+  Future<void> payForOrderQueue({
+    required List<MapEntry<String, double>> orderPayments,
+    required String phoneNumber,
+  }) async {
+    if (orderPayments.isEmpty) return;
+
+    // Single order — use the simple path
+    if (orderPayments.length == 1) {
+      return payForOrder(
+        orderId: orderPayments.first.key,
+        amount: orderPayments.first.value,
+        phoneNumber: phoneNumber,
+      );
+    }
+
+    // Multiple orders — process one at a time
+    final total = orderPayments.length;
+    for (var i = 0; i < total; i++) {
+      if (!mounted) return;
+      final entry = orderPayments[i];
+      state = MomoPaymentState(
+        phase: MomoPaymentPhase.initiating,
+        message: 'Initiating payment ${i + 1} of $total...',
+        totalOrders: total,
+        currentOrderIndex: i + 1,
+      );
+
+      try {
+        final result = await _paymentService.processPayment(
+          type: 'order',
+          amount: entry.value,
+          phoneNumber: phoneNumber,
+          orderId: entry.key,
+        );
+
+        if (!mounted) return;
+
+        if (!result.success || result.paymentId == null) {
+          state = MomoPaymentState(
+            phase: MomoPaymentPhase.failed,
+            errorMessage: result.message ?? 'Failed to initiate payment ${i + 1}',
+            totalOrders: total,
+            currentOrderIndex: i + 1,
+          );
+          return;
+        }
+
+        state = MomoPaymentState(
+          phase: MomoPaymentPhase.waitingForUser,
+          paymentId: result.paymentId,
+          message: 'Confirm payment ${i + 1} of $total on your phone...',
+          totalOrders: total,
+          currentOrderIndex: i + 1,
+        );
+
+        // Synchronously poll until this payment completes or fails
+        final success = await _pollUntilDone(result.paymentId!);
+        if (!success) return; // state is already set to failed
+      } catch (e) {
+        if (!mounted) return;
+        state = MomoPaymentState(
+          phase: MomoPaymentPhase.failed,
+          errorMessage: e.toString(),
+          totalOrders: total,
+          currentOrderIndex: i + 1,
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    // All payments succeeded
+    state = MomoPaymentState(
+      phase: MomoPaymentPhase.success,
+      message: 'All $total payments successful!',
+      totalOrders: total,
+      currentOrderIndex: total,
     );
   }
 
@@ -140,6 +235,8 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
         appointmentId: appointmentId,
       );
 
+      if (!mounted) return;
+
       if (result.success && result.paymentId != null) {
         state = MomoPaymentState(
           phase: MomoPaymentPhase.waitingForUser,
@@ -156,6 +253,7 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
       state = MomoPaymentState(
         phase: MomoPaymentPhase.failed,
         errorMessage: e.toString(),
@@ -168,6 +266,52 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
       const Duration(seconds: pollIntervalSeconds),
       (_) => _pollStatus(paymentId),
     );
+  }
+
+  /// Synchronous polling loop — resolves when payment is COMPLETED or FAILED.
+  /// Returns true on success, false on failure (and sets state accordingly).
+  Future<bool> _pollUntilDone(String paymentId) async {
+    for (var attempt = 1; attempt <= maxPollAttempts; attempt++) {
+      await Future.delayed(const Duration(seconds: pollIntervalSeconds));
+      if (!mounted) return false;
+
+      state = state.copyWith(
+        phase: MomoPaymentPhase.polling,
+        paymentId: paymentId,
+        pollAttempts: attempt,
+        message: 'Checking payment status...',
+      );
+
+      try {
+        final status = await _paymentService.checkPaymentStatus(paymentId);
+        if (!mounted) return false;
+        if (status.isCompleted) return true;
+        if (status.isFailed) {
+          state = MomoPaymentState(
+            phase: MomoPaymentPhase.failed,
+            paymentId: paymentId,
+            errorMessage: status.message ?? 'Payment was declined',
+            totalOrders: state.totalOrders,
+            currentOrderIndex: state.currentOrderIndex,
+          );
+          return false;
+        }
+        // Still PENDING — continue polling
+      } catch (_) {
+        // Network error — keep trying
+      }
+    }
+
+    if (!mounted) return false;
+    // Timed out
+    state = MomoPaymentState(
+      phase: MomoPaymentPhase.failed,
+      paymentId: paymentId,
+      errorMessage: 'Payment timed out. If money was deducted, please contact support.',
+      totalOrders: state.totalOrders,
+      currentOrderIndex: state.currentOrderIndex,
+    );
+    return false;
   }
 
   Future<void> _pollStatus(String paymentId) async {
@@ -183,6 +327,8 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
       return;
     }
 
+    if (!mounted) { _stopPolling(); return; }
+
     state = state.copyWith(
       phase: MomoPaymentPhase.polling,
       pollAttempts: currentAttempts,
@@ -191,6 +337,7 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
 
     try {
       final status = await _paymentService.checkPaymentStatus(paymentId);
+      if (!mounted) { _stopPolling(); return; }
 
       if (status.isCompleted) {
         _stopPolling();
@@ -209,6 +356,7 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
       }
       // If still PENDING, keep polling (state stays as-is with updated attempts)
     } catch (e) {
+      if (!mounted) { _stopPolling(); return; }
       // Don't stop polling on network errors, just log and retry
       state = state.copyWith(
         message: 'Checking payment status...',
@@ -234,9 +382,11 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
   }
 }
 
-/// Provider for the MoMo payment flow
+/// Provider for the MoMo payment flow.
+/// NOT autoDispose — the notifier must survive async gaps during payment
+/// initiation and polling. Call reset() manually when done.
 final momoPaymentProvider =
-    StateNotifierProvider.autoDispose<MomoPaymentNotifier, MomoPaymentState>(
+    StateNotifierProvider<MomoPaymentNotifier, MomoPaymentState>(
   (ref) {
     final service = ref.read(paymentServiceProvider);
     return MomoPaymentNotifier(service);

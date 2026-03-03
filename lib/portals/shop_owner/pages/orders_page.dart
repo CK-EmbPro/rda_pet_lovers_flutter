@@ -17,8 +17,8 @@ class OrdersPage extends ConsumerStatefulWidget {
 
 class _OrdersPageState extends ConsumerState<OrdersPage> {
   int _selectedFilter = 0;
-  final List<String> _filters = ['Pending', 'Processing', 'Completed', 'Cancelled'];
-  final List<String> _statusKeys = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
+  final List<String> _filters = ['Pending', 'Confirmed', 'Processing', 'Completed', 'Cancelled'];
+  final List<String> _statusKeys = ['PENDING', 'CONFIRMED', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
 
   @override
   Widget build(BuildContext context) {
@@ -221,7 +221,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                       Text(
-                        'Customer ID: ${order.userId}',
+                        'Customer ID: ${order.buyerId}',
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
@@ -268,8 +268,31 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
 
   Widget _buildStatusAction(BuildContext context) {
     final status = order.status.toLowerCase();
-    
+
     if (status == 'pending') {
+      // Pending orders are awaiting payment — no action for shop owner yet
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.orange.withAlpha(20),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange.withAlpha(60)),
+        ),
+        child: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.schedule, color: Colors.orange, size: 18),
+            SizedBox(width: 8),
+            Text('Awaiting Payment',
+                style: TextStyle(
+                    color: Colors.orange,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13)),
+          ],
+        ),
+      );
+    } else if (status == 'confirmed') {
       return ElevatedButton(
         onPressed: _isUpdating ? null : () => _updateStatus('PROCESSING'),
         style: ElevatedButton.styleFrom(
@@ -328,6 +351,8 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
     switch (status.toUpperCase()) {
       case 'PENDING':
         return Colors.orange;
+      case 'CONFIRMED':
+        return Colors.purple;
       case 'PROCESSING':
         return AppColors.secondary;
       case 'COMPLETED':
@@ -343,6 +368,8 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
     switch (status.toUpperCase()) {
       case 'PENDING':
         return Icons.hourglass_empty;
+      case 'CONFIRMED':
+        return Icons.check_circle_outline;
       case 'PROCESSING':
         return Icons.sync;
       case 'COMPLETED':
