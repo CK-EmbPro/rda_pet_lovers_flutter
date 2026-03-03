@@ -24,11 +24,11 @@ final allProductsProvider = FutureProvider.autoDispose
   );
 });
 
-/// Products by shop (for shop owner portal)
+/// Products by shop (for shop owner portal — includes inactive)
 final shopProductsProvider = FutureProvider.autoDispose
     .family<PaginatedResponse<ProductModel>, String>((ref, shopId) async {
   final service = ref.read(productServiceProvider);
-  return service.getByShop(shopId);
+  return service.getMyShopProducts(shopId, limit: 100);
 });
 
 /// Single product detail

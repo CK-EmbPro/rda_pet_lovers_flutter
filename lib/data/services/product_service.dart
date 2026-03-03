@@ -55,7 +55,7 @@ class ProductService extends BaseApiService {
     });
   }
 
-  /// Get products by shop (public)
+  /// Get products by shop (public — active only)
   Future<PaginatedResponse<ProductModel>> getByShop(
     String shopId, {
     int page = 1,
@@ -64,6 +64,31 @@ class ProductService extends BaseApiService {
     return safeApiCall(() async {
       final response = await dio.get(
         '${ApiEndpoints.products}/shop/$shopId',
+        queryParameters: {'page': page, 'limit': limit},
+      );
+
+      final List<dynamic> rawData = response.data['data'] ?? [];
+      final meta = response.data['meta'] ?? {};
+
+      return PaginatedResponse(
+        data: rawData.map((json) => ProductModel.fromJson(json)).toList(),
+        page: meta['page'] ?? page,
+        limit: meta['limit'] ?? limit,
+        total: meta['total'] ?? 0,
+        totalPages: meta['totalPages'] ?? 0,
+      );
+    });
+  }
+
+  /// Get all products for the shop owner (includes inactive)
+  Future<PaginatedResponse<ProductModel>> getMyShopProducts(
+    String shopId, {
+    int page = 1,
+    int limit = 20,
+  }) async {
+    return safeApiCall(() async {
+      final response = await dio.get(
+        '${ApiEndpoints.products}/my-shop/$shopId',
         queryParameters: {'page': page, 'limit': limit},
       );
 

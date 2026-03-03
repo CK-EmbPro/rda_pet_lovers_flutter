@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/toast_service.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/product_providers.dart';
 import '../../../data/providers/shop_providers.dart';
@@ -100,6 +101,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                 product: filteredProducts[index],
                                 onEdit: () => _showEditProductSheet(context, filteredProducts[index]),
                                 onDelete: () => _showDeleteConfirmation(context, filteredProducts[index], shop.id),
+                                onToggleActive: () => _toggleProductActive(filteredProducts[index], shop.id),
                               ),
                             )
                           : ListView.builder(
@@ -109,6 +111,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                 product: filteredProducts[index],
                                 onEdit: () => _showEditProductSheet(context, filteredProducts[index]),
                                 onDelete: () => _showDeleteConfirmation(context, filteredProducts[index], shop.id),
+                                onToggleActive: () => _toggleProductActive(filteredProducts[index], shop.id),
                               ),
                             ),
 
@@ -183,6 +186,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                   decoration: const InputDecoration(
                                     hintText: 'Search products...',
                                     hintStyle: TextStyle(color: AppColors.textSecondary),
+                                    filled: true,
+                                    fillColor: Colors.white,
                                     border: InputBorder.none,
                                     enabledBorder: InputBorder.none,
                                     focusedBorder: InputBorder.none,
@@ -235,29 +240,66 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   void _showDeleteConfirmation(BuildContext context, ProductModel product, String shopId) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Delete Product', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to delete "${product.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
+      builder: (ctx) {
+        bool isDeleting = false;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('Delete Product', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: Text('Are you sure you want to delete "${product.name}"?'),
+            actionsAlignment: MainAxisAlignment.center,
+            actionsPadding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+            actions: [
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isDeleting ? null : () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        side: const BorderSide(color: AppColors.textSecondary),
+                      ),
+                      child: const Text('Cancel', style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isDeleting
+                          ? null
+                          : () async {
+                              setDialogState(() => isDeleting = true);
+                              try {
+                                final deleted = await ref.read(productCrudProvider.notifier).deleteProduct(product.id);
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (deleted) {
+                                  ref.invalidate(shopProductsProvider(shopId));
+                                  if (mounted) ToastService.success(context, 'Product deleted');
+                                } else {
+                                  if (mounted) ToastService.error(context, 'Failed to delete product');
+                                }
+                              } catch (e) {
+                                if (ctx.mounted) Navigator.pop(ctx);
+                                if (mounted) ToastService.error(context, 'Error: $e');
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: isDeleting
+                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : const Text('Delete', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(productCrudProvider.notifier).deleteProduct(product.id);
-              ref.invalidate(shopProductsProvider(shopId));
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            ),
-            child: const Text('Delete', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -266,10 +308,26 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
   }
 
   void _showEditProductSheet(BuildContext context, ProductModel product) {
-    // Pass ProductModel directly or map. ProductFormSheet likely expects map or model.
-    // Based on previous code, it expects a map `product` argument.
-    // I should check ProductFormSheet, but for now matching previous implementation behavior.
     ProductFormSheet.show(context, product: product);
+  }
+
+  Future<void> _toggleProductActive(ProductModel product, String shopId) async {
+    final newActive = !product.isActive;
+    final label = newActive ? 'activated' : 'deactivated';
+    try {
+      final result = await ref.read(productCrudProvider.notifier).updateProduct(
+        product.id,
+        {'isActive': newActive},
+      );
+      if (result != null) {
+        ref.invalidate(shopProductsProvider(shopId));
+        if (mounted) ToastService.success(context, 'Product $label');
+      } else {
+        if (mounted) ToastService.error(context, 'Failed to update product');
+      }
+    } catch (e) {
+      if (mounted) ToastService.error(context, 'Error: $e');
+    }
   }
 }
 
@@ -341,8 +399,14 @@ class _ProductCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
 
-  const _ProductCard({required this.product, required this.onEdit, required this.onDelete});
+  const _ProductCard({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -350,144 +414,147 @@ class _ProductCard extends StatelessWidget {
     final price = product.price.toInt();
     final imageUrl = product.mainImage;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Product Image
-          Stack(
-            children: [
-              Container(
-                height: 180,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE86A2C),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-                  child: imageUrl != null && imageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: resolveImageUrl(imageUrl),
-                          fit: BoxFit.fill,
-                          placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
-                          errorWidget: (_, _, _) => _placeholderImage(),
-                        )
-                      : _placeholderImage(),
-                ),
-              ),
-              // Name overlay
-              Positioned(
-                top: 12,
-                left: 12,
-                right: 50,
-                child: Text(
-                  product.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
-                  ),
-                ),
-              ),
-              // Delete button
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: onDelete,
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(Icons.delete_outline, color: AppColors.error, size: 20),
-                  ),
-                ),
-              ),
-            ],
-          ),
-
-          // Details
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return Opacity(
+      opacity: product.isActive ? 1.0 : 0.65,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Product Image
+            Stack(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        const Text('Category: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                        Text(product.categoryName ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: stock > 0 ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: stock > 0 ? AppColors.success : AppColors.error),
-                      ),
-                      child: Text(
-                        stock > 0 ? 'In Stock: $stock' : 'Out of Stock',
-                        style: TextStyle(color: stock > 0 ? AppColors.success : AppColors.error, fontWeight: FontWeight.w600, fontSize: 12),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    const Text('Stock: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                    Text(
-                      '$stock Pieces',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        color: stock > 0 ? AppColors.textPrimary : AppColors.error,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Text('Product Fee: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                    Text(
-                      '${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} frw',
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
+                Container(
+                  height: 250,
                   width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: onEdit,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.secondary,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE86A2C),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: resolveImageUrl(imageUrl),
+                            fit: BoxFit.fill,
+                            placeholder: (_, _) => const Center(child: CircularProgressIndicator()),
+                            errorWidget: (_, _, _) => _placeholderImage(),
+                          )
+                        : _placeholderImage(),
+                  ),
+                ),
+                // Name overlay
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  right: 50,
+                  child: Text(
+                    product.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      shadows: [Shadow(blurRadius: 4, color: Colors.black26)],
                     ),
-                    child: const Text('edit', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+                // Inactive badge
+                if (!product.isActive)
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Text(
+                        'INACTIVE',
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                // Three-dot menu
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _ProductPopupMenu(
+                    product: product,
+                    onEdit: onEdit,
+                    onDelete: onDelete,
+                    onToggleActive: onToggleActive,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            // Details
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Row(
+                          children: [
+                            const Text('Category: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                            Flexible(child: Text(product.categoryName ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.w600), overflow: TextOverflow.ellipsis)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: stock > 0 ? AppColors.success.withValues(alpha: 0.1) : AppColors.error.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: stock > 0 ? AppColors.success : AppColors.error),
+                        ),
+                        child: Text(
+                          stock > 0 ? 'In Stock: $stock' : 'Out of Stock',
+                          style: TextStyle(color: stock > 0 ? AppColors.success : AppColors.error, fontWeight: FontWeight.w600, fontSize: 12),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Text('Stock: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text(
+                        '$stock Pieces',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: stock > 0 ? AppColors.textPrimary : AppColors.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      const Text('Product Fee: ', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      Text(
+                        '${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} frw',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -499,13 +566,19 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-// Grid Price Card
+// Grid Product Card
 class _ProductGridCard extends StatelessWidget {
   final ProductModel product;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
 
-  const _ProductGridCard({required this.product, required this.onEdit, required this.onDelete});
+  const _ProductGridCard({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -513,111 +586,116 @@ class _ProductGridCard extends StatelessWidget {
     final price = product.price.toInt();
     final imageUrl = product.mainImage;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: AppTheme.cardShadow,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Stack(
-            children: [
-              Container(
-                height: 90,
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFE86A2C),
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Opacity(
+      opacity: product.isActive ? 1.0 : 0.65,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  height: 120,
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFE86A2C),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    child: imageUrl != null && imageUrl.isNotEmpty
+                        ? CachedNetworkImage(
+                            imageUrl: resolveImageUrl(imageUrl),
+                            fit: BoxFit.fill,
+                            placeholder: (_, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                            errorWidget: (_, _, _) => _placeholderImage(),
+                          )
+                        : _placeholderImage(),
+                  ),
                 ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                  child: imageUrl != null && imageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: resolveImageUrl(imageUrl),
-                          fit: BoxFit.fill,
-                          placeholder: (_, _) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-                          errorWidget: (_, _, _) => _placeholderImage(),
-                        )
-                      : _placeholderImage(),
+                // Three-dot menu
+                Positioned(
+                  top: 4,
+                  right: 4,
+                  child: _ProductPopupMenu(
+                    product: product,
+                    onEdit: onEdit,
+                    onDelete: onDelete,
+                    onToggleActive: onToggleActive,
+                    isCompact: true,
+                  ),
                 ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: onDelete,
+                // Stock badge
+                Positioned(
+                  top: 8,
+                  left: 8,
                   child: Container(
-                    padding: const EdgeInsets.all(6),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                      color: stock > 0 ? AppColors.success : AppColors.error,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.delete_outline, color: AppColors.error, size: 16),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                left: 8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: stock > 0 ? AppColors.success : AppColors.error,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Text(
-                    stock > 0 ? '$stock left' : 'Out',
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} frw',
-                    style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Stock: $stock',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: stock > 0 ? AppColors.textSecondary : AppColors.error,
+                    child: Text(
+                      stock > 0 ? '$stock left' : 'Out',
+                      style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                     ),
                   ),
-                  const Spacer(),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: onEdit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.secondary,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                // Inactive badge
+                if (!product.isActive)
+                  Positioned(
+                    bottom: 6,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade800,
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Text('Edit', style: TextStyle(color: Colors.white, fontSize: 12)),
+                      child: const Text(
+                        'INACTIVE',
+                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
-                ],
+              ],
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${price.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},')} frw',
+                      style: const TextStyle(color: AppColors.secondary, fontWeight: FontWeight.w600, fontSize: 13),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Stock: $stock',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: stock > 0 ? AppColors.textSecondary : AppColors.error,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -625,6 +703,102 @@ class _ProductGridCard extends StatelessWidget {
   Widget _placeholderImage() {
     return Center(
       child: Icon(Icons.inventory_2, size: 40, color: Colors.white.withValues(alpha: 0.6)),
+    );
+  }
+}
+
+/// Reusable three-dot popup menu for product cards
+class _ProductPopupMenu extends StatelessWidget {
+  final ProductModel product;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
+  final bool isCompact;
+
+  const _ProductPopupMenu({
+    required this.product,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+    this.isCompact = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(isCompact ? 10 : 12),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(isCompact ? 16 : 16),
+      ),
+      child: SizedBox(
+        width: isCompact ? 30 : 34,
+        height: isCompact ? 30 : 34,
+        child: PopupMenuButton<String>(
+        icon: Icon(Icons.more_vert, size: isCompact ? 14 : 16, color: Colors.white),
+        padding: EdgeInsets.zero,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+        elevation: 4,
+        onSelected: (value) {
+          switch (value) {
+            case 'edit':
+              onEdit();
+              break;
+            case 'toggle':
+              onToggleActive();
+              break;
+            case 'delete':
+              onDelete();
+              break;
+          }
+        },
+        itemBuilder: (_) => [
+          const PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(Icons.edit_outlined, size: 20, color: AppColors.secondary),
+                SizedBox(width: 10),
+                Text('Edit', style: TextStyle(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          PopupMenuItem(
+            value: 'toggle',
+            child: Row(
+              children: [
+                Icon(
+                  product.isActive ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                  size: 20,
+                  color: product.isActive ? Colors.orange : AppColors.success,
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  product.isActive ? 'Deactivate' : 'Activate',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(height: 1),
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, size: 20, color: AppColors.error),
+                SizedBox(width: 10),
+                Text('Delete', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+    ),
+    ),
     );
   }
 }

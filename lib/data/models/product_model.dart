@@ -41,6 +41,14 @@ class ProductModel {
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final imagesList = (json['images'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        [];
+    // mainImage: explicit field from backend, or first image in array
+    final mainImg = json['mainImage'] as String? ??
+        (imagesList.isNotEmpty ? imagesList.first : null);
+
     return ProductModel(
       id: json['id'] as String,
       productCode: json['productCode'] as String,
@@ -52,11 +60,8 @@ class ProductModel {
       sku: json['sku'] as String?,
       isActive: json['isActive'] as bool? ?? true,
       isFeatured: json['isFeatured'] as bool? ?? false,
-      mainImage: json['mainImage'] as String?,
-      images: (json['images'] as List<dynamic>?)
-              ?.map((e) => e as String)
-              .toList() ??
-          [],
+      mainImage: mainImg,
+      images: imagesList,
       shopId: json['shopId'] as String,
       categoryId: json['categoryId'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),

@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/api/dio_client.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/toast_service.dart';
 import '../../../core/widgets/common_widgets.dart';
@@ -9,6 +10,7 @@ import '../../../data/models/models.dart';
 import '../../../data/providers/product_providers.dart';
 import '../../../data/providers/category_providers.dart';
 import '../../../data/providers/shop_providers.dart';
+import '../../../data/services/storage_service.dart';
 
 class ProductFormSheet extends ConsumerStatefulWidget {
   final ProductModel? product;
@@ -42,10 +44,14 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
   late TextEditingController _skuController;
   late TextEditingController _discountController;
   String? _selectedCategory;
-  String? _imagePath;
+  XFile? _newImage;
+  String? _existingImageUrl;
   bool _isLoading = false;
   bool _isActive = true;
   bool _isFeatured = false;
+
+  final _picker = ImagePicker();
+  final _storageService = StorageService(DioClient());
 
   bool get isEdit => widget.product != null;
 
@@ -60,7 +66,10 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
     _discountController = TextEditingController(text: widget.product?.discountPercentage?.toString() ?? '');
     _selectedCategory = widget.product?.categoryId;
     _isActive = widget.product?.isActive ?? true;
-    _isFeatured = widget.product?.isFeatured ?? false; 
+    _isFeatured = widget.product?.isFeatured ?? false;
+    _existingImageUrl = (widget.product?.images.isNotEmpty == true)
+        ? widget.product!.images.first
+        : null;
   }
 
   @override
@@ -72,6 +81,34 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
     _skuController.dispose();
     _discountController.dispose();
     super.dispose();
+  }
+
+  /// Sanitise a string for use in file/folder names.
+  String _safeName(String s) => s
+      .toLowerCase()
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'-+'), '-')
+      .replaceAll(RegExp(r'^-|-$'), '');
+
+  /// Upload the newly picked image and return its server URL.
+  /// Saved at: uploads/products/<shopName>/<productName>.ext
+  Future<String?> _uploadNewImage(String shopName) async {
+    if (_newImage == null) return null;
+    try {
+      final ext = _newImage!.path.contains('.')
+          ? '.${_newImage!.path.split('.').last}'
+          : '.jpg';
+      final folder = 'products/${_safeName(shopName)}';
+      final filename = '${_safeName(_nameController.text)}$ext';
+      final url = await _storageService.uploadFile(
+        _newImage!.path,
+        folder: folder,
+        filename: filename,
+      );
+      return url.isNotEmpty ? url : null;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> _save() async {
@@ -87,6 +124,14 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
     setState(() => _isLoading = true);
 
     try {
+      // Upload the new image if one was picked
+      final uploadedUrl = await _uploadNewImage(shop.name);
+      // Use new image if uploaded, otherwise keep existing, otherwise empty
+      final allImages = <String>[
+        if (uploadedUrl != null) uploadedUrl
+        else if (_existingImageUrl != null) _existingImageUrl!,
+      ];
+
       final notifier = ref.read(productCrudProvider.notifier);
       final price = double.tryParse(_priceController.text) ?? 0;
       final stockQuantity = int.tryParse(_stockController.text) ?? 0;
@@ -104,15 +149,12 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
           'discountPercentage': discountPercentage,
           'isActive': _isActive,
           'isFeatured': _isFeatured,
-          // 'images': _imagePath != null ? [_imagePath] : null
+          'images': allImages,
         });
         
         if (success != null && mounted) {
           ToastService.success(context, "Product updated");
           Navigator.pop(context);
-          // Refresh list? Provider invalidated automatically if crud updates state? 
-          // productCrudProvider doesn't auto-invalidate allProductsProvider or shopProductsProvider unless they listen to it or we manually refresh.
-          // Usually we invalidate affected providers.
           ref.invalidate(shopProductsProvider(shop.id));
         } else if (mounted) {
           ToastService.error(context, "Failed to update product");
@@ -130,7 +172,7 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
           sku: _skuController.text.isNotEmpty ? _skuController.text : null,
           isActive: _isActive,
           isFeatured: _isFeatured,
-          images: [], // Placeholder for image
+          images: allImages,
         );
 
         if (success != null && mounted) {
@@ -181,45 +223,67 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
               ),
               const SizedBox(height: 24),
   
-              // Image Picker
+              // ─── Image Picker (single image) ───────────────────
+              const Text('Product Image', style: TextStyle(fontWeight: FontWeight.w500)),
+              const SizedBox(height: 8),
               Center(
                 child: GestureDetector(
                   onTap: () async {
-                    final picker = ImagePicker();
-                    final image = await picker.pickImage(source: ImageSource.gallery);
+                    final image = await _picker.pickImage(source: ImageSource.gallery, imageQuality: 80);
                     if (image != null) {
-                      setState(() => _imagePath = image.path);
+                      setState(() {
+                        _newImage = image;
+                        _existingImageUrl = null; // new pick replaces existing
+                      });
                     }
                   },
-                  child: Container(
-                    width: 150,
-                    height: 150,
-                    decoration: BoxDecoration(
-                      color: AppColors.inputFill,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.secondary.withValues(alpha: 100/255.0), width: 2, style: BorderStyle.solid),
-                      image: _imagePath != null
-                          ? DecorationImage(
-                              image: FileImage(File(_imagePath!)),
-                              fit: BoxFit.cover,
-                            )
-                          : (widget.product?.images.isNotEmpty == true
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 150, height: 150,
+                        decoration: BoxDecoration(
+                          color: AppColors.inputFill,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.secondary.withValues(alpha: 100 / 255.0), width: 2),
+                          image: _newImage != null
                               ? DecorationImage(
-                                  image: NetworkImage(widget.product!.images.first),
+                                  image: FileImage(File(_newImage!.path)),
                                   fit: BoxFit.cover,
                                 )
-                              : null),
-                    ),
-                    child: (_imagePath == null && (widget.product?.images.isEmpty ?? true))
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.add_a_photo, color: AppColors.secondary, size: 40),
-                              const SizedBox(height: 8),
-                              const Text('Add Photo', style: TextStyle(color: AppColors.textSecondary)),
-                            ],
-                          )
-                        : null,
+                              : (_existingImageUrl != null
+                                  ? DecorationImage(
+                                      image: NetworkImage(resolveImageUrl(_existingImageUrl!)),
+                                      fit: BoxFit.cover,
+                                    )
+                                  : null),
+                        ),
+                        child: (_newImage == null && _existingImageUrl == null)
+                            ? Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.add_a_photo, color: AppColors.secondary, size: 40),
+                                  const SizedBox(height: 8),
+                                  const Text('Add Photo', style: TextStyle(color: AppColors.textSecondary)),
+                                ],
+                              )
+                            : null,
+                      ),
+                      if (_newImage != null || _existingImageUrl != null)
+                        Positioned(
+                          top: 4, right: 4,
+                          child: GestureDetector(
+                            onTap: () => setState(() {
+                              _newImage = null;
+                              _existingImageUrl = null;
+                            }),
+                            child: Container(
+                              decoration: const BoxDecoration(color: Colors.black54, shape: BoxShape.circle),
+                              padding: const EdgeInsets.all(4),
+                              child: const Icon(Icons.close, color: Colors.white, size: 16),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
