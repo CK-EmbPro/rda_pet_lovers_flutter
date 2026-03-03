@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -245,28 +246,44 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
                           color: AppColors.inputFill,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(color: AppColors.secondary.withValues(alpha: 100 / 255.0), width: 2),
-                          image: _newImage != null
-                              ? DecorationImage(
-                                  image: FileImage(File(_newImage!.path)),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: _newImage != null
+                              ? Image.file(
+                                  File(_newImage!.path),
+                                  width: 150, height: 150,
                                   fit: BoxFit.cover,
                                 )
-                              : (_existingImageUrl != null
-                                  ? DecorationImage(
-                                      image: NetworkImage(resolveImageUrl(_existingImageUrl!)),
+                              : _existingImageUrl != null
+                                  ? CachedNetworkImage(
+                                      imageUrl: resolveImageUrl(_existingImageUrl!),
+                                      width: 150, height: 150,
                                       fit: BoxFit.cover,
+                                      placeholder: (_, _) => const Center(
+                                        child: SizedBox(
+                                          width: 24, height: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 2),
+                                        ),
+                                      ),
+                                      errorWidget: (_, url, error) => Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(Icons.broken_image, color: AppColors.secondary, size: 40),
+                                          const SizedBox(height: 8),
+                                          const Text('Image load failed', style: TextStyle(color: AppColors.textSecondary, fontSize: 11)),
+                                        ],
+                                      ),
                                     )
-                                  : null),
+                                  : Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Icon(Icons.add_a_photo, color: AppColors.secondary, size: 40),
+                                        const SizedBox(height: 8),
+                                        const Text('Add Photo', style: TextStyle(color: AppColors.textSecondary)),
+                                      ],
+                                    ),
                         ),
-                        child: (_newImage == null && _existingImageUrl == null)
-                            ? Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.add_a_photo, color: AppColors.secondary, size: 40),
-                                  const SizedBox(height: 8),
-                                  const Text('Add Photo', style: TextStyle(color: AppColors.textSecondary)),
-                                ],
-                              )
-                            : null,
                       ),
                       if (_newImage != null || _existingImageUrl != null)
                         Positioned(

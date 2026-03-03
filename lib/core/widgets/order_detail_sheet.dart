@@ -116,8 +116,6 @@ class OrderDetailSheet extends StatelessWidget {
                   // TODO: Fetch user name if not in OrderModel. OrderModel has userId.
                   // For now showing ID or "Customer".
                   _buildInfoRow('Customer ID', order.userId),
-                  if (order.shippingAddress != null)
-                     _buildInfoRow('Address', order.shippingAddress!),
                 ],
               ),
             ),
@@ -193,31 +191,13 @@ class OrderDetailSheet extends StatelessWidget {
           child: ElevatedButton(
             onPressed: () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.secondary,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text('Mark as Shipped', style: TextStyle(color: Colors.white)),
-          ),
-        ),
-      );
-    } else if (status == 'shipped') {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: () => Navigator.pop(context),
-            style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.success,
               padding: const EdgeInsets.symmetric(vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: const Text('Mark as Delivered', style: TextStyle(color: Colors.white)),
+            child: const Text('Mark as Completed', style: TextStyle(color: Colors.white)),
           ),
         ),
       );
@@ -270,9 +250,7 @@ class OrderDetailSheet extends StatelessWidget {
         return Colors.orange;
       case 'processing':
         return AppColors.secondary;
-      case 'shipped':
-        return Colors.blue;
-      case 'delivered':
+      case 'completed':
         return AppColors.success;
       case 'cancelled':
         return AppColors.error;

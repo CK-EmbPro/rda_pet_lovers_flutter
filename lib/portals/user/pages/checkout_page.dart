@@ -19,8 +19,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
   Widget build(BuildContext context) {
     final cartItems = ref.watch(cartProvider);
     final total = ref.read(cartProvider.notifier).total;
-    const deliveryFee = 2500.0;
-    final grandTotal = total + deliveryFee;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -74,46 +72,6 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
 
             const SizedBox(height: 24),
 
-            // Shipping Address Section
-            _buildSectionHeader('Shipping Address'),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: AppTheme.cardShadow,
-              ),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.1),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.location_on, color: AppColors.secondary),
-                  ),
-                  const SizedBox(width: 16),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Home Address', style: TextStyle(fontWeight: FontWeight.bold)),
-                        Text('Kicukiro, Kigali, Rwanda', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-                      ],
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('Change', style: TextStyle(color: AppColors.secondary)),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
             // Order Summary
             _buildSectionHeader('Order Summary'),
             const SizedBox(height: 12),
@@ -126,13 +84,9 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
               ),
               child: Column(
                 children: [
-                  _SummaryRow(label: 'Subtotal', value: '${total.toInt()} frw'),
-                  const SizedBox(height: 12),
-                  const _SummaryRow(label: 'Delivery Fee', value: '2,500 frw'),
-                  const Divider(height: 32),
                   _SummaryRow(
                     label: 'Total Amount',
-                    value: '${grandTotal.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} frw',
+                    value: '${total.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')} RWF',
                     isTotal: true,
                   ),
                 ],

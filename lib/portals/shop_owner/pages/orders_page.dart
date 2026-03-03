@@ -17,8 +17,8 @@ class OrdersPage extends ConsumerStatefulWidget {
 
 class _OrdersPageState extends ConsumerState<OrdersPage> {
   int _selectedFilter = 0;
-  final List<String> _filters = ['Pending', 'Processing', 'Shipped', 'Delivered'];
-  final List<String> _statusKeys = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
+  final List<String> _filters = ['Pending', 'Processing', 'Completed', 'Cancelled'];
+  final List<String> _statusKeys = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +171,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
   String _getStatusSuccessMessage(String status) {
     switch (status) {
       case 'PROCESSING': return 'Order is now being processed! 🎉';
-      case 'SHIPPED': return 'Order marked as shipped! 📦';
+      case 'COMPLETED': return 'Order marked as completed! ✅';
       default: return 'Order status updated successfully';
     }
   }
@@ -283,15 +283,15 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
       );
     } else if (status == 'processing') {
       return ElevatedButton(
-        onPressed: _isUpdating ? null : () => _updateStatus('SHIPPED'),
+        onPressed: _isUpdating ? null : () => _updateStatus('COMPLETED'),
         style: ElevatedButton.styleFrom(
           minimumSize: const Size(double.infinity, 44),
-          backgroundColor: AppColors.secondary,
+          backgroundColor: AppColors.success,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
         child: _isUpdating
             ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : const Text('Mark as Shipped', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            : const Text('Mark as Completed', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       );
     }
     
@@ -330,9 +330,6 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
         return Colors.orange;
       case 'PROCESSING':
         return AppColors.secondary;
-      case 'SHIPPED':
-        return Colors.blue;
-      case 'DELIVERED':
       case 'COMPLETED':
         return AppColors.success;
       case 'CANCELLED':
@@ -348,9 +345,6 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
         return Icons.hourglass_empty;
       case 'PROCESSING':
         return Icons.sync;
-      case 'SHIPPED':
-        return Icons.local_shipping;
-      case 'DELIVERED':
       case 'COMPLETED':
         return Icons.check_circle;
       case 'CANCELLED':

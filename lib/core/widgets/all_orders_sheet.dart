@@ -25,8 +25,7 @@ class AllOrdersSheet extends ConsumerWidget {
 
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
-      case 'DELIVERED': return AppColors.success;
-      case 'SHIPPED':   return AppColors.secondary;
+      case 'COMPLETED': return AppColors.success;
       case 'CONFIRMED':
       case 'PROCESSING': return const Color(0xFF9333EA);
       case 'PENDING':   return Colors.orange;
@@ -37,8 +36,7 @@ class AllOrdersSheet extends ConsumerWidget {
 
   IconData _getStatusIcon(String status) {
     switch (status.toUpperCase()) {
-      case 'DELIVERED':  return Icons.check_circle;
-      case 'SHIPPED':    return Icons.local_shipping;
+      case 'COMPLETED':  return Icons.check_circle;
       case 'CONFIRMED':
       case 'PROCESSING': return Icons.access_time_rounded;
       case 'PENDING':    return Icons.hourglass_empty;

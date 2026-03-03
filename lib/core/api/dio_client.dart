@@ -103,7 +103,7 @@ class ApiEndpoints {
   static const String orders = '/orders';
   static const String myOrders = '/orders/my-orders';
   static const String sellerOrders = '/orders/seller-orders';
-  // Usage: /orders/:id/status, /orders/:id/cancel, /orders/:id/tracking
+  // Usage: /orders/:id/status, /orders/:id/cancel
 
   // ── Appointments ──────────────────────────────
   static const String appointments = '/appointments';

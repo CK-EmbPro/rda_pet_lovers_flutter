@@ -161,9 +161,8 @@ class OrderModel {
   final double subtotal;
   final double? discount;
   final double totalAmount;
-  final String status; // PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+  final String status; // PENDING, CONFIRMED, PROCESSING, COMPLETED, CANCELLED
   final String? paymentStatus;
-  final String? shippingAddress;
   final DateTime createdAt;
 
   OrderModel({
@@ -177,7 +176,6 @@ class OrderModel {
     required this.totalAmount,
     required this.status,
     this.paymentStatus,
-    this.shippingAddress,
     required this.createdAt,
   });
 
@@ -196,7 +194,6 @@ class OrderModel {
       totalAmount: ShopModel._parseDouble(json['totalAmount']) ?? 0,
       status: json['status'] as String,
       paymentStatus: json['paymentStatus'] as String?,
-      shippingAddress: json['shippingAddress'] as String?,
       createdAt: DateTime.parse(json['createdAt'] as String),
     );
   }
@@ -209,10 +206,6 @@ class OrderModel {
         return 'Confirmed';
       case 'PROCESSING':
         return 'Processing';
-      case 'SHIPPED':
-        return 'Shipped';
-      case 'DELIVERED':
-        return 'Delivered';
       case 'CANCELLED':
         return 'Cancelled';
       default:

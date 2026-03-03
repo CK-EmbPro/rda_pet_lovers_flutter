@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/widgets/notifications_sheet.dart';
+import '../../../core/widgets/notification_bell.dart';
 import '../../../core/widgets/appointment_detail_sheet.dart';
 // import '../../../data/providers/mock_data_provider.dart'; // Removing
 import '../../../data/models/models.dart';
@@ -174,20 +174,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
           Row(
             children: [
               // Notifications
-              GestureDetector(
-                onTap: () => NotificationsSheet.show(context),
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.inputFill,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Badge(
-                    label: const Text('3'),
-                    child: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-                  ),
-                ),
-              ),
+              const NotificationBell(),
               const SizedBox(width: 12),
               // Profile with initials
               GestureDetector(

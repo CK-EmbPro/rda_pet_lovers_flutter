@@ -16,8 +16,8 @@ class OrdersPage extends ConsumerStatefulWidget {
 
 class _OrdersPageState extends ConsumerState<OrdersPage> {
   int _selectedFilter = 0;
-  final List<String> _filters = ['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-  final List<String?> _statusKeys = [null, 'PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED', 'CANCELLED'];
+  final List<String> _filters = ['All', 'Pending', 'Processing', 'Completed', 'Cancelled'];
+  final List<String?> _statusKeys = [null, 'PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED'];
 
   @override
   Widget build(BuildContext context) {
@@ -247,9 +247,6 @@ class _OrderCard extends StatelessWidget {
         return Colors.orange;
       case 'PROCESSING':
         return AppColors.secondary;
-      case 'SHIPPED':
-        return Colors.blue;
-      case 'DELIVERED':
       case 'COMPLETED':
         return AppColors.success;
       case 'CANCELLED':
@@ -265,9 +262,6 @@ class _OrderCard extends StatelessWidget {
         return Icons.hourglass_empty;
       case 'PROCESSING':
         return Icons.sync;
-      case 'SHIPPED':
-        return Icons.local_shipping;
-      case 'DELIVERED':
       case 'COMPLETED':
         return Icons.check_circle;
       case 'CANCELLED':

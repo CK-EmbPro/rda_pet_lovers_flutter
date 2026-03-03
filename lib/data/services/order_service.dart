@@ -13,7 +13,6 @@ class OrderService extends BaseApiService {
   Future<OrderModel> create({
     required String shopId,
     required List<Map<String, dynamic>> items,
-    String? shippingAddress,
     String? notes,
   }) async {
     return safeApiCall(() async {
@@ -22,7 +21,6 @@ class OrderService extends BaseApiService {
         data: {
           'shopId': shopId,
           'items': items,
-          if (shippingAddress != null) 'shippingAddress': shippingAddress,
           if (notes != null) 'notes': notes,
         },
       );
@@ -144,14 +142,4 @@ class OrderService extends BaseApiService {
     });
   }
 
-  /// Add tracking info (protected — seller)
-  Future<OrderModel> addTracking(String id, String trackingNumber) async {
-    return safeApiCall(() async {
-      final response = await dio.patch(
-        '${ApiEndpoints.orders}/$id/tracking',
-        data: {'trackingNumber': trackingNumber},
-      );
-      return OrderModel.fromJson(response.data);
-    });
-  }
 }

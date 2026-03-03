@@ -47,7 +47,6 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
   Future<OrderModel?> createOrder({
     required String shopId,
     required List<Map<String, dynamic>> items,
-    String? shippingAddress,
     String? notes,
   }) async {
     state = const AsyncValue.loading();
@@ -55,7 +54,6 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
       final order = await _service.create(
         shopId: shopId,
         items: items,
-        shippingAddress: shippingAddress,
         notes: notes,
       );
       state = const AsyncValue.data(null);
@@ -90,17 +88,6 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<bool> addTracking(String id, String trackingNumber) async {
-    state = const AsyncValue.loading();
-    try {
-      await _service.addTracking(id, trackingNumber);
-      state = const AsyncValue.data(null);
-      return true;
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      return false;
-    }
-  }
 }
 
 final orderActionProvider =

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/notifications_sheet.dart';
+import '../../../core/widgets/notification_bell.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/auth_providers.dart';
@@ -117,20 +117,7 @@ class ShopDashboardPage extends ConsumerWidget {
                         Row(
                           children: [
                             // Notification icon
-                            GestureDetector(
-                              onTap: () => NotificationsSheet.show(context),
-                              child: Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  color: AppColors.inputFill,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Badge(
-                                  label: const Text('5'), // TODO: Real notification count
-                                  child: const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-                                ),
-                              ),
-                            ),
+                            const NotificationBell(),
                             const SizedBox(width: 12),
                             // Profile initials - circular, links to profile
                             GestureDetector(
@@ -570,10 +557,7 @@ class _OrderStatusBadge extends StatelessWidget {
       case 'processing':
         color = AppColors.secondary;
         break;
-      case 'shipped':
-        color = Colors.blue;
-        break;
-      case 'delivered':
+      case 'completed':
         color = AppColors.success;
         break;
       default:

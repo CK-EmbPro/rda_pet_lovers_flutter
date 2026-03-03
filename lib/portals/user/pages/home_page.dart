@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 
-import '../../../core/widgets/notifications_sheet.dart';
+import '../../../core/widgets/notification_bell.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../core/widgets/all_appointments_sheet.dart';
 import '../../../core/widgets/all_orders_sheet.dart';
@@ -116,33 +116,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     Row(
                       children: [
                         // Notification Icon
-                        GestureDetector(
-                          onTap: () => NotificationsSheet.show(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: AppColors.inputFill,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Stack(
-                              children: [
-                                const Icon(Icons.notifications_outlined, color: AppColors.textSecondary),
-                                Positioned(
-                                  right: 0,
-                                  top: 0,
-                                  child: Container(
-                                    width: 8,
-                                    height: 8,
-                                    decoration: const BoxDecoration(
-                                      color: AppColors.error,
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        const NotificationBell(),
                         const SizedBox(width: 12),
                         // Profile Icon - Links to Profile Page
                         GestureDetector(
@@ -538,12 +512,8 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget _buildOrderStatusBadge(String status) {
     Color color;
     switch (status.toLowerCase()) {
-      case 'delivered':
       case 'completed':
         color = AppColors.success;
-        break;
-      case 'shipped':
-        color = AppColors.secondary;
         break;
       default:
         color = Colors.orange;
