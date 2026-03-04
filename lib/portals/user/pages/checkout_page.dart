@@ -51,9 +51,7 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 children: [
                    ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: item.image != null
-                        ? CachedNetworkImage(imageUrl: resolveImageUrl(item.image!), width: 50, height: 50, fit: BoxFit.fill)
-                        : Container(width: 50, height: 50, color: AppColors.inputFill),
+                    child: _buildItemThumbnail(item),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -140,6 +138,44 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
     return Text(
       title,
       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF21314C)),
+    );
+  }
+
+  Widget _buildItemThumbnail(CartItem item) {
+    final url = resolveImageUrl(item.image);
+    if (url.isEmpty) {
+      return Container(
+        width: 50,
+        height: 50,
+        color: AppColors.inputFill,
+        child: Icon(
+          item.type == 'PET' ? Icons.pets : Icons.shopping_bag,
+          size: 22,
+          color: AppColors.textMuted,
+        ),
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: 50,
+      height: 50,
+      fit: BoxFit.fill,
+      placeholder: (_, _) => Container(
+        width: 50,
+        height: 50,
+        color: AppColors.inputFill,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      errorWidget: (_, _, _) => Container(
+        width: 50,
+        height: 50,
+        color: AppColors.inputFill,
+        child: Icon(
+          item.type == 'PET' ? Icons.pets : Icons.shopping_bag,
+          size: 22,
+          color: AppColors.textMuted,
+        ),
+      ),
     );
   }
 }

@@ -17,16 +17,8 @@ class ServicesPage extends ConsumerStatefulWidget {
 }
 
 class _ServicesPageState extends ConsumerState<ServicesPage> {
-  String _selectedCategory = 'All';
+  String? _selectedCategoryId; // null means "All"
   final TextEditingController _searchController = TextEditingController();
-
-  final List<Map<String, dynamic>> _categories = [
-    {'key': 'All', 'label': 'All', 'icon': '🐾'},
-    {'key': 'VETERINARY', 'label': 'Veterinary', 'icon': '🩺'},
-    {'key': 'GROOMING', 'label': 'Groom', 'icon': '✂️'},
-    {'key': 'TRAINING', 'label': 'Training', 'icon': '🎓'},
-    {'key': 'WALKING', 'label': 'Walk', 'icon': '🚶'},
-  ];
 
   @override
   void initState() {
@@ -54,7 +46,9 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
   Widget build(BuildContext context) {
     final servicesAsync = ref.watch(allServicesProvider(ServiceQueryParams(
       search: _searchTerm.isEmpty ? null : _searchTerm,
+      categoryId: _selectedCategoryId,
     )));
+    final categoriesAsync = ref.watch(serviceApiCategoriesProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -121,48 +115,89 @@ class _ServicesPageState extends ConsumerState<ServicesPage> {
           ),
 
           // Category Filter Chips
-          Container(
-            height: 60, // Sligthly increased height
-            padding: const EdgeInsets.only(top: 12, bottom: 4),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              clipBehavior: Clip.none, // Allow shadows
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final cat = _categories[index];
-                final isSelected = _selectedCategory == cat['key'];
-                return Padding(
-                  padding: const EdgeInsets.only(right: 10),
-                  child: GestureDetector(
-                    onTap: () => setState(() => _selectedCategory = cat['key']),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF21314C) : Colors.white,
-                        borderRadius: BorderRadius.circular(25),
-                        boxShadow: isSelected ? [] : AppTheme.cardShadow,
-                      ),
-                      child: Row(
-                        children: [
-                          Text(cat['icon'], style: const TextStyle(fontSize: 16)),
-                          const SizedBox(width: 6),
-                          Text(
-                            cat['label'],
-                            style: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                              fontSize: 13,
+          categoriesAsync.when(
+            loading: () => const SizedBox(height: 60),
+            error: (_, _) => const SizedBox(height: 60),
+            data: (categories) {
+              final activeCategories = categories.where((c) => c.isActive).toList();
+              return Container(
+                height: 60,
+                padding: const EdgeInsets.only(top: 12, bottom: 4),
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  clipBehavior: Clip.none,
+                  itemCount: activeCategories.length + 1, // +1 for "All"
+                  itemBuilder: (context, index) {
+                    if (index == 0) {
+                      final isSelected = _selectedCategoryId == null;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 10),
+                        child: GestureDetector(
+                          onTap: () => setState(() => _selectedCategoryId = null),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF21314C) : Colors.white,
+                              borderRadius: BorderRadius.circular(25),
+                              boxShadow: isSelected ? [] : AppTheme.cardShadow,
+                            ),
+                            child: Row(
+                              children: [
+                                const Text('🐾', style: TextStyle(fontSize: 16)),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'All',
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : AppColors.textPrimary,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
+                        ),
+                      );
+                    }
+                    final cat = activeCategories[index - 1];
+                    final isSelected = _selectedCategoryId == cat.id;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 10),
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedCategoryId = cat.id),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? const Color(0xFF21314C) : Colors.white,
+                            borderRadius: BorderRadius.circular(25),
+                            boxShadow: isSelected ? [] : AppTheme.cardShadow,
+                          ),
+                          child: Row(
+                            children: [
+                              if (cat.icon != null) ...[
+                                Text(cat.icon!, style: const TextStyle(fontSize: 16)),
+                                const SizedBox(width: 6),
+                              ],
+                              Text(
+                                cat.name,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                    );
+                  },
+                ),
+              );
+            },
           ),
           const SizedBox(height: 12),
 

@@ -6,6 +6,16 @@ import '../api/dio_client.dart';
 /// Helper to resolve image URLs (handling localhost -> device-accessible IP)
 String resolveImageUrl(String? url) {
   if (url == null || url.isEmpty) return '';
+  // Handle relative paths like /uploads/...
+  if (url.startsWith('/')) {
+    try {
+      final apiBase = Uri.parse(ApiEndpoints.baseUrl);
+      final origin = '${apiBase.scheme}://${apiBase.host}:${apiBase.port}';
+      return '$origin$url';
+    } catch (e) {
+      return url;
+    }
+  }
   if (url.contains('localhost')) {
     try {
       final apiBase = Uri.parse(ApiEndpoints.baseUrl);

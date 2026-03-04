@@ -293,7 +293,7 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
       return;
     }
 
-    // 1. Create orders grouped by shop
+    // 1. Create orders grouped by shop (pets with no shop get grouped under '__PET__')
     final cartItems = ref.read(cartProvider);
     if (cartItems.isEmpty) {
       if (mounted) {
@@ -305,8 +305,11 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
 
     final Map<String, List<CartItem>> itemsByShop = {};
     for (final item in cartItems) {
-      itemsByShop.putIfAbsent(item.shopId, () => []).add(item);
+      final key = item.shopId ?? '__PET_ORDER__';
+      itemsByShop.putIfAbsent(key, () => []).add(item);
     }
+
+    debugPrint('[Payment] Grouped cart into ${itemsByShop.length} order(s): ${itemsByShop.keys.toList()}');
 
     final notifier = ref.read(orderActionProvider.notifier);
     bool allSuccess = true;
@@ -316,8 +319,8 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
     final List<MapEntry<String, double>> orderPayments = [];
 
     // 2. Create orders first (they start as PENDING)
-    for (final shopId in itemsByShop.keys) {
-      final items = itemsByShop[shopId]!;
+    for (final groupKey in itemsByShop.keys) {
+      final items = itemsByShop[groupKey]!;
       final orderItems = items
           .map((item) => ({
                 'productId': item.id,
@@ -325,11 +328,16 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
               }))
           .toList();
 
-      // Calculate per-shop subtotal (not total cart!)
-      final shopSubtotal = items.fold<double>(
+      // Calculate per-group subtotal
+      final groupSubtotal = items.fold<double>(
         0,
         (sum, item) => sum + (item.price * item.quantity),
       );
+
+      // For pet orders (no real shop), pass null shopId
+      final String? shopId = groupKey == '__PET_ORDER__' ? null : groupKey;
+
+      debugPrint('[Payment] Creating order: shopId=${shopId ?? "NULL"}, items=$orderItems');
 
       final order = await notifier.createOrder(
         shopId: shopId,
@@ -338,10 +346,12 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
       );
 
       if (order != null) {
-        orderPayments.add(MapEntry(order.id, shopSubtotal));
+        debugPrint('[Payment] Order created: ${order.id} (${order.orderCode})');
+        orderPayments.add(MapEntry(order.id, groupSubtotal));
       } else {
         allSuccess = false;
-        errors.add('Failed to create order for shop $shopId');
+        errors.add('Failed to create order${shopId != null ? ' for shop $shopId' : ' for pet purchase'}');
+        debugPrint('[Payment] FAILED to create order for group $groupKey');
       }
     }
 

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
 import '../models/models.dart';
@@ -17,7 +18,7 @@ class CartItem {
   final double price;
   final int quantity;
   final String type; // 'PRODUCT' or 'PET'
-  final String shopId;
+  final String? shopId; // null for pet-only orders (individual sellers)
 
   CartItem({
     required this.id,
@@ -26,7 +27,7 @@ class CartItem {
     required this.price,
     this.quantity = 1,
     required this.type,
-    required this.shopId,
+    this.shopId,
   });
 
   CartItem copyWith({int? quantity}) {
@@ -105,19 +106,27 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   }
 
   void addPet(PetModel pet) {
+    // Use the saleListingId — the backend creates order items with petListingId
+    final listingId = pet.saleListingId;
+    if (listingId == null || listingId.isEmpty) {
+      debugPrint('[Cart] Cannot add pet ${pet.name}: no active sale listing');
+      return;
+    }
+
     final existingIndex =
-        state.indexWhere((item) => item.id == pet.id && item.type == 'PET');
+        state.indexWhere((item) => item.id == listingId && item.type == 'PET');
     if (existingIndex == -1) {
+      debugPrint('[Cart] Adding pet ${pet.name} with listingId=$listingId, ownerId=${pet.ownerId}');
       state = [
         ...state,
         CartItem(
-          id: pet.id,
+          id: listingId, // petListing ID, not pet ID
           name: pet.name,
           image: pet.displayImage,
           price: pet.price ?? 0,
           quantity: 1,
           type: 'PET',
-          shopId: pet.ownerId,
+          shopId: null, // Pet sellers don't have a shop
         ),
       ];
     }

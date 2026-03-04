@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
 import '../models/shop_model.dart';
@@ -45,7 +46,7 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
   OrderActionNotifier(this._service) : super(const AsyncValue.data(null));
 
   Future<OrderModel?> createOrder({
-    required String shopId,
+    String? shopId,
     required List<Map<String, dynamic>> items,
     String? notes,
   }) async {
@@ -59,6 +60,7 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
       state = const AsyncValue.data(null);
       return order;
     } catch (e, st) {
+      debugPrint('[OrderAction] createOrder FAILED: $e\n$st');
       state = AsyncValue.error(e, st);
       return null;
     }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../core/api/dio_client.dart';
 // ignore_for_file: use_null_aware_elements
 import '../models/models.dart';
@@ -11,19 +12,22 @@ class OrderService extends BaseApiService {
 
   /// Create an order from cart (protected)
   Future<OrderModel> create({
-    required String shopId,
+    String? shopId,
     required List<Map<String, dynamic>> items,
     String? notes,
   }) async {
     return safeApiCall(() async {
+      final data = <String, dynamic>{
+        'items': items,
+        if (shopId != null && shopId.isNotEmpty) 'shopId': shopId,
+        if (notes != null) 'notes': notes,
+      };
+      debugPrint('[OrderService] Creating order: shopId=${shopId ?? "NULL"}, items=$items');
       final response = await dio.post(
         ApiEndpoints.orders,
-        data: {
-          'shopId': shopId,
-          'items': items,
-          if (notes != null) 'notes': notes,
-        },
+        data: data,
       );
+      debugPrint('[OrderService] Order created: ${response.data}');
       return OrderModel.fromJson(response.data);
     });
   }

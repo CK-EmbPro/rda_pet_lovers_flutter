@@ -155,14 +155,7 @@ class _HorizontalCartCard extends StatelessWidget {
                   borderRadius: const BorderRadius.all(Radius.circular(24)),
                   child: Stack(
                     children: [
-                      item.image != null
-                          ? CachedNetworkImage(
-                              imageUrl: resolveImageUrl(item.image!),
-                              width: double.infinity,
-                              height: double.infinity,
-                              fit: BoxFit.fill,
-                            )
-                          : Container(color: AppColors.inputFill),
+                      _buildItemImage(item),
                       // Remove button
                       Positioned(
                         top: 12,
@@ -249,6 +242,42 @@ class _HorizontalCartCard extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildItemImage(CartItem item) {
+    final url = resolveImageUrl(item.image);
+    if (url.isEmpty) {
+      return Container(
+        color: AppColors.inputFill,
+        child: Center(
+          child: Icon(
+            item.type == 'PET' ? Icons.pets : Icons.shopping_bag,
+            size: 40,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+    }
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.fill,
+      placeholder: (_, _) => Container(
+        color: AppColors.inputFill,
+        child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
+      errorWidget: (_, _, _) => Container(
+        color: AppColors.inputFill,
+        child: Center(
+          child: Icon(
+            item.type == 'PET' ? Icons.pets : Icons.shopping_bag,
+            size: 40,
+            color: AppColors.textMuted,
+          ),
+        ),
       ),
     );
   }
