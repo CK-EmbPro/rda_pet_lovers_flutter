@@ -4,7 +4,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
-// import '../../../data/providers/mock_data_provider.dart'; // No longer needed
 import '../../../data/providers/shop_providers.dart';
 import '../../../data/providers/product_providers.dart';
 import '../../../data/models/models.dart';
@@ -240,7 +239,7 @@ class _ShopCard extends StatelessWidget {
                         children: [
                           const Icon(Icons.star, size: 14, color: Color(0xFFFBBF24)),
                           const SizedBox(width: 4),
-                          Text('${shop.rating ?? 4.5}', style: const TextStyle(fontSize: 12)),
+                          Text('${shop.rating ?? 'New'}', style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ],

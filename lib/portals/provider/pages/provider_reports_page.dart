@@ -30,22 +30,33 @@ class _ProviderReportsPageState extends ConsumerState<ProviderReportsPage> {
           Expanded(
             child: appointmentsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) => Center(child: Text('Something went wrong. Pull down to retry.')),
               data: (paginated) {
-                final appointments = paginated.data;
+                final allAppointments = paginated.data;
+                final now = DateTime.now();
+                
+                // Filter by selected date range
+                DateTime rangeStart;
+                if (_selectedRange == 'This Week') {
+                  rangeStart = now.subtract(Duration(days: now.weekday - 1));
+                  rangeStart = DateTime(rangeStart.year, rangeStart.month, rangeStart.day);
+                } else if (_selectedRange == 'This Year') {
+                  rangeStart = DateTime(now.year, 1, 1);
+                } else {
+                  // This Month (default)
+                  rangeStart = DateTime(now.year, now.month, 1);
+                }
+                
+                final appointments = allAppointments.where((a) => !a.scheduledAt.isBefore(rangeStart)).toList();
                 final completed = appointments.where((a) => a.status == 'COMPLETED').toList();
                 
-                // Calculate total earnings (mock calculation as ServiceModel might be null or fee might be missing)
-                // Assuming service fee is available in AppointmentModel -> ServiceModel
+                // Calculate total earnings from completed appointments
                 double totalEarnings = 0;
                 for (var apt in completed) {
-                   // If service is embedded
                    if (apt.service != null) {
                      totalEarnings += apt.service!.basePrice;
                    }
                 }
-
-                // Filter based on range (Mock for now)
                 
                 return SingleChildScrollView(
                   padding: const EdgeInsets.all(20),
@@ -106,7 +117,7 @@ class _ProviderReportsPageState extends ConsumerState<ProviderReportsPage> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Recent Transactions (Mock)
+                      // Recent Earnings
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(

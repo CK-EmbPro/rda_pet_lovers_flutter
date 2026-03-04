@@ -114,7 +114,7 @@ class _OrdersPageState extends ConsumerState<OrdersPage> {
           Expanded(
             child: ordersAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
+              error: (e, st) => Center(child: Text('Something went wrong. Pull down to retry.')),
               data: (orders) {
                 if (orders.isEmpty) {
                   return EmptyState(
@@ -187,10 +187,18 @@ class _OrderCard extends StatelessWidget {
                         'Order #${order.orderCode}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        '${order.items.length} items • ${_formatDate(order.createdAt)}',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        order.itemsSummary,
+                        style: const TextStyle(fontSize: 13, color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      if (order.shopName != null)
+                        Text(
+                          order.shopName!,
+                          style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
+                        ),
                     ],
                   ),
                 ),

@@ -185,7 +185,7 @@ class _ProductFormSheetState extends ConsumerState<ProductFormSheet> {
         }
       }
     } catch (e) {
-      if (mounted) ToastService.error(context, "Error: $e");
+      if (mounted) ToastService.error(context, 'Something went wrong. Please try again.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

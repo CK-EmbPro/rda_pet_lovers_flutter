@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/order_detail_sheet.dart';
 
 import '../../../core/widgets/notification_bell.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
@@ -469,7 +470,9 @@ class _HomePageState extends ConsumerState<HomePage> {
           itemCount: orders.take(3).length,
           itemBuilder: (context, index) {
             final order = orders[index];
-            return Container(
+            return GestureDetector(
+              onTap: () => OrderDetailSheet.show(context, order),
+              child: Container(
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -483,25 +486,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                     width: 50,
                     height: 50,
                     decoration: BoxDecoration(
-                      color: AppColors.inputFill,
+                      color: order.isPetOrder
+                          ? Colors.orange.withValues(alpha: 0.1)
+                          : AppColors.inputFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.shopping_bag, color: AppColors.secondary),
+                    child: Icon(
+                      order.isPetOrder ? Icons.pets : Icons.shopping_bag,
+                      color: order.isPetOrder ? Colors.orange : AppColors.secondary,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Order #${order.id.substring(0, 5)}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                        Text('${order.totalAmount} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                        Text('${order.createdAt.day}/${order.createdAt.month}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                        Text('Order #${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(order.itemsSummary, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        if (order.shopName != null)
+                          Text(order.shopName!, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
+                        Text('${order.totalAmount.toInt()} RWF • ${order.createdAt.day}/${order.createdAt.month}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                       ],
                     ),
                   ),
                   _buildOrderStatusBadge(order.status),
                 ],
               ),
+            ),
             );
           },
         ),
@@ -599,7 +610,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         children: [
                           const Icon(Icons.star, size: 14, color: Color(0xFFFBBF24)),
                           const SizedBox(width: 4),
-                          Text('${shop.rating ?? 4.5}', style: const TextStyle(fontSize: 12)),
+                          Text('${shop.rating ?? 'New'}', style: const TextStyle(fontSize: 12)),
                           const Spacer(),
                           Text('${shop.productCount} items', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
                         ],

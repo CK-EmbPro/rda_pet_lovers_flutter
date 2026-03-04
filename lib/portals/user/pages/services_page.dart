@@ -279,7 +279,7 @@ class _ProviderCard extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        service.provider?.fullName ?? 'Dr. Provider',
+                        service.provider?.fullName ?? 'Service Provider',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                       ),
                       const SizedBox(height: 2),

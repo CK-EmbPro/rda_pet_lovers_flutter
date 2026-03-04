@@ -6,7 +6,6 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/models/models.dart';
-// import '../../../data/providers/mock_data_provider.dart'; // Removing
 import '../../../data/providers/service_providers.dart';
 
 class ServiceDetailsPage extends ConsumerWidget {

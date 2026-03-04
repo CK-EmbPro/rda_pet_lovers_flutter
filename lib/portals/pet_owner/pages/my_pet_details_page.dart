@@ -486,7 +486,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
 
      return appointmentsAsync.when(
        loading: () => const Center(child: CircularProgressIndicator()),
-       error: (e, _) => Center(child: Text('Error: $e')),
+       error: (e, _) => Center(child: Text('Something went wrong. Pull down to retry.')),
        data: (paginated) {
          final appointments = paginated.data.where((a) => a.petId == pet.id).toList();
 

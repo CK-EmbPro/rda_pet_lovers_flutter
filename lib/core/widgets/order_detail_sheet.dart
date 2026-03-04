@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_toast.dart';
+import '../../core/widgets/common_widgets.dart';
 import '../../data/models/shop_model.dart';
 import '../../data/providers/order_providers.dart';
 
@@ -239,10 +241,22 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Order ID', order.id),
+                  _buildInfoRow('Order Code', '#${order.orderCode}'),
                   _buildInfoRow('Date', _formatDate(order.createdAt)),
-                  _buildInfoRow('Items', '${order.items.length} items'),
+                  if (order.shopName != null)
+                    _buildInfoRow('Shop', order.shopName!),
+                  _buildInfoRow('Type', order.isPetOrder ? 'Pet Adoption' : 'Product Order'),
                 ],
+              ),
+            ),
+            const Divider(height: 32),
+
+            // Order Items Breakdown
+            _buildSection(
+              icon: Icons.inventory_2_outlined,
+              title: 'Items (${order.items.length})',
+              content: Column(
+                children: order.items.map((item) => _buildItemRow(item)).toList(),
               ),
             ),
             const Divider(height: 32),
@@ -254,9 +268,9 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // TODO: Fetch user name if not in OrderModel. OrderModel has userId.
-                  // For now showing ID or "Customer".
-                  _buildInfoRow('Customer ID', order.buyerId),
+                  _buildInfoRow('Name', order.buyerName ?? 'Unknown'),
+                  if (order.buyerPhone != null)
+                    _buildInfoRow('Phone', order.buyerPhone!),
                 ],
               ),
             ),
@@ -265,13 +279,15 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
             // Payment Info
             _buildSection(
               icon: Icons.payment,
-              title: 'Payment',
+              title: 'Payment Summary',
               content: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildInfoRow('Total Amount', '${order.totalAmount.toInt()} RWF'),
-                  // Assuming paid if order exists or checking status
-                  _buildInfoRow('Payment Status', order.paymentId != null ? 'Paid' : 'Pending'),
+                  _buildInfoRow('Subtotal', '${order.subtotal.toInt()} RWF'),
+                  if (order.discount != null && order.discount! > 0)
+                    _buildInfoRow('Discount', '-${order.discount!.toInt()} RWF'),
+                  _buildInfoRow('Total', '${order.totalAmount.toInt()} RWF'),
+                  _buildInfoRow('Status', order.paymentId != null ? 'Paid' : 'Pending'),
                 ],
               ),
             ),
@@ -329,6 +345,69 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
             const SizedBox(height: 30),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildItemRow(OrderItemModel item) {
+    final hasImage = item.imageUrl != null && item.imageUrl!.isNotEmpty;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          // Item image
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.inputFill,
+              borderRadius: BorderRadius.circular(10),
+              image: hasImage
+                  ? DecorationImage(
+                      image: CachedNetworkImageProvider(
+                          resolveImageUrl(item.imageUrl)),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: hasImage
+                ? null
+                : Icon(
+                    item.petListingId != null ? Icons.pets : Icons.inventory_2,
+                    size: 20,
+                    color: AppColors.textMuted,
+                  ),
+          ),
+          const SizedBox(width: 10),
+          // Item details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w600, fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  'Qty: ${item.quantity} × ${item.unitPrice.toInt()} RWF',
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.textSecondary),
+                ),
+              ],
+            ),
+          ),
+          // Item total
+          Text(
+            '${item.totalPrice.toInt()} RWF',
+            style: const TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                color: AppColors.secondary),
+          ),
+        ],
       ),
     );
   }

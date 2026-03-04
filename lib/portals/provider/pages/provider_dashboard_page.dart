@@ -4,7 +4,6 @@ import 'package:table_calendar/table_calendar.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/notification_bell.dart';
 import '../../../core/widgets/appointment_detail_sheet.dart';
-// import '../../../data/providers/mock_data_provider.dart'; // Removing
 import '../../../data/models/models.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/appointment_providers.dart';

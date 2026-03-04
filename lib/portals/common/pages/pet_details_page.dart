@@ -34,7 +34,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
       backgroundColor: const Color(0xFFF8FAFC), // Light gray background
       body: petAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, st) => Center(child: Text('Error: $e')),
+        error: (e, st) => Center(child: Text('Something went wrong. Pull down to retry.')),
         data: (pet) {
           final isSold = pet.sellingStatus == 'SOLD';
           final isOwner = pet.owner?.id == ref.read(currentUserProvider)?.id;

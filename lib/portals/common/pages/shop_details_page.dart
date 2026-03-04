@@ -5,7 +5,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/models/models.dart';
-// import '../../../data/providers/mock_data_provider.dart'; // No longer needed
 import '../../../data/providers/shop_providers.dart';
 import '../../../data/providers/product_providers.dart';
 
@@ -185,16 +184,17 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                                             const Icon(Icons.star, size: 14, color: Colors.amber),
                                             const SizedBox(width: 4),
                                             Text(
-                                              '${shop.rating ?? 4.5}',
+                                              '${shop.rating ?? 'New'}',
                                               style: const TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      const Text(
-                                        '•  Pet Retailer', 
-                                        style: TextStyle(color: Colors.white70, fontSize: 13),
+                                      Text(
+                                        '•  ${shop.description?.split('.').first ?? 'Pet Shop'}', 
+                                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ],
                                   ),
@@ -361,7 +361,7 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
             // Products List/Grid
             productsAsync.when(
               loading: () => const SliverFillRemaining(child: Center(child: CircularProgressIndicator())),
-              error: (e, _) => SliverFillRemaining(child: Center(child: Text('Error loading products: $e'))),
+              error: (e, _) => SliverFillRemaining(child: Center(child: Text('Something went wrong. Pull down to retry.'))),
               data: (paginated) {
                 final allProducts = paginated.data;
                 // Filter locally for search query as an optimization, or could refetch

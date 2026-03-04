@@ -156,8 +156,11 @@ class OrderModel {
   final String id;
   final String orderCode;
   final String buyerId;
+  final String? buyerName;
+  final String? buyerPhone;
   final String? sellerId;
   final String? shopId;
+  final String? shopName;
   final List<OrderItemModel> items;
   final double subtotal;
   final double? discount;
@@ -175,8 +178,11 @@ class OrderModel {
     required this.id,
     required this.orderCode,
     required this.buyerId,
+    this.buyerName,
+    this.buyerPhone,
     this.sellerId,
     this.shopId,
+    this.shopName,
     required this.items,
     required this.subtotal,
     this.discount,
@@ -196,8 +202,11 @@ class OrderModel {
       id: json['id'] as String? ?? '',
       orderCode: json['orderCode'] as String? ?? '',
       buyerId: (json['buyerId'] ?? json['userId'] ?? '') as String,
+      buyerName: (json['buyer'] is Map) ? json['buyer']['fullName'] as String? : null,
+      buyerPhone: (json['buyer'] is Map) ? json['buyer']['phone'] as String? : null,
       sellerId: json['sellerId'] as String?,
       shopId: json['shopId'] as String?,
+      shopName: (json['shop'] is Map) ? json['shop']['name'] as String? : null,
       items: (json['items'] as List<dynamic>?)
               ?.map((e) => OrderItemModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
@@ -214,6 +223,14 @@ class OrderModel {
       cancellationReason: json['cancellationReason'] as String?,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
+  }
+
+  /// Summary of item names for display on cards
+  String get itemsSummary {
+    if (items.isEmpty) return 'No items';
+    final firstName = items.first.productName;
+    if (items.length == 1) return firstName;
+    return '$firstName +${items.length - 1} more';
   }
 
   String get displayStatus {

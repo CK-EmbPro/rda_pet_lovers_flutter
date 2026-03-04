@@ -55,7 +55,7 @@ class ProfilePage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    user?.email ?? 'user@example.com',
+                    user?.email ?? '',
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
                   ),
                   const SizedBox(height: 8),

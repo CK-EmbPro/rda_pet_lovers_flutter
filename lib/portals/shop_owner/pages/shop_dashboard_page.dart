@@ -167,10 +167,14 @@ class ShopDashboardPage extends ConsumerWidget {
                            error: (_, _) => _StatCard(icon: Icons.receipt_long, value: '-', label: 'Orders', color: Colors.orange),
                         ),
                         const SizedBox(width: 12),
-                        // Revenue placeholder or calculation
+                        // Revenue — only count paid orders (exclude PENDING/CANCELLED)
                         ordersAsync.when(
                            data: (o) {
-                             final revenue = o.data.fold<double>(0, (sum, order) => sum + order.totalAmount);
+                             final paidOrders = o.data.where((order) {
+                               final s = order.status.toUpperCase();
+                               return s != 'PENDING' && s != 'CANCELLED';
+                             });
+                             final revenue = paidOrders.fold<double>(0, (sum, order) => sum + order.totalAmount);
                              // Simple formatting
                              String valueArg = '${revenue.toInt()}'; // Default
                              if (revenue > 1000000) {
@@ -322,6 +326,29 @@ class ShopDashboardPage extends ConsumerWidget {
                 final monthlySales = paidThisMonth.fold<double>(0, (sum, o) => sum + o.totalAmount);
                 final fmt = NumberFormat.currency(symbol: '', decimalDigits: 0).format(monthlySales);
 
+                // Calculate month-over-month growth
+                final lastMonthStart = DateTime(now.year, now.month - 1, 1);
+                final lastMonthEnd = DateTime(now.year, now.month, 0); // last day of prev month
+                final paidLastMonth = orders.where((o) {
+                  final s = o.status.toUpperCase();
+                  return s != 'PENDING' && s != 'CANCELLED' &&
+                    !o.createdAt.isBefore(lastMonthStart) &&
+                    !o.createdAt.isAfter(lastMonthEnd);
+                }).toList();
+                final lastMonthSales = paidLastMonth.fold<double>(0, (sum, o) => sum + o.totalAmount);
+                double? growthPct;
+                if (lastMonthSales > 0) {
+                  growthPct = ((monthlySales - lastMonthSales) / lastMonthSales) * 100;
+                }
+
+                // Build daily revenue data for mini chart (this month)
+                final dailyRevenue = <int, double>{};
+                for (var o in paidThisMonth) {
+                  dailyRevenue[o.createdAt.day] = (dailyRevenue[o.createdAt.day] ?? 0) + o.totalAmount;
+                }
+                final chartDays = dailyRevenue.keys.toList()..sort();
+                final chartValues = chartDays.map((d) => dailyRevenue[d]!).toList();
+
                 // Calculate Top Selling Product (Simple aggregation)
                 String topProductName = 'N/A';
                 if (thisMonthOrders.isNotEmpty) {
@@ -352,18 +379,19 @@ class ShopDashboardPage extends ConsumerWidget {
                                     style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                                   ),
                                   const SizedBox(width: 8),
-                                  // Mock growth indicator for now as we don't have last month data easily without another query
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.success.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(4),
+                                  // Real growth indicator based on month-over-month comparison
+                                  if (growthPct != null)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: (growthPct >= 0 ? AppColors.success : AppColors.error).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: Text(
+                                        '${growthPct >= 0 ? '↑' : '↓'} ${growthPct.abs().toStringAsFixed(0)}%',
+                                        style: TextStyle(color: growthPct >= 0 ? AppColors.success : AppColors.error, fontSize: 12, fontWeight: FontWeight.w500),
+                                      ),
                                     ),
-                                    child: const Text(
-                                      '↑',
-                                      style: TextStyle(color: AppColors.success, fontSize: 12, fontWeight: FontWeight.w500),
-                                    ),
-                                  ),
                                 ],
                               ),
                               const SizedBox(height: 4),
@@ -371,14 +399,17 @@ class ShopDashboardPage extends ConsumerWidget {
                             ],
                           ),
                         ),
-                        // Mini chart placeholder
-                        SizedBox(
-                          width: 80,
-                          height: 40,
-                          child: CustomPaint(
-                            painter: _MiniChartPainter(),
-                          ),
-                        ),
+                        // Mini chart from real daily revenue
+                        if (chartValues.length >= 2)
+                          SizedBox(
+                            width: 80,
+                            height: 40,
+                            child: CustomPaint(
+                              painter: _MiniChartPainter(values: chartValues),
+                            ),
+                          )
+                        else
+                          const SizedBox(width: 80, height: 40),
                       ],
                     ),
                     const SizedBox(height: 16),
@@ -533,9 +564,9 @@ class _RecentOrderCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Use customer ID or placeholder until name is available
-                  Text('Customer #${order.buyerId.substring(0, 4)}...', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  Text('${order.items.length} items • ${order.totalAmount.toInt()} RWF', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Text('Order #${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                  Text(order.buyerName ?? 'Customer', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Text('${order.items.length} items • ${order.totalAmount.toInt()} RWF', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 ],
               ),
             ),
@@ -582,24 +613,42 @@ class _OrderStatusBadge extends StatelessWidget {
   }
 }
 
-// Mini Chart Painter
+// Mini Chart Painter — draws real data points
 class _MiniChartPainter extends CustomPainter {
+  final List<double> values;
+  _MiniChartPainter({required this.values});
+
   @override
   void paint(Canvas canvas, Size size) {
+    if (values.length < 2) return;
+
     final paint = Paint()
       ..color = AppColors.secondary
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final path = Path();
-    path.moveTo(0, size.height * 0.7);
-    path.quadraticBezierTo(size.width * 0.25, size.height * 0.3, size.width * 0.5, size.height * 0.5);
-    path.quadraticBezierTo(size.width * 0.75, size.height * 0.7, size.width, size.height * 0.2);
+    final maxVal = values.reduce((a, b) => a > b ? a : b);
+    final minVal = values.reduce((a, b) => a < b ? a : b);
+    final range = maxVal - minVal;
+    final padding = 4.0;
+    final drawH = size.height - padding * 2;
+    final drawW = size.width;
+    final step = drawW / (values.length - 1);
 
+    double yFor(double v) {
+      if (range == 0) return size.height / 2;
+      return padding + drawH - ((v - minVal) / range) * drawH;
+    }
+
+    final path = Path();
+    path.moveTo(0, yFor(values[0]));
+    for (var i = 1; i < values.length; i++) {
+      path.lineTo(i * step, yFor(values[i]));
+    }
     canvas.drawPath(path, paint);
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

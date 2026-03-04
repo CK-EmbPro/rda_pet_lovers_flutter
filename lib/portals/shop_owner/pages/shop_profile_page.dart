@@ -35,7 +35,7 @@ class ShopProfilePage extends ConsumerWidget {
               ),
               child: myShopAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator(color: Colors.white)),
-                error: (e, _) => Center(child: Text('Error: $e', style: const TextStyle(color: Colors.white))),
+                error: (e, _) => Center(child: Text('Something went wrong', style: const TextStyle(color: Colors.white))),
                 data: (shop) {
                   if (shop == null) {
                     return Column(
@@ -67,17 +67,15 @@ class ShopProfilePage extends ConsumerWidget {
                       const SizedBox(height: 16),
                       Text(shop.name, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text(shop.description ?? 'Premium Pet Supplies', 
+                      Text(shop.description ?? 'No description yet', 
                           style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          _StatItem(label: 'Rating', value: shop.rating.toString()),
-                          // Ideally fetch real stats, but keeping placeholders consistent with design for now
-                          const _StatItem(label: 'Products', value: '-'), 
-                          const _StatItem(label: 'Orders', value: '-'),
+                          _StatItem(label: 'Rating', value: shop.rating?.toStringAsFixed(1) ?? 'New'),
+                          _StatItem(label: 'Products', value: '${shop.productCount}'), 
                         ],
                       ),
                     ],
@@ -286,7 +284,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showError(context, 'Failed to update profile: $e');
+        ToastUtils.showError(context, 'Failed to update profile. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

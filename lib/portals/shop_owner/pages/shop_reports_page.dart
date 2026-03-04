@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/order_providers.dart';
 
@@ -48,6 +50,20 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
     return orders.where((o) {
       return !o.createdAt.isBefore(start) && o.createdAt.isBefore(end.add(const Duration(days: 1)));
     }).toList();
+  }
+
+  void _exportReportCsv(BuildContext context, List<OrderModel> paidOrders, NumberFormat salesFmt) {
+    final buf = StringBuffer();
+    buf.writeln('Order ID,Date,Status,Items,Total (RWF)');
+    final dateFmt = DateFormat('yyyy-MM-dd HH:mm');
+    for (var o in paidOrders) {
+      final itemNames = o.items.map((i) => '${i.productName} x${i.quantity}').join('; ');
+      // Escape commas in item names
+      final escapedItems = '"$itemNames"';
+      buf.writeln('${o.id},${dateFmt.format(o.createdAt)},${o.status},$escapedItems,${o.totalAmount.toStringAsFixed(0)}');
+    }
+    Clipboard.setData(ClipboardData(text: buf.toString()));
+    AppToast.success(context, 'Report data copied to clipboard (${paidOrders.length} orders)');
   }
 
   Future<void> _pickCustomRange() async {
@@ -198,7 +214,7 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
         child: SingleChildScrollView(
           child: ordersAsync.when(
             loading: () => SizedBox(height: MediaQuery.of(context).size.height, child: const Center(child: CircularProgressIndicator())),
-            error: (e, _) => SizedBox(height: MediaQuery.of(context).size.height, child: Center(child: Text('Error: $e'))),
+            error: (e, _) => SizedBox(height: MediaQuery.of(context).size.height, child: Center(child: Text('Something went wrong. Pull down to retry.'))),
             data: (paginatedResponse) {
               final allOrders = paginatedResponse.data; // Raw orders
               final orders = _filterOrders(allOrders);  // Filtered orders
@@ -275,13 +291,18 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
                             Text('Track your shop performance', style: TextStyle(color: AppColors.textSecondary)),
                           ],
                         ),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
+                        GestureDetector(
+                          onTap: () {
+                            _exportReportCsv(context, revenueOrders, salesFmt);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.secondary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Icon(Icons.download, color: AppColors.secondary),
                           ),
-                          child: const Icon(Icons.download, color: AppColors.secondary),
                         ),
                       ],
                     ),

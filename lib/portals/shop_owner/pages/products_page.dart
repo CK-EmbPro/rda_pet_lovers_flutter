@@ -41,7 +41,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       backgroundColor: AppColors.background,
       body: myShopAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading shop: $e')),
+        error: (e, _) => Center(child: Text('Something went wrong. Pull down to retry.')),
         data: (shop) {
           if (shop == null) {
              return const Center(child: Text('No shop found. Please create a shop first.'));
@@ -281,7 +281,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                 }
                               } catch (e) {
                                 if (ctx.mounted) Navigator.pop(ctx);
-                                if (mounted) ToastService.error(context, 'Error: $e');
+                                if (mounted) ToastService.error(context, 'Something went wrong. Please try again.');
                               }
                             },
                       style: ElevatedButton.styleFrom(
@@ -326,7 +326,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         if (mounted) ToastService.error(context, 'Failed to update product');
       }
     } catch (e) {
-      if (mounted) ToastService.error(context, 'Error: $e');
+      if (mounted) ToastService.error(context, 'Something went wrong. Please try again.');
     }
   }
 }

@@ -120,7 +120,7 @@ class _OrderList extends ConsumerWidget {
 
     return ordersAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, st) => Center(child: Text('Error: $e')),
+      error: (e, st) => Center(child: Text('Something went wrong. Pull down to retry.')),
       data: (paginated) {
         final orders = paginated.data;
         if (orders.isEmpty) {
@@ -220,8 +220,9 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                         'Order #${order.orderCode}',
                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        'Customer ID: ${order.buyerId}',
+                        order.buyerName ?? 'Customer',
                         style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
                       ),
                     ],
@@ -247,10 +248,15 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    '${order.items.length} items',
-                    style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                  Expanded(
+                    child: Text(
+                      order.itemsSummary,
+                      style: const TextStyle(color: AppColors.textPrimary, fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
+                  const SizedBox(width: 8),
                   Text(
                     _formatDate(order.createdAt),
                     style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),

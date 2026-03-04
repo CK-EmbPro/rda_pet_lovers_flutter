@@ -31,7 +31,7 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
       backgroundColor: const Color(0xFFF8FAFC),
       body: productAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error loading product: $e')),
+        error: (e, _) => Center(child: Text('Something went wrong. Pull down to retry.')),
         data: (product) {
           final shopAsync = ref.watch(shopDetailProvider(product.shopId));
           final isInCart = cart.any((i) => i.id == product.id && i.type == 'PRODUCT');
@@ -246,9 +246,10 @@ class _ProductDetailsPageState extends ConsumerState<ProductDetailsPage> {
                                             shop.name,
                                             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Color(0xFF1E293B)),
                                           ),
-                                          const Text(
-                                            'Pet Retailer',
-                                            style: TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                          Text(
+                                            shop.description?.split('.').first ?? 'Pet Shop',
+                                            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+                                            overflow: TextOverflow.ellipsis,
                                           ),
                                         ],
                                       ),

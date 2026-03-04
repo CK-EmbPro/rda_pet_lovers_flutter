@@ -105,7 +105,7 @@ class _PetOwnerAppointmentsPageState extends ConsumerState<PetOwnerAppointmentsP
           Expanded(
             child: appointmentsAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, st) => Center(child: Text('Error: $e')),
+              error: (e, st) => Center(child: Text('Something went wrong. Pull down to retry.')),
               data: (paginated) {
                 final appointments = paginated.data;
                 final filtered = _getFilteredAppointments(appointments);
