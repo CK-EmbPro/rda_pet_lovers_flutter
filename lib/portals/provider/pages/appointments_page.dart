@@ -351,7 +351,7 @@ class _AppointmentCardView extends StatelessWidget {
       case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
-        return Colors.orange;
+        return AppColors.warning;
       case 'COMPLETED':
         return AppColors.secondary;
       case 'CANCELLED':
@@ -609,7 +609,7 @@ class _AppointmentListViewState extends ConsumerState<_AppointmentListView> {
       case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
-        return Colors.orange;
+        return AppColors.warning;
       case 'COMPLETED':
         return AppColors.secondary;
       case 'CANCELLED':

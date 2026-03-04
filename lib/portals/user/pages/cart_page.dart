@@ -197,7 +197,7 @@ class _HorizontalCartCard extends StatelessWidget {
                         Text(item.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                         const SizedBox(width: 4),
                         if (item.type == 'PET')
-                          const Icon(Icons.male, size: 14, color: Colors.blue),
+                          const Icon(Icons.male, size: 14, color: AppColors.secondary),
                       ],
                     ),
                     Text(

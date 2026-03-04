@@ -33,7 +33,7 @@ class AllAppointmentsSheet extends ConsumerWidget {
       case 'ACCEPTED':
         return AppColors.success;
       case 'PENDING':
-        return Colors.orange;
+        return AppColors.warning;
       case 'CANCELLED':
         return AppColors.error;
       case 'COMPLETED':

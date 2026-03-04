@@ -425,9 +425,9 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Row(
                       children: [
-                        _buildStatCard('Avg Order', salesFmt.format(avgOrder), Icons.shopping_cart, Colors.orange),
+                        _buildStatCard('Avg Order', salesFmt.format(avgOrder), Icons.shopping_cart, AppColors.warning),
                         const SizedBox(width: 12),
-                        _buildStatCard('Items Sold', '$productCount', Icons.inventory_2, Colors.purple),
+                        _buildStatCard('Items Sold', '$productCount', Icons.inventory_2, AppColors.primary),
                       ],
                     ),
                   ),
@@ -579,7 +579,7 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
                 children: [
                   _detailStat('Price', fmt.format(price), Icons.monetization_on, AppColors.secondary),
                   const SizedBox(width: 12),
-                  _detailStat('Units Sold', '$sales', Icons.shopping_cart, Colors.orange),
+                  _detailStat('Units Sold', '$sales', Icons.shopping_cart, AppColors.warning),
                 ],
               ),
             ),

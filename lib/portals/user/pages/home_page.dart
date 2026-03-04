@@ -385,19 +385,19 @@ class _HomePageState extends ConsumerState<HomePage> {
               _QuickActionButton(
                 icon: Icons.shopping_basket_outlined,
                 label: 'Buy',
-                color: Colors.blue,
+                color: AppColors.secondary,
                 onTap: () => _scrollToSection(_soldSectionKey),
               ),
               _QuickActionButton(
                 icon: Icons.pets_outlined,
                 label: 'Adopt',
-                color: Colors.purple,
+                color: AppColors.secondary,
                 onTap: () => _scrollToSection(_donatedSectionKey),
               ),
               _QuickActionButton(
                 icon: Icons.favorite_outline,
                 label: 'Donate',
-                color: Colors.pink,
+                color: AppColors.secondary,
                 onTap: () {
                   _scrollToSection(_donatedSectionKey);
                 },
@@ -405,7 +405,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               _QuickActionButton(
                 icon: Icons.sell_outlined,
                 label: 'Sell',
-                color: Colors.green,
+                color: AppColors.secondary,
                 onTap: () {
                   _showGuestRestriction(context, 'sell a pet');
                 },
@@ -413,7 +413,7 @@ class _HomePageState extends ConsumerState<HomePage> {
               _QuickActionButton(
                 icon: Icons.calendar_today,
                 label: 'Book Service',
-                color: Colors.orange,
+                color: AppColors.secondary,
                 onTap: () {
                    final user = ProviderScope.containerOf(context).read(currentUserProvider);
                    if (user == null || user.primaryRole == 'user') {
@@ -487,13 +487,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                     height: 50,
                     decoration: BoxDecoration(
                       color: order.isPetOrder
-                          ? Colors.orange.withValues(alpha: 0.1)
+                          ? AppColors.warning.withValues(alpha: 0.1)
                           : AppColors.inputFill,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
                       order.isPetOrder ? Icons.pets : Icons.shopping_bag,
-                      color: order.isPetOrder ? Colors.orange : AppColors.secondary,
+                      color: order.isPetOrder ? AppColors.warning : AppColors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -501,7 +501,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Order #${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Row(
+                          children: [
+                            const Text('Order ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            Flexible(
+                              child: Text('#${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            ),
+                          ],
+                        ),
                         Text(order.itemsSummary, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
                         if (order.shopName != null)
                           Text(order.shopName!, style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
@@ -527,7 +534,7 @@ class _HomePageState extends ConsumerState<HomePage> {
         color = AppColors.success;
         break;
       default:
-        color = Colors.orange;
+        color = AppColors.warning;
     }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -1115,10 +1122,10 @@ class _AppointmentCard extends StatelessWidget {
 
   Color _getStatusColor(String status) {
     switch (status) {
-      case 'PENDING': return Colors.orange;
+      case 'PENDING': return AppColors.warning;
       case 'ACCEPTED': return const Color(0xFF10B981);
-      case 'COMPLETED': return Colors.blue;
-      case 'CANCELLED': return Colors.red;
+      case 'COMPLETED': return AppColors.secondary;
+      case 'CANCELLED': return AppColors.error;
       default: return const Color(0xFF64748B);
     }
   }

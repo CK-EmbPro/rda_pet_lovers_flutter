@@ -773,7 +773,7 @@ class _ProductPopupMenu extends StatelessWidget {
                 Icon(
                   product.isActive ? Icons.visibility_off_outlined : Icons.visibility_outlined,
                   size: 20,
-                  color: product.isActive ? Colors.orange : AppColors.success,
+                  color: product.isActive ? AppColors.warning : AppColors.success,
                 ),
                 const SizedBox(width: 10),
                 Text(

@@ -174,18 +174,18 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                         decoration: BoxDecoration(
-                                          color: Colors.amber.withValues(alpha: 0.2),
+                                          color: AppColors.warning.withValues(alpha: 0.2),
                                           borderRadius: BorderRadius.circular(8),
-                                          border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+                                          border: Border.all(color: AppColors.warning.withValues(alpha: 0.5)),
                                         ),
                                         child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            const Icon(Icons.star, size: 14, color: Colors.amber),
+                                            const Icon(Icons.star, size: 14, color: AppColors.warning),
                                             const SizedBox(width: 4),
                                             Text(
                                               '${shop.rating ?? 'New'}',
-                                              style: const TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.bold),
+                                              style: const TextStyle(color: AppColors.warning, fontSize: 13, fontWeight: FontWeight.bold),
                                             ),
                                           ],
                                         ),

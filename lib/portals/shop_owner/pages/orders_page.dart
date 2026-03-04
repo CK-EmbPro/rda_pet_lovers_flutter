@@ -225,7 +225,7 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                           Flexible(
                             child: Text(
                               '#${order.orderCode}',
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.secondary),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -300,18 +300,18 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
-          color: Colors.orange.withAlpha(20),
+          color: AppColors.warning.withAlpha(20),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange.withAlpha(60)),
+          border: Border.all(color: AppColors.warning.withAlpha(60)),
         ),
         child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.schedule, color: Colors.orange, size: 18),
+            Icon(Icons.schedule, color: AppColors.warning, size: 18),
             SizedBox(width: 8),
             Text('Awaiting Payment',
                 style: TextStyle(
-                    color: Colors.orange,
+                    color: AppColors.warning,
                     fontWeight: FontWeight.w600,
                     fontSize: 13)),
           ],
@@ -375,9 +375,9 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
   Color _getStatusColor(String status) {
     switch (status.toUpperCase()) {
       case 'PENDING':
-        return Colors.orange;
+        return AppColors.warning;
       case 'CONFIRMED':
-        return Colors.purple;
+        return AppColors.secondary;
       case 'PROCESSING':
         return AppColors.secondary;
       case 'COMPLETED':

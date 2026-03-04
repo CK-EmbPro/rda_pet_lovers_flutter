@@ -607,9 +607,9 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
   Color _getStatusColor(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return Colors.orange;
+        return AppColors.warning;
       case 'confirmed':
-        return Colors.purple;
+        return AppColors.secondary;
       case 'processing':
         return AppColors.secondary;
       case 'completed':

@@ -162,9 +162,9 @@ class ShopDashboardPage extends ConsumerWidget {
                         ),
                         const SizedBox(width: 12),
                         ordersAsync.when(
-                           data: (o) => _StatCard(icon: Icons.receipt_long, value: '${o.data.length}', label: 'Orders', color: Colors.orange),
+                           data: (o) => _StatCard(icon: Icons.receipt_long, value: '${o.data.length}', label: 'Orders', color: AppColors.warning),
                            loading: () => const Expanded(child: SizedBox(height: 100, child: Center(child: CircularProgressIndicator()))),
-                           error: (_, _) => _StatCard(icon: Icons.receipt_long, value: '-', label: 'Orders', color: Colors.orange),
+                           error: (_, _) => _StatCard(icon: Icons.receipt_long, value: '-', label: 'Orders', color: AppColors.warning),
                         ),
                         const SizedBox(width: 12),
                         // Revenue — only count paid orders (exclude PENDING/CANCELLED)
@@ -216,7 +216,7 @@ class ShopDashboardPage extends ConsumerWidget {
                               child: _ActionButton(
                                 icon: Icons.inventory,
                                 label: 'Manage Stock',
-                                color: Colors.orange,
+                                color: AppColors.secondary,
                                 onTap: () {
                                   final portal = context.findAncestorStateOfType<ShopOwnerPortalState>();
                                   portal?.navigateToTab(1); // Products tab
@@ -568,7 +568,7 @@ class _RecentOrderCard extends StatelessWidget {
                     children: [
                       const Text('Order ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                       Flexible(
-                        child: Text('#${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.secondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                        child: Text('#${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
                     ],
                   ),
@@ -596,7 +596,7 @@ class _OrderStatusBadge extends StatelessWidget {
     Color color;
     switch (status.toLowerCase()) {
       case 'pending':
-        color = Colors.orange;
+        color = AppColors.warning;
         break;
       case 'processing':
         color = AppColors.secondary;

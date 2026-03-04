@@ -208,7 +208,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
         children: [
           _StatCard(icon: Icons.calendar_today, value: '$todayCount', label: 'Today', color: AppColors.secondary),
           const SizedBox(width: 8),
-          _StatCard(icon: Icons.date_range, value: '$weekCount', label: 'This Week', color: Colors.orange),
+          _StatCard(icon: Icons.date_range, value: '$weekCount', label: 'This Week', color: AppColors.warning),
           const SizedBox(width: 8),
           _StatCard(icon: Icons.check_circle_outline, value: '$monthCount', label: 'Month Completed', color: AppColors.success),
         ],
@@ -240,7 +240,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               _QuickActionButton(
                 icon: Icons.event_available,
                 label: 'Set Availability',
-                color: AppColors.success,
+                color: AppColors.secondary,
                 onTap: () {
                   final portal = context.findAncestorStateOfType<ProviderPortalState>();
                   portal?.navigateToTab(1); // Services tab
@@ -249,7 +249,7 @@ class _ProviderDashboardPageState extends ConsumerState<ProviderDashboardPage> {
               _QuickActionButton(
                 icon: Icons.pending_actions,
                 label: 'View Requests',
-                color: Colors.orange,
+                color: AppColors.secondary,
                 onTap: () {
                   final portal = context.findAncestorStateOfType<ProviderPortalState>();
                   portal?.navigateToTab(2); // Appointments tab (pending)
@@ -680,10 +680,10 @@ class _RequestCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: Colors.orange.withValues(alpha: 0.1),
+              color: AppColors.warning.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(Icons.arrow_forward, color: Colors.orange, size: 20),
+            child: Icon(Icons.arrow_forward, color: AppColors.warning, size: 20),
           ),
         ],
       ),

@@ -330,7 +330,7 @@ class _PetCarouselCard extends StatelessWidget {
                       ),
                       Icon(
                         pet.gender == 'MALE' ? Icons.male : Icons.female,
-                        color: pet.gender == 'MALE' ? AppColors.secondary : Colors.pink,
+                        color: pet.gender == 'MALE' ? AppColors.secondary : AppColors.error,
                       ),
                     ],
                   ),

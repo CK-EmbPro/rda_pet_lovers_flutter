@@ -637,7 +637,7 @@ class _MyPetDetailsPageState extends ConsumerState<MyPetDetailsPage> with Single
       title = 'Listed for Donation';
       subtitle = 'Available for free adoption';
       icon = Icons.volunteer_activism_outlined;
-      color = Colors.green;
+      color = AppColors.success;
     } else {
       title = 'Private Listing';
       subtitle = 'Not visible in the marketplace';

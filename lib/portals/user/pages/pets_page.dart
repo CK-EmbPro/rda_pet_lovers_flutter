@@ -597,7 +597,7 @@ class _PetGridCard extends StatelessWidget {
                           size: 16,
                           color: pet.gender == 'MALE'
                               ? AppColors.secondary
-                              : Colors.pink,
+                              : AppColors.error,
                         ),
                       ],
                     ),
@@ -707,7 +707,7 @@ class _PetCarouselCard extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: pet.gender == 'MALE'
                               ? AppColors.secondary.withValues(alpha: 0.1)
-                              : Colors.pink.withValues(alpha: 0.1),
+                              : AppColors.error.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -719,7 +719,7 @@ class _PetCarouselCard extends StatelessWidget {
                               size: 16,
                               color: pet.gender == 'MALE'
                                   ? AppColors.secondary
-                                  : Colors.pink,
+                                  : AppColors.error,
                             ),
                             const SizedBox(width: 4),
                             Text(
@@ -728,7 +728,7 @@ class _PetCarouselCard extends StatelessWidget {
                                 fontSize: 12,
                                 color: pet.gender == 'MALE'
                                     ? AppColors.secondary
-                                    : Colors.pink,
+                                    : AppColors.error,
                               ),
                             ),
                           ],

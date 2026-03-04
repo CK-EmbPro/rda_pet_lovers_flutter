@@ -357,7 +357,7 @@ class _OwnerAppointmentListViewState extends ConsumerState<_OwnerAppointmentList
       case 'RESCHEDULED':
         return AppColors.success;
       case 'PENDING':
-        return Colors.orange;
+        return AppColors.warning;
       case 'COMPLETED':
         return AppColors.secondary;
       case 'CANCELLED':

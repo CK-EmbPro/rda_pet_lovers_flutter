@@ -176,7 +176,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
                   _buildSourceOption(
                     icon: Icons.photo_library_rounded,
                     label: 'Gallery',
-                    color: Colors.purple,
+                    color: AppColors.primary,
                     onTap: () {
                       Navigator.pop(ctx);
                       if (isProfile) {
@@ -1306,9 +1306,9 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
         Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.05),
+            color: AppColors.success.withValues(alpha: 0.05),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
+            border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1322,8 +1322,8 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
               ),
               Switch(
                 value: _isForDonation,
-                activeTrackColor: Colors.green.withValues(alpha: 0.5),
-                activeThumbColor: Colors.green,
+                activeTrackColor: AppColors.success.withValues(alpha: 0.5),
+                activeThumbColor: AppColors.success,
                 onChanged: (v) => setState(() {
                   _isForDonation = v;
                   if (v) _isForSale = false; // Mutually exclusive

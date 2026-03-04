@@ -160,13 +160,13 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
-                                        color: isSold ? Colors.red.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
+                                        color: isSold ? Colors.red.withValues(alpha: 0.1) : AppColors.success.withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Text(
                                         isSold ? 'Sold' : 'Available',
                                         style: TextStyle(
-                                          color: isSold ? Colors.red : Colors.green,
+                                          color: isSold ? Colors.red : AppColors.success,
                                           fontWeight: FontWeight.bold,
                                           fontSize: 12,
                                         ),
@@ -716,7 +716,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
       title = 'Listed for Donation';
       subtitle = 'Available for free adoption';
       icon = Icons.volunteer_activism_outlined;
-      color = Colors.green;
+      color = AppColors.success;
     } else {
       title = 'Private Listing';
       subtitle = 'Not visible in the marketplace';

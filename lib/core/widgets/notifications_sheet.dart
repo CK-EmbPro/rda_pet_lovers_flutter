@@ -351,19 +351,19 @@ class _NotificationCard extends ConsumerWidget {
       case 'BOOKING_UPDATE':
         return AppColors.secondary;
       case 'ORDER_STATUS':
-        return Colors.orange;
+        return AppColors.warning;
       case 'PAYMENT_EVENT':
-        return Colors.green;
+        return AppColors.success;
       case 'SUBSCRIPTION_STATUS':
-        return Colors.purple;
+        return AppColors.primary;
       case 'ADMIN_ALERT':
       case 'SYSTEM_WARNING':
-        return Colors.red;
+        return AppColors.error;
       case 'ADOPTION_REQUEST':
       case 'ADOPTION_APPROVED':
-        return Colors.teal;
+        return AppColors.secondary;
       case 'REVIEW':
-        return Colors.amber;
+        return AppColors.warning;
       default:
         return AppColors.textSecondary;
     }
