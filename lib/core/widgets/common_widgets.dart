@@ -363,6 +363,7 @@ class PrimaryButton extends StatelessWidget {
   final VoidCallback? onPressed;
   final bool isLoading;
   final IconData? icon;
+  final double? width;
 
   const PrimaryButton({
     super.key,
@@ -370,11 +371,12 @@ class PrimaryButton extends StatelessWidget {
     this.onPressed,
     this.isLoading = false,
     this.icon,
+    this.width,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
+    final button = ElevatedButton(
       onPressed: isLoading ? null : onPressed,
       child: isLoading
           ? const SizedBox(
@@ -396,6 +398,10 @@ class PrimaryButton extends StatelessWidget {
               ],
             ),
     );
+    if (width != null) {
+      return SizedBox(width: width, child: button);
+    }
+    return button;
   }
 }
 

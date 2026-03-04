@@ -50,7 +50,10 @@ class DioClient {
 
 /// API Endpoints configuration — all backend routes
 class ApiEndpoints {
-  static const String baseUrl = 'http://192.168.2.59:3001/api/v1';
+
+  // static const String baseUrl = 'http://192.168.2.59:3001/api/v1';  Development-case
+  static const String baseUrl = 'https://rda-pet-lovers-api.onrender.com/api/v1';
+
 
   // ── Auth ──────────────────────────────────────
   static const String login = '/auth/login';

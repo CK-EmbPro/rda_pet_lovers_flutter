@@ -72,10 +72,12 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const Spacer(flex: 2),
               // Logo and Title
@@ -85,6 +87,7 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
                   return Opacity(
                     opacity: _fadeAnimation.value,
                     child: Transform.scale(
+                      alignment: Alignment.center,
                       scale: _scaleAnimation.value,
                       child: child,
                     ),
@@ -122,7 +125,7 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
                 ),
               ),
               const Spacer(flex: 2),
-              // Pet Image placeholder
+              // Pet Image
               AnimatedBuilder(
                 animation: _controller,
                 builder: (context, child) {
@@ -131,17 +134,12 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
                     child: child,
                   );
                 },
-                child: Container(
-                  width: 250,
-                  height: 250,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFE9D5FF).withValues(alpha: 0.5),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.pets,
-                    size: 120,
-                    color: AppColors.secondary,
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/images/splash_screen.png',
+                    width: 250,
+                    height: 250,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
@@ -149,8 +147,8 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
               // Get Started Button
               if (!isLoading) // Only show button when not loading
               SizedBox(
-                width: double.infinity,
-                height: 56,
+                width: 200,
+                height: 52,
                 child: ElevatedButton(
                   onPressed: () => context.go('/login'),
                   style: ElevatedButton.styleFrom(
@@ -160,9 +158,9 @@ class _SplashPageState extends ConsumerState<SplashPage> with SingleTickerProvid
                       borderRadius: BorderRadius.circular(30),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(Icons.pets, size: 20),
                       SizedBox(width: 12),
                       Text(
