@@ -4,8 +4,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_toast.dart';
 import '../../core/widgets/common_widgets.dart';
+import '../../core/widgets/momo_payment_dialog.dart';
 import '../../data/models/shop_model.dart';
+import '../../data/providers/auth_providers.dart';
 import '../../data/providers/order_providers.dart';
+import '../../data/providers/payment_providers.dart';
 
 /// A modal sheet that shows order details when an order card is clicked.
 /// Supports cancel action for PENDING orders (buyer).
@@ -39,6 +42,7 @@ class OrderDetailSheet extends ConsumerStatefulWidget {
 
 class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
   bool _isCancelling = false;
+  bool _isPayingNow = false;
 
   OrderModel get order => widget.order;
 
@@ -174,6 +178,162 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
     } else {
       AppToast.error(context, 'Failed to cancel order. Please try again.');
     }
+  }
+
+  /// Show a dialog to collect MoMo phone number and initiate payment
+  /// for this PENDING order using the existing payment infrastructure.
+  Future<void> _payNow() async {
+    // Pre-fill from user profile
+    final user = ref.read(currentUserProvider);
+    String initialPhone = '';
+    if (user?.phone != null && user!.phone!.isNotEmpty) {
+      String p = user.phone!;
+      if (p.startsWith('+250')) p = '0${p.substring(4)}';
+      if (p.startsWith('250')) p = '0${p.substring(3)}';
+      initialPhone = p;
+    }
+
+    final phoneController = TextEditingController(text: initialPhone);
+
+    final phone = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.secondary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.account_balance_wallet,
+                  color: AppColors.secondary, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Pay with MoMo',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          ],
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Enter your MTN MoMo number to pay ${order.totalAmount.toInt()} RWF for order #${order.orderCode}.',
+              style: TextStyle(fontSize: 13, color: Colors.grey[700], height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            const Text('MTN Phone Number',
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: AppColors.textSecondary)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              style: const TextStyle(fontSize: 14, letterSpacing: 1),
+              decoration: InputDecoration(
+                hintText: '078 XXX XXXX',
+                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                prefixText: '+250 ',
+                prefixStyle: TextStyle(fontSize: 14, color: Colors.grey[600], fontWeight: FontWeight.w600),
+                filled: true,
+                fillColor: Colors.grey[50],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.secondary),
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+        actions: [
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(color: Colors.grey[300]!),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Cancel', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: () {
+                    final value = phoneController.text.trim();
+                    if (value.isEmpty) return;
+                    final mtnRegex = RegExp(r'^(078|079)\d{7}$');
+                    if (!mtnRegex.hasMatch(value)) return;
+                    Navigator.pop(ctx, value);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  child: const Text('Pay Now',
+                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500)),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    phoneController.dispose();
+    if (phone == null || !mounted) return;
+
+    setState(() => _isPayingNow = true);
+
+    // Use existing MomoPaymentNotifier.payForOrder
+    final momoNotifier = ref.read(momoPaymentProvider.notifier);
+    await momoNotifier.payForOrder(
+      orderId: order.id,
+      amount: order.totalAmount,
+      phoneNumber: phone,
+    );
+
+    if (!mounted) return;
+    setState(() => _isPayingNow = false);
+
+    // Close this bottom sheet and show the shared payment status dialog
+    Navigator.pop(context);
+
+    if (!context.mounted) return;
+    MomoPaymentStatusDialog.show(
+      context,
+      onSuccess: () {
+        // Refresh order lists
+        ref.invalidate(myOrdersProvider);
+        ref.invalidate(sellerOrdersProvider);
+      },
+      onRetry: () {
+        // Re-open this sheet so user can try again
+        OrderDetailSheet.show(context, order);
+      },
+      onDismiss: () {
+        ref.invalidate(myOrdersProvider);
+      },
+    );
   }
 
   @override
@@ -313,10 +473,42 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
             if (order.status.toUpperCase() == 'CANCELLED')
               const SizedBox(height: 8),
 
+            // Pay Now button for PENDING orders (no payment yet)
+            if (order.status.toUpperCase() == 'PENDING' && order.paymentId == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: (_isPayingNow || _isCancelling) ? null : _payNow,
+                    icon: _isPayingNow
+                        ? const SizedBox(
+                            height: 16,
+                            width: 16,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.account_balance_wallet, size: 18),
+                    label: Text(
+                        _isPayingNow
+                            ? 'Initiating...'
+                            : 'Pay ${order.totalAmount.toInt()} RWF'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.secondary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ),
+              ),
+
             // Cancel button for PENDING orders
             if (order.status.toUpperCase() == 'PENDING')
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.only(left: 20, right: 20, top: 10),
                 child: SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(

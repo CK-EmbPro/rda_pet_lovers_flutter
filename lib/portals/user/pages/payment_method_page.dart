@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/toast_service.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/momo_payment_dialog.dart';
 import '../../../data/providers/auth_providers.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/providers/order_providers.dart';
@@ -20,6 +21,10 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
   final TextEditingController _phoneController = TextEditingController();
   bool _isProcessing = false;
   bool _phoneInitialized = false;
+
+  /// Tracks already-created PENDING orders so "Try Again" can re-pay them
+  /// without creating duplicates.  Cleared on success.
+  List<MapEntry<String, double>>? _pendingOrderPayments;
 
   @override
   void dispose() {
@@ -270,6 +275,24 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
 
     setState(() => _isProcessing = true);
 
+    final momoNotifier = ref.read(momoPaymentProvider.notifier);
+
+    // If we already have PENDING orders from a previous attempt, skip order
+    // creation and jump straight to payment.  This prevents duplicate orders
+    // when the user taps "Try Again" after a failed MoMo payment.
+    if (_pendingOrderPayments != null && _pendingOrderPayments!.isNotEmpty) {
+      await momoNotifier.payForOrderQueue(
+        orderPayments: _pendingOrderPayments!,
+        phoneNumber: phone,
+      );
+
+      if (mounted) {
+        setState(() => _isProcessing = false);
+        _showMomoPaymentModal();
+      }
+      return;
+    }
+
     // 1. Create orders grouped by shop
     final cartItems = ref.read(cartProvider);
     if (cartItems.isEmpty) {
@@ -286,7 +309,6 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
     }
 
     final notifier = ref.read(orderActionProvider.notifier);
-    final momoNotifier = ref.read(momoPaymentProvider.notifier);
     bool allSuccess = true;
     final List<String> errors = [];
 
@@ -332,10 +354,10 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
       return;
     }
 
+    // Stash the order payments so retry will re-pay these orders
+    _pendingOrderPayments = orderPayments;
+
     // 3. Initiate MoMo payment(s) using the payment queue.
-    //    Each order gets its own USSD push with the correct per-shop amount.
-    //    The notifier processes them one at a time and polls until
-    //    each completes before starting the next.
     await momoNotifier.payForOrderQueue(
       orderPayments: orderPayments,
       phoneNumber: phone,
@@ -350,197 +372,22 @@ class _PaymentMethodPageState extends ConsumerState<PaymentMethodPage> {
   }
 
   void _showMomoPaymentModal() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const _MomoPaymentStatusDialog(),
+    MomoPaymentStatusDialog.show(
+      context,
+      onSuccess: () {
+        ref.read(cartProvider.notifier).clear();
+        _pendingOrderPayments = null;
+        context.go('/user');
+      },
+      onRetry: () {
+        // "Try Again" — re-trigger payment for already-created orders
+        _processPaymentAndOrder();
+      },
+      onDismiss: () {
+        // User chooses to go home without retrying
+        _pendingOrderPayments = null;
+        context.go('/user');
+      },
     );
-  }
-}
-
-/// Dialog that shows real-time MoMo payment status with polling.
-///
-/// Displays different states:
-/// - Initiating: spinner + "Sending payment request..."
-/// - Waiting for user: phone icon + "Confirm on your phone"
-/// - Polling: spinner + "Checking payment status..."
-/// - Success: checkmark + "Payment successful!"
-/// - Failed: error icon + reason
-class _MomoPaymentStatusDialog extends ConsumerWidget {
-  const _MomoPaymentStatusDialog();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final paymentState = ref.watch(momoPaymentProvider);
-
-    return AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const SizedBox(height: 20),
-
-          // Icon / Animation
-          _buildIcon(paymentState),
-
-          const SizedBox(height: 24),
-
-          // Title
-          Text(
-            _getTitle(paymentState),
-            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            textAlign: TextAlign.center,
-          ),
-
-          const SizedBox(height: 12),
-
-          // Message
-          Text(
-            _getMessage(paymentState),
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
-          ),
-
-          // Poll counter (subtle)
-          if (paymentState.phase == MomoPaymentPhase.polling ||
-              paymentState.phase == MomoPaymentPhase.waitingForUser)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                'Attempt ${paymentState.pollAttempts}/${MomoPaymentNotifier.maxPollAttempts}',
-                style: TextStyle(
-                  color: Colors.grey.shade400,
-                  fontSize: 11,
-                ),
-              ),
-            ),
-
-          const SizedBox(height: 32),
-
-          // Action button (only show when finalized)
-          if (paymentState.phase == MomoPaymentPhase.success)
-            PrimaryButton(
-              label: 'Back to Home',
-              onPressed: () {
-                ref.read(cartProvider.notifier).clear();
-                ref.read(momoPaymentProvider.notifier).reset();
-                // Invalidate order caches so lists show updated status
-                ref.invalidate(myOrdersProvider);
-                ref.invalidate(sellerOrdersProvider);
-                Navigator.of(context).pop();
-                context.go('/user');
-              },
-            ),
-
-          if (paymentState.phase == MomoPaymentPhase.failed)
-            Column(
-              children: [
-                PrimaryButton(
-                  label: 'Try Again',
-                  onPressed: () {
-                    ref.read(momoPaymentProvider.notifier).reset();
-                    Navigator.of(context).pop();
-                  },
-                ),
-                const SizedBox(height: 8),
-                TextButton(
-                  onPressed: () {
-                    ref.read(momoPaymentProvider.notifier).reset();
-                    ref.invalidate(myOrdersProvider);
-                    Navigator.of(context).pop();
-                    context.go('/user');
-                  },
-                  child: const Text('Back to Home'),
-                ),
-              ],
-            ),
-
-          const SizedBox(height: 10),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildIcon(MomoPaymentState state) {
-    switch (state.phase) {
-      case MomoPaymentPhase.initiating:
-      case MomoPaymentPhase.polling:
-        return const SizedBox(
-          width: 80,
-          height: 80,
-          child: CircularProgressIndicator(
-            strokeWidth: 3,
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-          ),
-        );
-      case MomoPaymentPhase.waitingForUser:
-        return Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            color: AppColors.secondary.withValues(alpha: 0.08),
-            shape: BoxShape.circle,
-          ),
-          child: const Stack(
-            alignment: Alignment.center,
-            children: [
-              Icon(Icons.phone_android, size: 40, color: AppColors.secondary),
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                        AppColors.secondary),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      case MomoPaymentPhase.success:
-        return const Icon(Icons.check_circle, size: 80, color: AppColors.success);
-      case MomoPaymentPhase.failed:
-        return const Icon(Icons.error_outline, size: 80, color: AppColors.error);
-      case MomoPaymentPhase.idle:
-        return const SizedBox.shrink();
-    }
-  }
-
-  String _getTitle(MomoPaymentState state) {
-    switch (state.phase) {
-      case MomoPaymentPhase.initiating:
-        return 'Sending Payment Request';
-      case MomoPaymentPhase.waitingForUser:
-        return 'Confirm on Your Phone';
-      case MomoPaymentPhase.polling:
-        return 'Processing Payment';
-      case MomoPaymentPhase.success:
-        return 'Payment Successful!';
-      case MomoPaymentPhase.failed:
-        return 'Payment Failed';
-      case MomoPaymentPhase.idle:
-        return '';
-    }
-  }
-
-  String _getMessage(MomoPaymentState state) {
-    switch (state.phase) {
-      case MomoPaymentPhase.initiating:
-        return 'Connecting to MTN MoMo...';
-      case MomoPaymentPhase.waitingForUser:
-        return 'A USSD prompt has been sent to your phone.\nPlease dial *182# or check your notifications to approve the payment.';
-      case MomoPaymentPhase.polling:
-        return 'Waiting for payment confirmation from MTN MoMo...';
-      case MomoPaymentPhase.success:
-        return state.message ?? 'Your order has been placed successfully!';
-      case MomoPaymentPhase.failed:
-        return state.errorMessage ?? 'Something went wrong. Please try again.';
-      case MomoPaymentPhase.idle:
-        return '';
-    }
   }
 }

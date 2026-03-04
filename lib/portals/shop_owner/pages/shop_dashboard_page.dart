@@ -564,9 +564,17 @@ class _RecentOrderCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Order #${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                  Text(order.buyerName ?? 'Customer', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                  Text('${order.items.length} items • ${order.totalAmount.toInt()} RWF', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                  Row(
+                    children: [
+                      const Text('Order ', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      Flexible(
+                        child: Text('#${order.orderCode}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.secondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(order.itemsSummary, style: const TextStyle(fontSize: 12, color: AppColors.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text('${order.buyerName ?? 'Customer'} • ${order.totalAmount.toInt()} RWF', style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
                 ],
               ),
             ),

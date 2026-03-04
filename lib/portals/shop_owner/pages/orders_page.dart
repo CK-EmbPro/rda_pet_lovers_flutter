@@ -216,14 +216,33 @@ class _OrderCardState extends ConsumerState<_OrderCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Row(
+                        children: [
+                          const Text(
+                            'Order ',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                          ),
+                          Flexible(
+                            child: Text(
+                              '#${order.orderCode}',
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: AppColors.secondary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
                       Text(
-                        'Order #${order.orderCode}',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        order.itemsSummary,
+                        style: const TextStyle(fontSize: 12, color: AppColors.textPrimary),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 2),
                       Text(
                         order.buyerName ?? 'Customer',
-                        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                        style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                       ),
                     ],
                   ),
