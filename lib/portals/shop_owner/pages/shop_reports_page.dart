@@ -46,7 +46,7 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
     }
 
     return orders.where((o) {
-      return o.createdAt.isAfter(start) && o.createdAt.isBefore(end.add(const Duration(days: 1)));
+      return !o.createdAt.isBefore(start) && o.createdAt.isBefore(end.add(const Duration(days: 1)));
     }).toList();
   }
 
@@ -203,53 +203,58 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
               final allOrders = paginatedResponse.data; // Raw orders
               final orders = _filterOrders(allOrders);  // Filtered orders
 
-              // Compute Stats
-              final totalSales = orders.fold<double>(0, (sum, o) => sum + o.totalAmount);
-              final orderCount = orders.length;
-              final avgOrder = orderCount > 0 ? totalSales / orderCount : 0.0;
-              final productCount = orders.fold<int>(0, (sum, o) => sum + o.items.length); // Total distinct items sold
+              // Only count revenue from orders that have been paid
+              // (CONFIRMED, PROCESSING, COMPLETED — exclude PENDING and CANCELLED)
+              final revenueOrders = orders.where((o) {
+                final s = o.status.toUpperCase();
+                return s != 'PENDING' && s != 'CANCELLED';
+              }).toList();
 
-              // Compute Top Products
+              // Compute Stats — revenue from paid orders only
+              final totalSales = revenueOrders.fold<double>(0, (sum, o) => sum + o.totalAmount);
+              final orderCount = orders.length; // total orders (all statuses)
+              final paidOrderCount = revenueOrders.length;
+              final avgOrder = paidOrderCount > 0 ? totalSales / paidOrderCount : 0.0;
+              final productCount = revenueOrders.fold<int>(
+                0, (sum, o) => sum + o.items.fold<int>(0, (s, i) => s + i.quantity),
+              ); // Total units sold (from paid orders)
+
+              // Compute Top Products (from paid orders only)
               final productStats = <String, Map<String, dynamic>>{};
-              for (var o in orders) {
+              for (var o in revenueOrders) {
                 for (var item in o.items) {
-                  // Assuming item.productName exists and is unique enough for now
-                  // Use productId if available for key
-                  final key = item.productName; 
+                  final key = item.itemKey; // Use productId/petListingId, not name
                   if (!productStats.containsKey(key)) {
                     productStats[key] = {
                       'name': item.productName,
                       'sales': 0,
                       'revenue': 0.0,
-                      'image': item.imageUrl, // Assumption: item has image or we don't have it easily
+                      'image': item.imageUrl,
                       'price': item.unitPrice,
                     };
                   }
                   productStats[key]!['sales'] = (productStats[key]!['sales'] as int) + item.quantity;
-                  productStats[key]!['revenue'] = (productStats[key]!['revenue'] as double) + (item.unitPrice * item.quantity);
+                  productStats[key]!['revenue'] = (productStats[key]!['revenue'] as double) + item.totalPrice;
                 }
               }
               final topProducts = productStats.values.toList()
                 ..sort((a, b) => (b['sales'] as int).compareTo(a['sales'] as int));
               final top5 = topProducts.take(5).toList();
 
-              // Compute Chart Data (Monthly for 'This Year', Daily for others?)
-              // For simplicity, let's just do Monthly aggregation of the filtered orders
+              // Compute Chart Data — monthly aggregation from paid orders only
               final monthlyStats = <String, Map<String, dynamic>>{};
-              // Initialize last 6 months 
-              // (Or just aggregate existing orders logic)
-              for (var o in orders) {
-                final monthKey = DateFormat('MMM').format(o.createdAt);
+              for (var o in revenueOrders) {
+                final monthKey = DateFormat('yyyy-MM').format(o.createdAt);
+                final monthLabel = DateFormat('MMM').format(o.createdAt);
                 if (!monthlyStats.containsKey(monthKey)) {
-                  monthlyStats[monthKey] = {'month': monthKey, 'sales': 0.0, 'orders': 0};
+                  monthlyStats[monthKey] = {'month': monthLabel, 'sales': 0.0, 'orders': 0};
                 }
                 monthlyStats[monthKey]!['sales'] = (monthlyStats[monthKey]!['sales'] as double) + o.totalAmount;
                 monthlyStats[monthKey]!['orders'] = (monthlyStats[monthKey]!['orders'] as int) + 1;
               }
-              final chartData = monthlyStats.values.toList(); 
-              // Sort chart data? Map key sorting is tricky without proper date.
-              // If filtered by "This Year", we can enforce Jan-Dec order.
-              // For now, let's just use what we have.
+              // Sort by year-month key so months are in chronological order
+              final sortedMonthKeys = monthlyStats.keys.toList()..sort();
+              final chartData = sortedMonthKeys.map((k) => monthlyStats[k]!).toList();
 
               final salesFmt = NumberFormat.currency(symbol: 'RWF', decimalDigits: 0, customPattern: '#,##0 \u00A4');
               

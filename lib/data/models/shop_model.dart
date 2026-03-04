@@ -168,6 +168,7 @@ class OrderModel {
   final bool isPetOrder;
   final bool isProductOrder;
   final String? notes;
+  final String? cancellationReason;
   final DateTime createdAt;
 
   OrderModel({
@@ -186,6 +187,7 @@ class OrderModel {
     this.isPetOrder = false,
     this.isProductOrder = true,
     this.notes,
+    this.cancellationReason,
     required this.createdAt,
   });
 
@@ -209,6 +211,7 @@ class OrderModel {
       isPetOrder: json['isPetOrder'] as bool? ?? false,
       isProductOrder: json['isProductOrder'] as bool? ?? true,
       notes: json['notes'] as String?,
+      cancellationReason: json['cancellationReason'] as String?,
       createdAt: DateTime.tryParse(json['createdAt']?.toString() ?? '') ?? DateTime.now(),
     );
   }
@@ -231,7 +234,8 @@ class OrderModel {
 
 /// Order Item Model
 class OrderItemModel {
-  final String productId;
+  final String? productId;
+  final String? petListingId;
   final String productName;
   final int quantity;
   final double unitPrice;
@@ -239,7 +243,8 @@ class OrderItemModel {
   final String? imageUrl;
 
   OrderItemModel({
-    required this.productId,
+    this.productId,
+    this.petListingId,
     required this.productName,
     required this.quantity,
     required this.unitPrice,
@@ -247,16 +252,37 @@ class OrderItemModel {
     this.imageUrl,
   });
 
+  /// Unique key for grouping — uses productId or petListingId
+  String get itemKey => productId ?? petListingId ?? productName;
+
   factory OrderItemModel.fromJson(Map<String, dynamic> json) {
+    // Determine name and image from either product or petListing
+    String name = 'Unknown Product';
+    String? image;
+
+    if (json['product'] != null) {
+      name = json['product']['name'] as String? ?? 'Unknown Product';
+      final images = json['product']['images'];
+      if (images is List && images.isNotEmpty) {
+        image = images.first as String;
+      }
+    } else if (json['petListing'] != null) {
+      final pet = json['petListing']['pet'];
+      name = pet?['name'] as String? ?? 'Pet Listing';
+      final petImages = pet?['images'];
+      if (petImages is List && petImages.isNotEmpty) {
+        image = petImages.first as String;
+      }
+    }
+
     return OrderItemModel(
-      productId: json['productId'] as String,
-      productName: json['product']?['name'] as String? ?? 'Unknown Product',
-      quantity: json['quantity'] as int,
+      productId: json['productId'] as String?,
+      petListingId: json['petListingId'] as String?,
+      productName: name,
+      quantity: json['quantity'] as int? ?? 1,
       unitPrice: ShopModel._parseDouble(json['unitPrice']) ?? 0,
       totalPrice: ShopModel._parseDouble(json['totalPrice']) ?? 0,
-      imageUrl: (json['product']?['images'] is List && (json['product']['images'] as List).isNotEmpty) 
-          ? (json['product']['images'] as List).first as String 
-          : null,
+      imageUrl: image,
     );
   }
 }

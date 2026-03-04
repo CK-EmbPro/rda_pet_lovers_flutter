@@ -135,10 +135,14 @@ class OrderService extends BaseApiService {
   }
 
   /// Cancel an order (protected)
-  Future<OrderModel> cancel(String id) async {
+  Future<void> cancel(String id, {String? reason}) async {
     return safeApiCall(() async {
-      final response = await dio.post('${ApiEndpoints.orders}/$id/cancel');
-      return OrderModel.fromJson(response.data);
+      await dio.post(
+        '${ApiEndpoints.orders}/$id/cancel',
+        data: {
+          'reason': reason ?? 'Cancelled by user',
+        },
+      );
     });
   }
 

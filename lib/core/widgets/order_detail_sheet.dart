@@ -41,16 +41,76 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
   OrderModel get order => widget.order;
 
   Future<void> _cancelOrder() async {
+    final reasonController = TextEditingController();
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Cancel Order?'),
-        content: Text(
-          'Are you sure you want to cancel order #${order.orderCode}? This action cannot be undone.',
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.cancel_outlined,
+                  color: AppColors.error, size: 20),
+            ),
+            const SizedBox(width: 12),
+            const Text('Cancel Order',
+                style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600)),
+          ],
         ),
-        actionsAlignment: MainAxisAlignment.center,
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        contentPadding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Are you sure you want to cancel order #${order.orderCode}?',
+              style: TextStyle(
+                  fontSize: 13, color: Colors.grey[700], height: 1.4),
+            ),
+            const SizedBox(height: 14),
+            const Text('Reason (optional)',
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: AppColors.textSecondary)),
+            const SizedBox(height: 6),
+            TextField(
+              controller: reasonController,
+              maxLines: 2,
+              minLines: 1,
+              textAlignVertical: TextAlignVertical.top,
+              style: const TextStyle(fontSize: 13),
+              decoration: InputDecoration(
+                hintText: 'e.g. Changed my mind',
+                hintStyle: TextStyle(fontSize: 13, color: Colors.grey[400]),
+                filled: true,
+                fillColor: Colors.grey[50],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: const BorderSide(color: AppColors.secondary),
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 12, vertical: 10),
+                isDense: true,
+              ),
+            ),
+          ],
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
         actions: [
           Row(
             children: [
@@ -58,25 +118,32 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
                 child: OutlinedButton(
                   onPressed: () => Navigator.pop(ctx, false),
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    foregroundColor: AppColors.textSecondary,
+                    side: BorderSide(color: Colors.grey[300]!),
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(10)),
                   ),
-                  child: const Text('Keep Order'),
+                  child: const Text('Keep Order',
+                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500)),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.error,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                        borderRadius: BorderRadius.circular(10)),
                   ),
                   child: const Text('Cancel Order',
-                      style: TextStyle(color: Colors.white)),
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500)),
                 ),
               ),
             ],
@@ -87,9 +154,13 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
 
     if (confirmed != true || !mounted) return;
 
+    final reason = reasonController.text.trim();
+    reasonController.dispose();
+
     setState(() => _isCancelling = true);
-    final success =
-        await ref.read(orderActionProvider.notifier).cancelOrder(order.id);
+    final success = await ref
+        .read(orderActionProvider.notifier)
+        .cancelOrder(order.id, reason: reason.isEmpty ? null : reason);
     if (!mounted) return;
     setState(() => _isCancelling = false);
 
@@ -205,6 +276,26 @@ class _OrderDetailSheetState extends ConsumerState<OrderDetailSheet> {
               ),
             ),
             const SizedBox(height: 24),
+
+            // Cancellation reason for cancelled orders
+            if (order.status.toUpperCase() == 'CANCELLED' &&
+                order.cancellationReason != null &&
+                order.cancellationReason!.isNotEmpty)
+              _buildSection(
+                icon: Icons.info_outline,
+                title: 'Cancellation Reason',
+                content: Text(
+                  order.cancellationReason!,
+                  style: const TextStyle(
+                    color: AppColors.error,
+                    fontSize: 13,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ),
+
+            if (order.status.toUpperCase() == 'CANCELLED')
+              const SizedBox(height: 8),
 
             // Cancel button for PENDING orders
             if (order.status.toUpperCase() == 'PENDING')

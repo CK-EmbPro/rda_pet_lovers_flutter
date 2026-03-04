@@ -309,12 +309,17 @@ class ShopDashboardPage extends ConsumerWidget {
               data: (paginated) {
                 final orders = paginated.data;
                 // Filter for this month
+                // Filter for this month — only paid orders for revenue
                 final now = DateTime.now();
                 final thisMonthOrders = orders.where((o) => 
                   o.createdAt.year == now.year && o.createdAt.month == now.month
                 ).toList();
+                final paidThisMonth = thisMonthOrders.where((o) {
+                  final s = o.status.toUpperCase();
+                  return s != 'PENDING' && s != 'CANCELLED';
+                }).toList();
                 
-                final monthlySales = thisMonthOrders.fold<double>(0, (sum, o) => sum + o.totalAmount);
+                final monthlySales = paidThisMonth.fold<double>(0, (sum, o) => sum + o.totalAmount);
                 final fmt = NumberFormat.currency(symbol: '', decimalDigits: 0).format(monthlySales);
 
                 // Calculate Top Selling Product (Simple aggregation)

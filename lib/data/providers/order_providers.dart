@@ -76,10 +76,10 @@ class OrderActionNotifier extends StateNotifier<AsyncValue<void>> {
     }
   }
 
-  Future<bool> cancelOrder(String id) async {
+  Future<bool> cancelOrder(String id, {String? reason}) async {
     state = const AsyncValue.loading();
     try {
-      await _service.cancel(id);
+      await _service.cancel(id, reason: reason);
       state = const AsyncValue.data(null);
       return true;
     } catch (e, st) {
