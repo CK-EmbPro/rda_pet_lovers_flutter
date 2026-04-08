@@ -8,23 +8,21 @@ import '../models/models.dart';
 class LocationService extends BaseApiService {
   LocationService(super.client);
 
-  /// Get all districts (public)
+  /// Get all districts (public) — uses /locations which returns full objects with real UUIDs
   Future<List<LocationModel>> getDistricts({String? provinceName}) async {
     return safeApiCall(() async {
-      final response = await dio.get(
-        ApiEndpoints.districts,
-        queryParameters: {if (provinceName != null) 'provinceName': provinceName},
-      );
+      final response = await dio.get(ApiEndpoints.locations);
       final List<dynamic> data = response.data is List
           ? response.data
           : (response.data['data'] ?? []);
-      return data.map((item) {
-        if (item is String) {
-          // Backend returns plain district name strings
-          return LocationModel(id: item, name: item, district: item);
-        }
-        return LocationModel.fromJson(item as Map<String, dynamic>);
-      }).toList();
+      final all = data
+          .map((item) => LocationModel.fromJson(item as Map<String, dynamic>))
+          .where((l) => l.id.isNotEmpty)
+          .toList();
+      if (provinceName != null) {
+        return all.where((l) => l.province == provinceName).toList();
+      }
+      return all;
     });
   }
 

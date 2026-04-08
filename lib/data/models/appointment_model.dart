@@ -101,6 +101,7 @@ class AppointmentModel {
   bool get isAccepted => status == 'ACCEPTED';
   bool get isCancelled => status == 'CANCELLED';
   bool get isCompleted => status == 'COMPLETED';
+  bool get isRescheduled => status == 'RESCHEDULED';
 
   String get displayStatus {
     switch (status) {
@@ -108,6 +109,8 @@ class AppointmentModel {
         return 'Pending';
       case 'ACCEPTED':
         return 'Confirmed';
+      case 'RESCHEDULED':
+        return 'Rescheduled';
       case 'CANCELLED':
         return 'Cancelled';
       case 'COMPLETED':

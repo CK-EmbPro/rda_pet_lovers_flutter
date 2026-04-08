@@ -371,7 +371,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           'speciesId': _selectedSpeciesId,
           'gender': _selectedGender,
           'breedId': _selectedBreedId,
-          if (_selectedLocationId != null) 'locationId': _selectedLocationId,
+          if (_selectedLocationId != null && _selectedLocationId!.isNotEmpty) 'locationId': _selectedLocationId,
           'ageYears': int.tryParse(_ageController.text),
           'weightKg': double.tryParse(_weightController.text),
           'birthDate': _selectedBirthDate?.toIso8601String(),
@@ -402,7 +402,7 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           gender: _selectedGender!,
           petCode: petCode,
           breedId: _selectedBreedId,
-          locationId: _selectedLocationId,
+          locationId: (_selectedLocationId?.isEmpty ?? true) ? null : _selectedLocationId,
           ageYears: int.tryParse(_ageController.text),
           weightKg: double.tryParse(_weightController.text),
           birthDate: _selectedBirthDate?.toIso8601String(),
@@ -495,6 +495,9 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
       }
 
       if (mounted) {
+        // Always refresh the pet list and detail so changes appear immediately
+        ref.invalidate(myPetsProvider);
+        if (widget.pet != null) ref.invalidate(petDetailProvider(widget.pet!.id));
         Navigator.pop(context);
         if (listingFailed) {
           // Pet was saved but listing action failed — show the backend error
@@ -505,13 +508,13 @@ class _PetFormSheetState extends ConsumerState<PetFormSheet> {
           if (_isForSale) ref.invalidate(forSaleListingsProvider);
           String successMsg;
           if (widget.pet == null) {
-            successMsg = '🎉 Pet registered! You are now a Pet Owner.';
+            successMsg = 'Pet registered! You are now a Pet Owner.';
           } else if (_isForDonation && !(widget.pet!.isForDonation)) {
-            successMsg = '🐾 Pet listed for donation!';
+            successMsg = 'Pet listed for donation.';
           } else if (_isForSale && !(widget.pet!.isForSale)) {
-            successMsg = '🏷️ Pet listed for sale!';
+            successMsg = 'Pet listed for sale.';
           } else {
-            successMsg = 'Pet updated successfully!';
+            successMsg = 'Pet updated successfully.';
           }
           AppToast.success(context, successMsg);
         }

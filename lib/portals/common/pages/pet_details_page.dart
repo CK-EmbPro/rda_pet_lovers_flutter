@@ -421,7 +421,7 @@ class _PetDetailsPageState extends ConsumerState<PetDetailsPage> {
                                     IconButton(
                                       icon: const Icon(Icons.message_outlined, color: AppColors.secondary),
                                       onPressed: () {
-                                        AppToast.info(context, 'Chat feature coming soon 💬');
+                                        AppToast.info(context, 'Chat feature coming soon.');
                                       },
 
                                     ),

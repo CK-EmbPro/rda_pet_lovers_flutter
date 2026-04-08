@@ -66,7 +66,7 @@ class PetService extends BaseApiService {
         if (speciesId != null) 'speciesId': speciesId,
         if (breedId != null) 'breedId': breedId,
         if (gender != null) 'gender': gender,
-        if (locationId != null) 'locationId': locationId,
+        if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
         if (search != null && search.isNotEmpty) 'search': search,
       };
 
@@ -162,7 +162,7 @@ class PetService extends BaseApiService {
         if (weightKg != null) 'weightKg': weightKg,
         if (ageYears != null) 'ageYears': ageYears,
         if (birthDate != null) 'birthDate': birthDate,
-        if (locationId != null) 'locationId': locationId,
+        if (locationId != null && locationId.isNotEmpty) 'locationId': locationId,
         if (nationality != null) 'nationality': nationality,
         if (images != null) 'images': images,
         if (videos != null) 'videos': videos,

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_theme.dart';
 import '../../../../core/widgets/common_widgets.dart';
-import '../../../../core/widgets/appointment_detail_sheet.dart';
+import '../../../../core/widgets/appointment_detail_sheet.dart' show AppointmentDetailSheet, AppointmentUserType;
 import '../../../../core/widgets/app_toast.dart';
 import '../../../../data/models/models.dart';
 import '../../../../data/providers/appointment_providers.dart';
@@ -231,7 +231,7 @@ class _OwnerAppointmentListViewState extends ConsumerState<_OwnerAppointmentList
     final statusColor = _getStatusColor(status);
 
     return GestureDetector(
-      onTap: () => AppointmentDetailSheet.show(context, appointment),
+      onTap: () => AppointmentDetailSheet.show(context, appointment, userType: AppointmentUserType.petOwner),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),

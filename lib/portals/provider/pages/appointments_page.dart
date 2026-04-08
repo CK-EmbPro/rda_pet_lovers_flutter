@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
-import '../../../core/widgets/appointment_detail_sheet.dart';
+import '../../../core/widgets/appointment_detail_sheet.dart' show AppointmentDetailSheet, AppointmentUserType;
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/appointment_providers.dart';
@@ -159,7 +159,7 @@ class _AppointmentsPageState extends ConsumerState<AppointmentsPage> {
   List<AppointmentModel> _getFilteredAppointments(List<AppointmentModel> appointments) {
     switch (_selectedFilter) {
       case 0: // Upcoming
-        return appointments.where((a) => a.status == 'ACCEPTED').toList();
+        return appointments.where((a) => a.status == 'ACCEPTED' || a.status == 'RESCHEDULED').toList();
       case 1: // Completed
         return appointments.where((a) => a.status == 'COMPLETED').toList();
       case 2: // Pending
@@ -253,7 +253,7 @@ class _AppointmentCardView extends StatelessWidget {
     final statusColor = _getStatusColor(status);
 
     return GestureDetector(
-      onTap: () => AppointmentDetailSheet.show(context, appointment),
+      onTap: () => AppointmentDetailSheet.show(context, appointment, userType: AppointmentUserType.provider),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -455,7 +455,7 @@ class _AppointmentListViewState extends ConsumerState<_AppointmentListView> {
     final statusColor = _getStatusColor(status);
 
     return GestureDetector(
-      onTap: () => AppointmentDetailSheet.show(context, appointment),
+      onTap: () => AppointmentDetailSheet.show(context, appointment, userType: AppointmentUserType.provider),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),

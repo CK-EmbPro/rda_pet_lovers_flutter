@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../data/providers/cart_provider.dart';
 import '../../../data/providers/auth_providers.dart';
 
@@ -100,26 +101,12 @@ class _CheckoutPageState extends ConsumerState<CheckoutPage> {
                 if (user == null || user.primaryRole == 'user') {
                   final hasPet = cartItems.any((item) => item.type == 'PET');
                   if (!hasPet) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('Account Required'),
-                        content: const Text('Guests cannot purchase products without a pet. Please sign in or add a pet to your cart to proceed.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('OK'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              if (user == null) context.go('/login');
-                            },
-                            child: const Text('Sign In'),
-                          ),
-                        ],
-                      ),
-                    );
+                    if (user == null) {
+                      AppToast.warning(context, 'Please sign in to proceed with your purchase.');
+                      context.go('/login');
+                    } else {
+                      AppToast.warning(context, 'Add a pet to your cart to proceed with this purchase.');
+                    }
                     return;
                   }
                   // If has pet, allow proceed (triggers role upgrade flow later)

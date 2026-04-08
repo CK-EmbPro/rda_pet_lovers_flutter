@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/order_detail_sheet.dart';
 
 import '../../../core/widgets/notification_bell.dart';
@@ -862,17 +863,7 @@ class _HomePageState extends ConsumerState<HomePage> {
 
 
   void _showGuestRestriction(BuildContext context, String action) {
-    showDialog(
-      context: context,
-      builder: (context) => const AlertDialog(
-        title: Text('Pet Ownership Required', textAlign: TextAlign.center),
-        content: Text(
-          'To perform this action, you must own a pet by either creating it, buying it, or adopting it.',
-          textAlign: TextAlign.center,
-        ),
-        actions: [], // No buttons as requested
-      ),
-    );
+    AppToast.info(context, 'Pet ownership required. Create, buy, or adopt a pet to $action.');
   }
 }
 

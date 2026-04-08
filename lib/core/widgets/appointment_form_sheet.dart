@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_toast.dart';
+import '../widgets/momo_payment_dialog.dart';
 import '../../data/providers/service_providers.dart';
 import '../../data/providers/pet_providers.dart';
 import '../../data/providers/appointment_providers.dart';
+import '../../data/providers/auth_providers.dart';
+import '../../data/providers/payment_providers.dart';
 import '../../data/models/models.dart';
 
 /// Appointment Form Modal
@@ -243,7 +246,7 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: (selectedServiceId != null && selectedDay != null && selectedTime != null && !_isLoading)
+              onPressed: (selectedServiceId != null && selectedDay != null && selectedTime != null && selectedPetId != null && !_isLoading)
                   ? _submitAppointment
                   : null,
               style: ElevatedButton.styleFrom(
@@ -263,29 +266,29 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
 
   Future<void> _submitAppointment() async {
     setState(() => _isLoading = true);
-    
-    // Find provider from service
-    // In a real app, we might check if service has provider data.
-    // For now, if we don't have providerId, we might fail or need to fetch it.
-    // Assuming ServiceModel has ownerId or similar.
-    // Let's check ServiceModel in memory.
+
     final services = ref.read(allServicesProvider(const ServiceQueryParams())).value?.data ?? [];
     final service = services.cast<ServiceModel?>().firstWhere(
       (s) => s?.id == selectedServiceId,
       orElse: () => null,
     );
-    
-    // If providerId is passed in widget, use it. Else use service's providerId.
+
     final providerId = widget.preselectedProviderId ?? service?.providerId ?? '';
-    
-    // Format Time: 09:00
+
+    // BUG 10: catch empty providerId before hitting the backend
+    if (providerId.isEmpty) {
+      setState(() => _isLoading = false);
+      AppToast.error(context, 'Cannot determine the service provider. Please select a service again.');
+      return;
+    }
+
     final hour = selectedTime!.hour.toString().padLeft(2, '0');
     final minute = selectedTime!.minute.toString().padLeft(2, '0');
     final timeString = '$hour:$minute';
-    
+
     final resultPair = await ref.read(appointmentActionProvider.notifier).bookAppointment(
       serviceId: selectedServiceId!,
-      providerId: providerId, // Fallback might fail validation
+      providerId: providerId,
       scheduledDate: DateTime(selectedMonth.year, selectedMonth.month, selectedDay!),
       scheduledTime: timeString,
       petId: selectedPetId,
@@ -297,12 +300,131 @@ class _AppointmentFormSheetState extends ConsumerState<AppointmentFormSheet> {
       final errorMsg = resultPair.$2;
 
       if (appointment != null) {
-        Navigator.pop(context);
-        AppToast.success(context, 'Appointment booked successfully!');
         ref.invalidate(myAppointmentsProvider);
+        final price = appointment.servicePrice ?? 0;
+        final paymentType = appointment.service?.paymentType ?? 'PAY_UPFRONT';
+
+        // Only prompt for upfront payment immediately after booking.
+        // PAY_AFTER services are paid once the appointment is completed.
+        // SUBSCRIPTION services have no per-appointment charge.
+        if (price > 0 && paymentType == 'PAY_UPFRONT') {
+          // Show payment dialog BEFORE popping the sheet so the sheet context stays valid.
+          // The dialog's callbacks close the sheet themselves.
+          _showAppointmentPaymentDialog(context, ref, appointment.id, price);
+        } else {
+          Navigator.pop(context);
+          AppToast.success(context, 'Appointment booked successfully!');
+        }
       } else {
         AppToast.error(context, errorMsg ?? 'Failed to book appointment. Please try again.');
       }
+    }
+  }
+
+  static void _showAppointmentPaymentDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String appointmentId,
+    double amount,
+  ) {
+    final user = ref.read(currentUserProvider);
+    final mtnRegex = RegExp(r'^(078|079)\d{7}$');
+
+    // Normalise profile phone to local format
+    String? profilePhone;
+    if (user?.phone != null && user!.phone!.isNotEmpty) {
+      String phone = user.phone!;
+      if (phone.startsWith('+250')) phone = '0${phone.substring(4)}';
+      else if (phone.startsWith('250')) phone = '0${phone.substring(3)}';
+      if (mtnRegex.hasMatch(phone)) profilePhone = phone;
+    }
+
+    // If a valid MTN number is already on file, skip the dialog and pay directly
+    if (profilePhone != null) {
+      _runPayment(context, ref, appointmentId, amount, profilePhone);
+      return;
+    }
+
+    // No valid phone on file — show phone input dialog with Pay Later / Pay Now options
+    final phoneController = TextEditingController();
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Pay for Appointment', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Amount due: ${amount.toStringAsFixed(0)} RWF',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 16),
+            const Text('MTN MoMo Number', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                hintText: '078 XXX XXXX',
+                filled: true,
+                fillColor: AppColors.inputFill,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogCtx);
+              Navigator.pop(context);
+              AppToast.success(context, 'Appointment booked. Pay later from your appointments.');
+            },
+            child: const Text('Pay Later'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final phone = phoneController.text.trim();
+              if (!mtnRegex.hasMatch(phone)) {
+                AppToast.error(dialogCtx, 'Enter a valid MTN number (078/079, 10 digits)');
+                return;
+              }
+              Navigator.pop(dialogCtx);
+              _runPayment(context, ref, appointmentId, amount, phone);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.secondary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Pay Now', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Future<void> _runPayment(BuildContext context, WidgetRef ref, String appointmentId, double amount, String phone) async {
+    await ref.read(momoPaymentProvider.notifier).payForAppointment(
+      appointmentId: appointmentId,
+      amount: amount,
+      phoneNumber: phone,
+    );
+    if (context.mounted) {
+      MomoPaymentStatusDialog.show(
+        context,
+        onSuccess: () {
+          ref.invalidate(myAppointmentsProvider);
+          Navigator.pop(context);
+        },
+        onRetry: () => _showAppointmentPaymentDialog(context, ref, appointmentId, amount),
+        onDismiss: () => Navigator.pop(context),
+      );
     }
   }
 
