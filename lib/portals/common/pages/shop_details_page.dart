@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/shop_providers.dart';
@@ -71,7 +72,7 @@ class _ShopDetailsPageState extends ConsumerState<ShopDetailsPage> {
                   ),
                   child: IconButton(
                     icon: const Icon(Icons.share, color: Colors.white, size: 20),
-                    onPressed: () {},
+                    onPressed: () => AppToast.info(context, 'Share feature coming soon.'),
                   ),
                 ),
               ],

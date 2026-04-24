@@ -69,17 +69,30 @@ class ShopDashboardPage extends ConsumerWidget {
                      const SizedBox(height: 8),
                      Text('User ID: ${user?.id ?? "Unknown"}', style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
                      const SizedBox(height: 24),
-                     ElevatedButton(
-                       onPressed: () {
-                          // TODO: Implement Create Shop Flow
-                          AppToast.info(context, 'Create Shop feature coming soon');
-                       }, 
-                       style: ElevatedButton.styleFrom(
-                         backgroundColor: AppColors.primary,
-                         foregroundColor: Colors.white,
-                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                     Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                       decoration: BoxDecoration(
+                         color: AppColors.inputFill,
+                         borderRadius: BorderRadius.circular(12),
+                         border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
                        ),
-                       child: const Text('Create Shop'),
+                       child: const Column(
+                         children: [
+                           Icon(Icons.admin_panel_settings_outlined, size: 32, color: AppColors.primary),
+                           SizedBox(height: 8),
+                           Text(
+                             'Shop creation is managed by admins.',
+                             textAlign: TextAlign.center,
+                             style: TextStyle(fontWeight: FontWeight.w600, color: AppColors.primary),
+                           ),
+                           SizedBox(height: 4),
+                           Text(
+                             'Please contact an administrator to set up your shop.',
+                             textAlign: TextAlign.center,
+                             style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                           ),
+                         ],
+                       ),
                      ),
                      const SizedBox(height: 16),
                      TextButton(

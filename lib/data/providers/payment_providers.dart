@@ -382,6 +382,14 @@ class MomoPaymentNotifier extends StateNotifier<MomoPaymentState> {
   }
 }
 
+/// Payout records for the current provider/shop owner.
+/// Each map has: amount (num), currency (String), status (String), createdAt (String).
+final myPayoutsProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+  final service = ref.read(paymentServiceProvider);
+  return service.getMyPayouts();
+});
+
 /// Provider for the MoMo payment flow.
 /// NOT autoDispose — the notifier must survive async gaps during payment
 /// initiation and polling. Call reset() manually when done.

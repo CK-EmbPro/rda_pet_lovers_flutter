@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api/dio_client.dart';
+import '../../core/errors/app_exceptions.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 
@@ -37,30 +38,43 @@ class AuthNotifier extends StateNotifier<AsyncValue<UserModel?>> {
     try {
       final user = await _authService.login(email, password);
       state = AsyncValue.data(user);
+    } on UnverifiedAccountException catch (e, st) {
+      // The account credentials are correct but OTP verification is pending.
+      // Store as an error state so the login page can inspect the error type
+      // and redirect to /verify-otp — without treating this as a fatal failure.
+      state = AsyncValue.error(e, st);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
   }
 
-  Future<void> register({
+  /// Register and return the userId on success, or null on failure.
+  /// State is set to error so the caller can surface the message via authState.
+  /// [pet] is forwarded to the service when the role is PET_OWNER.
+  Future<String?> register({
     required String fullName,
     required String email,
     required String password,
     required String role,
     String? phone,
+    Map<String, dynamic>? pet,
   }) async {
     state = const AsyncValue.loading();
     try {
-      final user = await _authService.register(
+      final userId = await _authService.register(
         fullName: fullName,
         email: email,
         password: password,
         role: role,
         phone: phone,
+        pet: pet,
       );
-      state = AsyncValue.data(user);
+      // Registration succeeded — user is not yet logged in, keep state as null.
+      state = const AsyncValue.data(null);
+      return userId;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
+      return null;
     }
   }
 

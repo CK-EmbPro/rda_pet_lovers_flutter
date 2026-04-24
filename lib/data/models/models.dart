@@ -7,3 +7,4 @@ export 'appointment_model.dart';
 export 'shop_model.dart';
 export 'api_response.dart';
 export 'notification_model.dart';
+export 'subscription_model.dart';

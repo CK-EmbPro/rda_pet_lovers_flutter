@@ -13,10 +13,14 @@ import '../../portals/provider/provider_portal.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/splash_page.dart';
+import '../../features/auth/presentation/pages/verify_otp_page.dart';
 import '../../portals/common/pages/shop_details_page.dart';
 import '../../portals/common/pages/service_details_page.dart';
 import '../../portals/common/pages/pet_details_page.dart';
 import '../../portals/common/pages/product_details_page.dart';
+import '../../portals/common/pages/subscription_plans_page.dart';
+import '../../portals/pet_owner/pages/my_subscriptions_page.dart';
+import '../../portals/provider/pages/subscribers_page.dart';
 import '../../portals/user/pages/cart_page.dart';
 import '../../portals/user/pages/checkout_page.dart';
 import '../../portals/user/pages/payment_method_page.dart';
@@ -43,6 +47,13 @@ class AppRouter {
         path: '/register',
         builder: (context, state) => const RegisterPage(),
       ),
+      GoRoute(
+        path: '/verify-otp',
+        builder: (context, state) {
+          final userId = state.uri.queryParameters['userId'] ?? '';
+          return VerifyOtpPage(userId: userId);
+        },
+      ),
 
       // Portal Routes
       GoRoute(
@@ -57,7 +68,8 @@ class AppRouter {
         path: '/pet-owner',
         builder: (context, state) {
           final tab = state.uri.queryParameters['tab'];
-          final index = tab == 'cart' ? 4 : 0;
+          // Pages: 0=Home, 1=Services, 2=Market, 3=MyPets, 4=Plans, 5=Cart, 6=Profile
+          final index = tab == 'cart' ? 5 : 0;
           return PetOwnerPortal(initialIndex: index);
         },
       ),
@@ -123,6 +135,25 @@ class AppRouter {
       GoRoute(
         path: '/user/orders',
         builder: (context, state) => const OrdersPage(),
+      ),
+      GoRoute(
+        path: '/subscriptions',
+        builder: (context, state) => const MySubscriptionsPage(),
+      ),
+      GoRoute(
+        path: '/subscription-plans/:providerId',
+        builder: (context, state) {
+          final providerId = state.pathParameters['providerId']!;
+          final providerName = state.uri.queryParameters['name'];
+          return SubscriptionPlansPage(
+            providerId: providerId,
+            providerName: providerName,
+          );
+        },
+      ),
+      GoRoute(
+        path: '/provider/subscribers',
+        builder: (context, state) => const SubscribersPage(),
       ),
     ],
     errorBuilder: (context, state) => Scaffold(

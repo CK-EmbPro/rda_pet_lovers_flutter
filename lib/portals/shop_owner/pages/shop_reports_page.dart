@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../data/models/models.dart';
 import '../../../data/providers/order_providers.dart';
+import '../../../data/providers/payment_providers.dart';
 
 class ShopReportsPage extends ConsumerStatefulWidget {
   const ShopReportsPage({super.key});
@@ -432,6 +433,10 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
+
+                  // Settlement & Earnings Section
+                  _buildSettlementSection(totalSales, salesFmt),
+                  const SizedBox(height: 24),
                   
                   // Sales Chart
                   Padding(
@@ -507,6 +512,113 @@ class _ShopReportsPageState extends ConsumerState<ShopReportsPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildSettlementSection(double grossRevenue, NumberFormat fmt) {
+    final payoutsAsync = ref.watch(myPayoutsProvider);
+    // Platform commission rate is 5%
+    const commissionRate = 0.05;
+    final commission = grossRevenue * commissionRate;
+    final netEarnings = grossRevenue - commission;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: AppTheme.cardShadow,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.account_balance_wallet, color: AppColors.success, size: 20),
+                ),
+                const SizedBox(width: 12),
+                const Text('Settlement & Earnings', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 16),
+            // Gross / Commission / Net breakdown
+            _settlementRow('Gross Revenue', fmt.format(grossRevenue), AppColors.textPrimary, bold: true),
+            const SizedBox(height: 10),
+            _settlementRow('Platform Commission (5%)', '− ${fmt.format(commission)}', AppColors.error),
+            const SizedBox(height: 10),
+            Container(height: 1, color: const Color(0xFFE2E8F0)),
+            const SizedBox(height: 10),
+            _settlementRow('Your Net Earnings', fmt.format(netEarnings), AppColors.success, bold: true),
+            const SizedBox(height: 20),
+            const Divider(height: 1, color: Color(0xFFE2E8F0)),
+            const SizedBox(height: 16),
+            // Payout history summary from backend
+            payoutsAsync.when(
+              loading: () => const Center(child: SizedBox(height: 40, child: CircularProgressIndicator(strokeWidth: 2))),
+              error: (_, __) => const Text('Could not load payout data', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+              data: (payouts) {
+                double totalPaid = 0;
+                double totalPending = 0;
+                double totalFailed = 0;
+                for (final p in payouts) {
+                  final amt = (p['amount'] as num?)?.toDouble() ?? 0;
+                  final status = (p['status'] as String?)?.toUpperCase() ?? '';
+                  if (status == 'PAID') totalPaid += amt;
+                  else if (status == 'PENDING') totalPending += amt;
+                  else if (status == 'FAILED') totalFailed += amt;
+                }
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Payout History', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
+                    const SizedBox(height: 12),
+                    _settlementRow('Paid Out', fmt.format(totalPaid), AppColors.success),
+                    const SizedBox(height: 8),
+                    _settlementRow('Pending Disbursement', fmt.format(totalPending), AppColors.warning),
+                    if (totalFailed > 0) ...[
+                      const SizedBox(height: 8),
+                      _settlementRow('Failed Payouts', fmt.format(totalFailed), AppColors.error),
+                    ],
+                    if (payouts.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4),
+                        child: Text('No payouts yet', style: TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _settlementRow(String label, String value, Color valueColor, {bool bold = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(label, style: TextStyle(
+          fontSize: 13,
+          color: bold ? AppColors.textPrimary : AppColors.textSecondary,
+          fontWeight: bold ? FontWeight.w600 : FontWeight.normal,
+        )),
+        Text(value, style: TextStyle(
+          fontSize: 13,
+          fontWeight: bold ? FontWeight.bold : FontWeight.w600,
+          color: valueColor,
+        )),
+      ],
     );
   }
 

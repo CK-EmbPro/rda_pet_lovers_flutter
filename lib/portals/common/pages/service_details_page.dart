@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../core/widgets/appointment_form_sheet.dart';
 import '../../../data/models/models.dart';
@@ -41,7 +42,7 @@ class ServiceDetailsPage extends ConsumerWidget {
                     children: [
                       _buildServiceInfo(service),
                       const SizedBox(height: 32),
-                      _buildProviderInfo(service.provider),
+                      _buildProviderInfo(context, service.provider),
                       const SizedBox(height: 32),
                       _buildDescription(service.description),
                       const SizedBox(height: 40),
@@ -171,7 +172,7 @@ class ServiceDetailsPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildProviderInfo(ProviderInfo? provider) {
+  Widget _buildProviderInfo(BuildContext context, ProviderInfo? provider) {
     if (provider == null) {
       return const SizedBox.shrink();
     }
@@ -253,7 +254,7 @@ class ServiceDetailsPage extends ConsumerWidget {
                 ),
                 child: IconButton(
                   icon: const Icon(Icons.chat_bubble_outline, color: AppColors.secondary, size: 22),
-                  onPressed: () {},
+                  onPressed: () => AppToast.info(context, 'Chat feature coming soon.'),
                 ),
               ),
             ],
@@ -306,6 +307,43 @@ class ServiceDetailsPage extends ConsumerWidget {
   }
 
   Widget _buildActionButtons(BuildContext context, ServiceModel service) {
+    if (service.paymentType == 'SUBSCRIPTION') {
+      return Column(
+        children: [
+          // Info banner
+          Container(
+            padding: const EdgeInsets.all(14),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: const Color(0xFFCBD5E1)),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, size: 18, color: Color(0xFF475569)),
+                SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'This service requires an active subscription. View available plans below.',
+                    style: TextStyle(color: Color(0xFF475569), fontSize: 13, height: 1.4),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          PrimaryButton(
+            label: 'View Subscription Plans',
+            onPressed: () {
+              final name = service.provider?.fullName;
+              final query = name != null ? '?name=${Uri.encodeComponent(name)}' : '';
+              context.push('/subscription-plans/${service.providerId}$query');
+            },
+          ),
+        ],
+      );
+    }
+
     return PrimaryButton(
       label: 'Book Appointment',
       onPressed: () {

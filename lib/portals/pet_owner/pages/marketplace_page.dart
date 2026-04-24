@@ -6,6 +6,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/common_widgets.dart';
 import '../../../data/providers/shop_providers.dart';
 import '../../../data/providers/product_providers.dart';
+import '../../../data/providers/cart_provider.dart';
 import '../../../data/models/models.dart';
 
 class MarketplacePage extends ConsumerStatefulWidget {
@@ -327,12 +328,12 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
-class _ProductListItem extends StatelessWidget {
+class _ProductListItem extends ConsumerWidget {
   final ProductModel product;
   const _ProductListItem({required this.product});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
@@ -372,7 +373,15 @@ class _ProductListItem extends StatelessWidget {
           ),
           IconButton(
             icon: const Icon(Icons.add_shopping_cart, color: AppColors.secondary),
-            onPressed: () {},
+            onPressed: () {
+              ref.read(cartProvider.notifier).addProduct(product);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('${product.name} added to cart'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            },
           ),
         ],
       ),

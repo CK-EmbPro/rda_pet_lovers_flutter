@@ -63,6 +63,18 @@ class PaymentService extends BaseApiService {
       return response.data['data'] ?? [];
     });
   }
+
+  /// Get payout records for the current provider/shop owner.
+  /// Returns raw list — each item has: id, amount, currency, status, createdAt, processedAt.
+  Future<List<Map<String, dynamic>>> getMyPayouts() async {
+    return safeApiCall(() async {
+      final response = await dio.get('${ApiEndpoints.payments}/payouts/mine');
+      final raw = response.data is List
+          ? response.data as List
+          : (response.data['data'] ?? []) as List;
+      return raw.cast<Map<String, dynamic>>();
+    });
+  }
 }
 
 /// Result from initiating a payment

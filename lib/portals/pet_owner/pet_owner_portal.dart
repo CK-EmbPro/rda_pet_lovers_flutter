@@ -3,6 +3,7 @@ import '../../core/widgets/common_widgets.dart';
 import 'pages/dashboard_page.dart';
 import 'pages/my_pets_page.dart';
 import 'pages/marketplace_page.dart';
+import 'pages/my_subscriptions_page.dart';
 import '../../portals/user/pages/services_page.dart';
 import 'pages/profile_page.dart';
 import '../user/pages/cart_page.dart';
@@ -37,16 +38,17 @@ class PetOwnerPortalState extends State<PetOwnerPortal> {
     const ServicesPage(),
     const MarketplacePage(),
     const MyPetsPage(),
+    const MySubscriptionsPage(),
     const CartPage(),
     const PetOwnerProfilePage(),
   ];
 
-  // Standardized order with User Portal
   final List<FloatingNavItem> _navItems = const [
     FloatingNavItem(icon: Icons.home_outlined, label: 'Home'),
     FloatingNavItem(icon: Icons.miscellaneous_services_outlined, label: 'Services'),
     FloatingNavItem(icon: Icons.store_outlined, label: 'Market'),
     FloatingNavItem(icon: Icons.pets_outlined, label: 'My Pets'),
+    FloatingNavItem(icon: Icons.subscriptions_outlined, label: 'Plans'),
     FloatingNavItem(icon: Icons.shopping_cart_outlined, label: 'Cart'),
     FloatingNavItem(icon: Icons.person_outline, label: 'Profile'),
   ];

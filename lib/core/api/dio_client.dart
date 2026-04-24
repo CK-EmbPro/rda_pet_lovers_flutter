@@ -58,8 +58,12 @@ class ApiEndpoints {
   // ── Auth ──────────────────────────────────────
   static const String login = '/auth/login';
   static const String register = '/auth/register';
+  static const String verifyOtp = '/auth/verify-otp';
+  static const String resendOtp = '/auth/resend-otp';
   static const String refresh = '/auth/refresh';
   static const String logout = '/auth/logout';
+  static const String forgotPassword = '/auth/forgot-password';
+  static const String resetPassword = '/auth/reset-password';
 
   // ── Users ─────────────────────────────────────
   static const String usersMe = '/users/me';
@@ -130,6 +134,16 @@ class ApiEndpoints {
   static const String locations = '/locations';
   static const String districts = '/locations/districts';
   static const String provinces = '/locations/provinces';
+
+  // ── Subscriptions ─────────────────────────────
+  static const String subscriptionModels = '/subscriptions/models';
+  static const String subscriptions = '/subscriptions';
+  static const String mySubscriptions = '/subscriptions/my-subscriptions';
+  static const String providerSubscribers = '/subscriptions/provider/subscribers';
+  // Usage: /subscriptions/models/provider/:providerId
+  // Usage: /subscriptions/:id/cancel, /subscriptions/:id/auto-renew
+  // Usage: /subscriptions/:id/use-session
+  // Usage: /subscriptions/check/:providerId
 
   // ── Storage ───────────────────────────────────
   static const String storageUpload = '/storage/upload';
